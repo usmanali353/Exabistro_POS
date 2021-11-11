@@ -206,11 +206,21 @@ class _LoginScreenState extends State<LoginScreen> {
                               setState(() {
                                 isLoading=true;
                               });
-                              Network_Operations.signIn(context, email.text, password.text,admin.text).then((value){
-                                setState(() {
-                                  isLoading=false;
-                                });
+                              Utils.check_connectivity().then((isConnected){
+                                if(isConnected){
+                                  Network_Operations.signIn(context, email.text, password.text,admin.text).then((value){
+                                    setState(() {
+                                      isLoading=false;
+                                    });
+                                  });
+                                }else{
+                                  setState(() {
+                                    isLoading=false;
+                                  });
+                                }
+
                               });
+
 
                             }
                           },

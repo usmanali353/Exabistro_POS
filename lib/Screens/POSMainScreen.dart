@@ -23,33 +23,41 @@ class _POSMainScreenState extends State<POSMainScreen> {
   bool isLoading=true;
   @override
   void initState() {
-
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeRight,
       DeviceOrientation.landscapeLeft,
     ]);
-    print("Store Id "+widget.storeId.toString());
-    Network_Operations.getSubcategories(context, widget.storeId).then((sub){
-      setState(() {
-        if(sub!=null&&sub.length>0){
-          subCategories.addAll(sub);
-          categoryName=subCategories[0].name;
-         Network_Operations.getProduct(context, subCategories[0].categoryId, subCategories[0].id, widget.storeId,"").then((p){
-           setState(() {
-             if(p!=null&&p.length>0){
-               isLoading=false;
-               products.addAll(p);
-             }else
-               isLoading=false;
-           });
+    Utils.check_connectivity().then((isConnected){
+      if(isConnected){
+        Network_Operations.getSubcategories(context, widget.storeId).then((sub){
+          setState(() {
+            if(sub!=null&&sub.length>0){
+              subCategories.addAll(sub);
+              categoryName=subCategories[0].name;
+              Network_Operations.getProduct(context, subCategories[0].categoryId, subCategories[0].id, widget.storeId,"").then((p){
+                setState(() {
+                  if(p!=null&&p.length>0){
+                    isLoading=false;
+                    products.addAll(p);
+                  }else
+                    isLoading=false;
+                });
 
-         });
-        }else{
-          Utils.showError(context,"No Categories Found");
-        }
-      });
+              });
+            }else{
+              isLoading=false;
+              Utils.showError(context,"No Categories Found");
+            }
+          });
 
+        });
+      }else{
+        Utils.showError(context,"Network Error");
+        Navigator.pop(context);
+      }
     });
+    print("Store Id "+widget.storeId.toString());
+
   }
 
 

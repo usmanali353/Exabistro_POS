@@ -1,5 +1,6 @@
 import 'package:exabistro_pos/Screens/Orders/components/TabsComponent.dart';
 import 'package:exabistro_pos/Screens/POSMainScreen.dart';
+import 'package:exabistro_pos/Screens/Restarant&Stores/AdminNavBar(Tablet).dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/components/constants.dart';
 import 'package:exabistro_pos/model/Stores.dart';
@@ -129,7 +130,7 @@ class _NewStoresState extends State<NewStores> {
                   child: InkWell(
                    onTap: (){
 
-                     Navigator.push(context, MaterialPageRoute(builder: (context)=> AdminTabletTabsScreen(storeId: storeList[index].id,)));
+                     Navigator.push(context, MaterialPageRoute(builder: (context)=> AdminNavBarForTablet(storeId: storeList[index].id,)));
                    },
                     child: Container(
                       //alignment: Alignment.center,
