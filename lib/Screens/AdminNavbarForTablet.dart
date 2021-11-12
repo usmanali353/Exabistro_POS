@@ -3,9 +3,8 @@ import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/components/paint/fancy_bottom_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../LoginScreen.dart';
-import '../POSMainScreen.dart';
+import 'LoginScreen.dart';
+import 'POSMainScreen.dart';
 
 
 
@@ -86,7 +85,7 @@ class _AdminNavBarState extends State<AdminNavBarForTablet> {
     switch (page) {
       case 0:
         return POSMainScreen(storeId:widget.storeId);
-        //return AdminProfile(widget.storeId,widget.roleId);
+    //return AdminProfile(widget.storeId,widget.roleId);
       case 1:
         return AdminTabletTabsScreen(storeId: widget.storeId);
       case 2:

@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:api_cache_manager/models/cache_db_model.dart';
 import 'package:api_cache_manager/utils/cache_manager.dart';
 import 'package:connectivity/connectivity.dart';
-import 'package:exabistro_pos/Screens/Restarant&Stores/Restaurant/RestaurantList(Tablet).dart';
 import 'package:exabistro_pos/model/Products.dart';
 import 'package:exabistro_pos/model/Stores.dart';
 import 'package:http/http.dart' as http;
@@ -11,6 +10,8 @@ import 'package:exabistro_pos/model/Categories.dart';
 import 'package:flutter/material.dart';
 import 'package:progress_dialog/progress_dialog.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+import '../Screens/RolesBaseStoreSelection.dart';
 
 class Network_Operations{
   static Future signIn(BuildContext context,String email,String password,String admin) async {
@@ -52,10 +53,10 @@ class Network_Operations{
           //   // Route<dynamic> route) => false);
           // }
 
-            Navigator.pushAndRemoveUntil(context,
-                //MaterialPageRoute(builder: (context) => DashboardScreen()), (
-                MaterialPageRoute(builder: (context) => RestaurantsListForTablet(restaurantList,2)), (
-                    Route<dynamic> route) => false);
+          Navigator.pushAndRemoveUntil(context,
+              //MaterialPageRoute(builder: (context) => DashboardScreen()), (
+              MaterialPageRoute(builder: (context) => RoleBaseStoreSelection(rolesAndStores)), (
+                  Route<dynamic> route) => false);
           }
         print(response.body);
       }
@@ -71,6 +72,23 @@ class Network_Operations{
       print(e);
       Utils.showError(context, "Please Confirm your Email Address");
     }
+  }
+  static Future<dynamic> getRoles(BuildContext context)async{
+
+    try{
+      var response=await http.get(Utils.baseUrl()+"Account/GetAllRolesExceptSuperAdmin",);
+      var data= jsonDecode(response.body);
+      if(response.statusCode==200){
+        return data;
+      }
+      else{
+        Utils.showError(context, response.statusCode.toString());
+        return null;
+      }
+    }catch(e){
+      Utils.showError(context, "Error Found: ");
+    }
+    return null;
   }
   static Future<List<Categories>> getSubcategories(BuildContext context,int storeId)async{
     //ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);

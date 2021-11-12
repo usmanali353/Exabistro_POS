@@ -52,6 +52,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
 
         });
       }else{
+        isLoading=false;
         Utils.showError(context,"Network Error");
         Navigator.pop(context);
       }
