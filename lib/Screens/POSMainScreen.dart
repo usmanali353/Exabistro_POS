@@ -21,6 +21,8 @@ class _POSMainScreenState extends State<POSMainScreen> {
   List<Products> products=[];
   String categoryName="";
   bool isLoading=true;
+  List<String> menuTypeDropdownItems = ["Products","Deals"];
+  String selectedMenuType;
   @override
   void initState() {
     SystemChrome.setPreferredOrientations([
@@ -141,8 +143,8 @@ class _POSMainScreenState extends State<POSMainScreen> {
                               errorWidget: (context, url, error) => Icon(Icons.error,color: Colors.red,),
                               imageBuilder: (context, imageProvider){
                                 return Container(
-                                  height: 120,
-                                  width: 120,
+                                  height: 150,
+                                  width: 150,
                                   decoration: BoxDecoration(
                                       borderRadius: BorderRadius.circular(8),
                                       image: DecorationImage(
@@ -158,10 +160,12 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                     child: Center(
                                       child: Text(
                                         subCategories[index].name,
+                                        textAlign: TextAlign.center,
                                         style: TextStyle(
                                             fontSize: 20,
                                             color: Colors.white,
-                                            fontWeight: FontWeight.bold
+                                            fontWeight: FontWeight.bold,
+
                                         ),
                                       ),
                                     ),
@@ -178,22 +182,54 @@ class _POSMainScreenState extends State<POSMainScreen> {
                       width: MediaQuery.of(context).size.width,
                       height: 50,
                       color: yellowColor,
-                      child: Center(
-                        child: Text(categoryName, style: TextStyle(
-                            fontSize: 22,
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold
-                        ),),
-                      ),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.only(left: 16.0),
+                            child: Text(categoryName, style: TextStyle(
+                                fontSize: 22,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold
+                            ),),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(right: 16.0),
+                            child: Card(
+                              color: yellowColor,
+                              elevation: 8,
+                              child: DropdownButton(
+                                  isDense: true,
+                                  value: selectedMenuType==null?menuTypeDropdownItems[0]:selectedMenuType,//actualDropdown,
+                                  onChanged: (String value){
+                                    setState(() {
+                                      this.selectedMenuType=value;
+                                    });
+                                  },
+                                  items: menuTypeDropdownItems.map((String title)
+                                  {
+                                    return DropdownMenuItem
+                                      (
+                                      value: title,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(3.0),
+                                        child: Text(title, style: TextStyle(color: blueColor, fontWeight: FontWeight.bold, fontSize: 14.0)),
+                                      ),
+                                    );
+                                  }).toList()
+                              ),
+                            ),
+                          )
+                        ],
+                      )
                     ),
                     Container(
                       //color: Colors.teal,
                       width: MediaQuery.of(context).size.width,
-                      height: 440,
                       child: GridView.builder(
                           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: 120,
-                              childAspectRatio: 2 / 2,
+                              maxCrossAxisExtent: 200,
+                              childAspectRatio: 3 / 2,
                               crossAxisSpacing: 10,
                               mainAxisSpacing: 10),
                           itemCount: products.length,
@@ -206,8 +242,8 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 errorWidget: (context, url, error) => Icon(Icons.error,color: Colors.red,),
                                 imageBuilder: (context, imageProvider){
                                   return Container(
-                                    height: 120,
-                                    width: 120,
+                                    height: 150,
+                                    width: 190,
                                     decoration: BoxDecoration(
                                         borderRadius: BorderRadius.circular(8),
                                         image: DecorationImage(
@@ -223,8 +259,9 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                       child: Center(
                                         child: Text(
                                           products[index].name,
+                                          textAlign: TextAlign.center,
                                           style: TextStyle(
-                                              fontSize: 20,
+                                              fontSize: 19,
                                               color: Colors.white,
                                               fontWeight: FontWeight.bold
                                           ),
