@@ -226,6 +226,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                     Container(
                       //color: Colors.teal,
                       width: MediaQuery.of(context).size.width,
+                      height: 440,
                       child: GridView.builder(
                           gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                               maxCrossAxisExtent: 200,
