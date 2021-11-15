@@ -130,13 +130,9 @@ class Network_Operations{
       var isCacheExist = await APICacheManager().isAPICacheKeyExist("productList");
       var connectivityResult = await (Connectivity().checkConnectivity());
       if (connectivityResult == ConnectivityResult.none){
-        print("connectivity hit");
         if (isCacheExist) {
           var cacheData = await APICacheManager().getCacheData("productList");
-          print("cache hit");
-          print("gjgjgj"+Products.listProductFromJson(cacheData.syncData).toString());
           return Products.listProductFromJson(cacheData.syncData);
-
         }else{
           Utils.showError(context, "No Offline Data");
         }
@@ -401,6 +397,39 @@ class Network_Operations{
         return null;
       }
     }catch(e){
+      print(e);
+      Utils.showError(context, "Error Found:");
+    }
+    return null;
+  }
+  static Future<List<dynamic>> getAllDeals(BuildContext context,String token,int storeId,{String startingPrice,String endingPrice,String search,DateTime startDate,DateTime endDate})async{
+    try{
+      var response;
+      Map<String,String> headers = {'Authorization':'Bearer '+token};
+      if(startDate ==null && endDate==null && startingPrice==null && endingPrice==null && search==null)
+        response=await http.get(Utils.baseUrl()+"deals/GetAll?storeId=$storeId",headers: headers);
+      else if(startDate ==null && endDate==null && startingPrice==null && endingPrice==null)
+        response=await http.get(Utils.baseUrl()+"deals/GetAll?storeId=$storeId&searchstring=$search",headers: headers);
+      else if(startDate !=null && endDate!=null)
+        response=await http.get(Utils.baseUrl()+"deals/GetAll?storeId=$storeId&startingDate=$startDate&EndingDate=$endDate",headers: headers);
+      else if(startingPrice !=null && endingPrice!=null)
+        response=await http.get(Utils.baseUrl()+"deals/GetAll?storeId=$storeId&startingPrice=$startingPrice&endingPrice=$endingPrice",headers: headers);
+      else if(startDate !=null && endDate!=null && startingPrice!=null && endingPrice!=null)
+        response=await http.get(Utils.baseUrl()+"deals/GetAll?storeId=$storeId&startingPrice=$startingPrice&endingPrice=$endingPrice&startingDate=$startDate&EndingDate=$endDate",headers: headers);
+      else
+        response=await http.get(Utils.baseUrl()+"deals/GetAll?storeId=$storeId",headers: headers);
+      var data= jsonDecode(response.body);
+      if(response.statusCode==200){
+       // pd.hide();
+        return data;
+      }
+      else{
+        //pd.hide();
+        Utils.showError(context, "Please Try Again");
+        return null;
+      }
+    }catch(e){
+      //pd.hide();
       print(e);
       Utils.showError(context, "Error Found:");
     }

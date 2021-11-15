@@ -1,5 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:exabistro_pos/Screens/Deals/DealsList.dart';
+import 'package:exabistro_pos/Screens/Deals/DealsDetailsPopup.dart';
 import 'package:exabistro_pos/Screens/LoadingScreen.dart';
+import 'package:exabistro_pos/Screens/Products/ProductsList.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/components/constants.dart';
 import 'package:exabistro_pos/model/Categories.dart';
@@ -7,6 +10,7 @@ import 'package:exabistro_pos/model/Products.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class POSMainScreen extends StatefulWidget {
  int storeId;
@@ -18,11 +22,13 @@ class POSMainScreen extends StatefulWidget {
 
 class _POSMainScreenState extends State<POSMainScreen> {
   List<Categories> subCategories=[];
+  List<dynamic> dealsList=[];
   List<Products> products=[];
   String categoryName="";
   bool isLoading=true;
   List<String> menuTypeDropdownItems = ["Products","Deals"];
   String selectedMenuType;
+
   @override
   void initState() {
     SystemChrome.setPreferredOrientations([
@@ -43,6 +49,15 @@ class _POSMainScreenState extends State<POSMainScreen> {
                     products.addAll(p);
                   }else
                     isLoading=false;
+                  SharedPreferences.getInstance().then((prefs){
+                    Network_Operations.getAllDeals(context, prefs.getString("token"), widget.storeId).then((dealsList){
+                      setState(() {
+                        if(dealsList.length>0){
+                          this.dealsList.addAll(dealsList);
+                        }
+                      });
+                    });
+                  });
                 });
 
               });
@@ -55,11 +70,10 @@ class _POSMainScreenState extends State<POSMainScreen> {
         });
       }else{
         isLoading=false;
-        Utils.showError(context,"Network Error");
         Navigator.pop(context);
+        Utils.showError(context,"Network Error");
       }
     });
-    print("Store Id "+widget.storeId.toString());
 
   }
 
@@ -227,53 +241,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                       //color: Colors.teal,
                       width: MediaQuery.of(context).size.width,
                       height: 440,
-                      child: GridView.builder(
-                          gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                              maxCrossAxisExtent: 200,
-                              childAspectRatio: 3 / 2,
-                              crossAxisSpacing: 10,
-                              mainAxisSpacing: 10),
-                          itemCount: products.length,
-                          itemBuilder: (context, index){
-                            return Card(
-                              elevation: 8,
-                              child: CachedNetworkImage(
-                                imageUrl: products[index].image!=null?products[index].image:"http://anokha.world/images/not-found.png",
-                                placeholder:(context, url)=> Container(width:85,height: 85,child: Center(child: CircularProgressIndicator(color: Colors.amber,))),
-                                errorWidget: (context, url, error) => Icon(Icons.error,color: Colors.red,),
-                                imageBuilder: (context, imageProvider){
-                                  return Container(
-                                    height: 150,
-                                    width: 190,
-                                    decoration: BoxDecoration(
-                                        borderRadius: BorderRadius.circular(8),
-                                        image: DecorationImage(
-                                          image: imageProvider,
-                                          fit: BoxFit.cover,
-                                        )
-                                    ),
-                                    child: Container(
-                                      decoration: BoxDecoration(
-                                        color: Colors.black38,
-                                        borderRadius: BorderRadius.circular(6),
-                                      ),
-                                      child: Center(
-                                        child: Text(
-                                          products[index].name,
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
-                                              fontSize: 19,
-                                              color: Colors.white,
-                                              fontWeight: FontWeight.bold
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                },
-                              ),
-                            );
-                          }),
+                      child: selectedMenuType=="Products"||selectedMenuType==null?ProductsList(products):DealsList(dealsList)
                     )
                   ],
                 ),
