@@ -68,21 +68,22 @@ class _LoginScreenState extends State<LoginScreen> {
           //decoration: new BoxDecoration(color: Colors.black.withOpacity(0.3)),
           child: Column(
             children: <Widget>[
-              Padding(
-                padding: const EdgeInsets.only(top: 40),
-                child: Row(
-                  //mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    IconButton(
-                      icon: Icon(Icons.arrow_back, color: yellowColor,size:30),
-                      onPressed: (){
-                        Navigator.pop(context);
-                      },
-                    ),
-                  ],
-                ),
-              ),
+              SizedBox(height: 70,),
+              // Padding(
+              //   padding: const EdgeInsets.only(top: 40),
+              //   child: Row(
+              //     //mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              //     crossAxisAlignment: CrossAxisAlignment.start,
+              //     children: <Widget>[
+              //       IconButton(
+              //         icon: Icon(Icons.arrow_back, color: yellowColor,size:30),
+              //         onPressed: (){
+              //           Navigator.pop(context);
+              //         },
+              //       ),
+              //     ],
+              //   ),
+              // ),
               Center(
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),

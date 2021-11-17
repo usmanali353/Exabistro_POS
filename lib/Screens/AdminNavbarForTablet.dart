@@ -1,4 +1,6 @@
+import 'package:exabistro_pos/Screens/DummyScreen.dart';
 import 'package:exabistro_pos/Screens/Orders/components/TabsComponent.dart';
+import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/TabsComponent.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/components/paint/fancy_bottom_navigation.dart';
 import 'package:flutter/material.dart';
@@ -19,7 +21,8 @@ class AdminNavBarForTablet extends StatefulWidget {
 }
 
 class _AdminNavBarState extends State<AdminNavBarForTablet> {
-  int currentPage = 2;
+  int currentPage = 0
+  ;
   GlobalKey bottomNavigationKey = GlobalKey();
 
   @override
@@ -66,11 +69,11 @@ class _AdminNavBarState extends State<AdminNavBarForTablet> {
               title: "Orders"
           ),
           TabData(
-              iconData: Icons.fastfood,
-              title: "Orders"
+              iconData: Icons.access_time,
+              title: "History"
           ),
         ],
-        initialSelection: 2,
+        initialSelection: 0,
         key: bottomNavigationKey,
         onTabChangedListener: (position) {
           setState(() {
@@ -81,6 +84,7 @@ class _AdminNavBarState extends State<AdminNavBarForTablet> {
     );
   }
 
+
   _getPage(int page) {
     switch (page) {
       case 0:
@@ -89,7 +93,8 @@ class _AdminNavBarState extends State<AdminNavBarForTablet> {
       case 1:
         return AdminTabletTabsScreen(storeId: widget.storeId);
       case 2:
-        return POSMainScreen(storeId:widget.storeId);
+        //return OrderRecordTabsScreen(storeId:widget.storeId);
+        return DummyScreen();
       default:
         return POSMainScreen(storeId: widget.storeId);
     }

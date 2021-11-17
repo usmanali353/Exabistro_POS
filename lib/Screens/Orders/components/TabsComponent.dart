@@ -48,6 +48,9 @@ class KitchenWidgetState extends State<AdminTabletTabsScreen> with SingleTickerP
         length: 3,
         child: Scaffold(
           appBar: AppBar(
+            iconTheme: IconThemeData(
+                color: Colors.white
+            ),
             centerTitle: true,
             actions: [
               IconButton(
@@ -62,7 +65,7 @@ class KitchenWidgetState extends State<AdminTabletTabsScreen> with SingleTickerP
             ],
             backgroundColor: BackgroundColor,
             title: Text("Dashboard", style: TextStyle(
-                color: yellowColor, fontSize: 25, fontWeight: FontWeight.bold
+                color: yellowColor, fontSize: 35, fontWeight: FontWeight.bold
             ),
             ),
             elevation: 6,
@@ -83,100 +86,36 @@ class KitchenWidgetState extends State<AdminTabletTabsScreen> with SingleTickerP
                   Tab(
                     child: Align(
                       alignment: Alignment.center,
-                      child: Center(
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text("Received Orders",
-                              style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.bold
-                                //color: Color(0xff172a3a)
-                              ),
-                            ),
-                            // Badge(
-                            //   showBadge: true,
-                            //   borderRadius: 10,
-                            //   badgeContent: Center(child: Text(recievedOrders!=null?recievedOrders.toString():"0"
-                            //     ,style: TextStyle(color: BackgroundColor,fontWeight: FontWeight.bold),)),
-                            //   child: InkWell(
-                            //     onTap: () {
-                            //       //Navigator.push(context, MaterialPageRoute(builder: (context) => MyCartScreen(ishome: false,),));
-                            //     },
-                            //     child: Padding(
-                            //       padding: const EdgeInsets.all(8.0),
-                            //       child: Icon(Icons.fastfood, color: PrimaryColor, size: 20,),
-                            //     ),
-                            //   ),
-                            // ),
-                          ],),
+                      child: Text("Received Orders",
+                        style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold
+                          //color: Color(0xff172a3a)
+                        ),
                       ),
                     ),
                   ),
                   Tab(
                     child: Align(
                       alignment: Alignment.center,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text("Preparing",
-                            style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold
-                              //color: Color(0xff172a3a)
-                            ),
-                          ),
-                          // Badge(
-                          //   showBadge: true,
-                          //   borderRadius: 10,
-                          //   badgeContent: Center(child: Text(preparingOrders!=null?preparingOrders.toString():"0"
-                          //     ,style: TextStyle(color: BackgroundColor,fontWeight: FontWeight.bold),)),
-                          //   child: InkWell(
-                          //     onTap: () {
-                          //       //Navigator.push(context, MaterialPageRoute(builder: (context) => MyCartScreen(ishome: false,),));
-                          //     },
-                          //     child: Padding(
-                          //       padding: const EdgeInsets.all(8.0),
-                          //       child: Icon(Icons.access_time, color: PrimaryColor, size: 20,),
-                          //     ),
-                          //   ),
-                          // ),
-                        ],
+                      child: Text("Preparing",
+                        style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold
+                          //color: Color(0xff172a3a)
+                        ),
                       ),
                     ),
                   ),
                   Tab(
                     child: Align(
                       alignment: Alignment.center,
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text("Ready",
-                            style: TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold
-                              //color: Color(0xff172a3a)
-                            ),
-                          ),
-                          // Badge(
-                          //   showBadge: true,
-                          //   borderRadius: 10,
-                          //   badgeContent: Center(child: Text(readyOrders!=null?readyOrders.toString():"0"
-                          //     ,style: TextStyle(color: BackgroundColor,fontWeight: FontWeight.bold),)),
-                          //   child: InkWell(
-                          //     onTap: () {
-                          //       //Navigator.push(context, MaterialPageRoute(builder: (context) => MyCartScreen(ishome: false,),));
-                          //     },
-                          //     child: Padding(
-                          //       padding: const EdgeInsets.all(8.0),
-                          //       child: Icon(Icons.done_all, color: PrimaryColor, size: 20,),
-                          //     ),
-                          //   ),
-                          // ),
-                        ],
+                      child: Text("Ready",
+                        style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold
+                          //color: Color(0xff172a3a)
+                        ),
                       ),
                     ),
                   ),
@@ -216,9 +155,9 @@ class KitchenWidgetState extends State<AdminTabletTabsScreen> with SingleTickerP
                 ]),
           ),
           body: TabBarView(children: [
-            ReadyOrdersScreenForTab(widget.storeId),
-            PreparingOrdersScreenForTab(widget.storeId),
             ReceivedOrdersScreenForTab(widget.storeId),
+            PreparingOrdersScreenForTab(widget.storeId),
+            ReadyOrdersScreenForTab(widget.storeId),
            // POSMainScreen()
           ]),
         )
