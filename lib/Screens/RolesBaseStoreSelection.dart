@@ -110,8 +110,8 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
         child: GridView.builder(
             scrollDirection: Axis.horizontal,
             gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 500,
-                childAspectRatio: 2 / 2,
+                maxCrossAxisExtent: 400,
+                childAspectRatio: 2 / 3,
                 crossAxisSpacing: 20,
                 mainAxisSpacing: 20),
             itemCount: widget.roles == null ? 0:widget.roles.length,
@@ -124,111 +124,241 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
                     Navigator.push(context,MaterialPageRoute(builder:(context)=>AdminNavBarForTablet(storeId: widget.roles[index]['store']['id'],)));
                   },
                   child: Container(
-                    //alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                     // border: Border.all(color: yellowColor, width: 2),
-                        borderRadius: BorderRadius.circular(4)),
-                    child: Column(
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
+                          height: MediaQuery.of(context).size.height,
+                          width: 250,
                           decoration: BoxDecoration(
-                              border: Border.all(color: yellowColor, width: 2),
-                              image: DecorationImage(
-                                fit: BoxFit.fill,
-                                image: NetworkImage(widget.roles[index]['restaurant']["image"]!=null?widget.roles[index]['restaurant']["image"]:'http://www.4motiondarlington.org/wp-content/uploads/2013/06/No-image-found.jpg',),
-                              ),
-                              //color: Colors.lightGreen,
-                              borderRadius: BorderRadius.only(topRight: Radius.circular(15), topLeft:  Radius.circular(15) )),
-                          width: MediaQuery.of(context).size.width,
-                          height: 210,
-                          //child: Image.network(widget.roles[index]['image']!=null?widget.roles[index].image:'http://www.4motiondarlington.org/wp-content/uploads/2013/06/No-image-found.jpg',fit: BoxFit.fill),
-                        ),
-                        Padding(padding: EdgeInsets.all(2),),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8, bottom: 5),
-                          child: Row(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(right: 11),
-                                child: FaIcon(FontAwesomeIcons.utensils, color: PrimaryColor, size: 15,),
-                              ),
-                              Text("Restaurant: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20,color: yellowColor),),
-                              Text("${widget.roles[index]['restaurant']!=null?widget.roles[index]['restaurant']['name']:" - "}",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20,color: PrimaryColor),),
-                            ],
+                            color: yellowColor,
+                            borderRadius: BorderRadius.circular(4),
+                                        image: DecorationImage(
+                                          fit: BoxFit.fill,
+                                          image: NetworkImage(widget.roles[index]['restaurant']["image"]!=null?widget.roles[index]['restaurant']["image"]:'http://www.4motiondarlington.org/wp-content/uploads/2013/06/No-image-found.jpg',),
+                                        ),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 8, bottom: 2),
-                          child: Row(
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.only(right: 5),
-                                child: FaIcon(FontAwesomeIcons.storeAlt, color: PrimaryColor, size: 15,),
-                              ),
-                              Text("Store: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20,color: yellowColor),),
-                              Text(widget.roles[index]['store']!=null?widget.roles[index]['store']['name']:" - ",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 17,color: PrimaryColor),),
-                            ],
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.only(right: 7),
-                                    child: FaIcon(FontAwesomeIcons.city, color: PrimaryColor, size: 15,),
-                                  ),
-                                  Text("City: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20,color: yellowColor),),
-                                  Text("${widget.roles[index]['store']['city']}",style: TextStyle(color: PrimaryColor,fontWeight: FontWeight.bold, fontSize: 17),),
-                                ],
-                              ),
-                              Row(
-                                  children: [
-                                    Padding(
-                                        padding: const EdgeInsets.only(right: 5),
-                                        child: FaIcon(FontAwesomeIcons.userTie, color: PrimaryColor, size: 20,),
-                                    ),
-                                    Text("Role: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20,color: yellowColor),),
-                                    Text("${getRoleName(widget.roles[index]['roleId'])}",style: TextStyle(color: PrimaryColor,fontWeight: FontWeight.bold, fontSize: 17),),
-                                  ],
+                        VerticalDivider(),
+                        Column(
+                          children: [
+                            SizedBox(height: 5,),
+                            Card(
+                              elevation: 6,
+                              child: Container(
+                                width: MediaQuery.of(context).size.width /4,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                  color: yellowColor,
+                                  borderRadius: BorderRadius.circular(4),
                                 ),
-                            ],
-                          ),
+                                child: Center(child: Text("${widget.roles[index]['restaurant']!=null?widget.roles[index]['restaurant']['name']:" - "}",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 30,color: Colors.white),)),
+                              ),
+                            ),
+                            Card(
+                              elevation: 6,
+                              child: Container(
+                                width: MediaQuery.of(context).size.width /4,
+                                height: 50,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4.0),
+                                  child: Row(
+                                    children: [
+                                      Text("Store: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 22,color: yellowColor),),
+                                      Text(widget.roles[index]['store']!=null?widget.roles[index]['store']['name']:" - ",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 22,color: PrimaryColor),),
+                                              ],
+                                            ),
+                                ),
+                              ),
+                            ),
+                            Card(
+                              elevation: 6,
+                              child: Container(
+                                width: MediaQuery.of(context).size.width /4,
+                                height: 50,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4.0),
+                                  child: Row(
+                                    children: [
+                                      Text("City: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 22,color: yellowColor),),
+                                      Text("${widget.roles[index]['store']['city']}",style: TextStyle(color: PrimaryColor,fontWeight: FontWeight.bold, fontSize: 22),),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Card(
+                              elevation: 6,
+                              child: Container(
+                                width: MediaQuery.of(context).size.width /4,
+                                height: 50,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4.0),
+                                  child: Row(
+                                    children: [
+                                      Text("Role: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 22,color: yellowColor),),
+                                      Text("${getRoleName(widget.roles[index]['roleId'])}",style: TextStyle(color: PrimaryColor,fontWeight: FontWeight.bold, fontSize: 22),),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 5,),
+                            Card(
+                              elevation: 6,
+                              color: yellowColor,
+                              child: Container(
+                                width: MediaQuery.of(context).size.width /4,
+                                height: 40,
+                                color: yellowColor,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4.0),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      FaIcon(FontAwesomeIcons.clock, color: PrimaryColor, size: 25,),
+                                      SizedBox(width: 10,),
+                                      Text("${widget.roles[index]['store']!=null?widget.roles[index]['store']['openTime']:""}",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold, fontSize: 25),),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.all(4.0),
+                              child: Center(child: Text("- To -",style: TextStyle(color: blueColor,fontWeight: FontWeight.bold, fontSize: 25),)),
+                            ),
+                            Card(
+                              elevation: 6,
+                              color: yellowColor,
+                              child: Container(
+                                width: MediaQuery.of(context).size.width /4,
+                                height: 40,
+                                color: yellowColor,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4.0),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      FaIcon(FontAwesomeIcons.clock, color: PrimaryColor, size: 25,),
+                                      SizedBox(width: 10,),
+                                      Text("${widget.roles[index]['store']!=null?widget.roles[index]['store']['closeTime']:""}",style: TextStyle(color: Colors.white,fontWeight: FontWeight.bold, fontSize: 25),),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        Padding(
-                          padding: const EdgeInsets.only(left: 4, right: 4),
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Row(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(2.0),
-                                    child: FaIcon(FontAwesomeIcons.clock, color: PrimaryColor),
-                                  ),
-                                  Text("Open: ",style: TextStyle(color: yellowColor,fontWeight: FontWeight.bold),),
-                                  Text("${widget.roles[index]['store']!=null?widget.roles[index]['store']['openTime']:""}",style: TextStyle(color: PrimaryColor,fontWeight: FontWeight.bold),),
-                                ],
-                              ),
-                              Row(
-                                children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(2.0),
-                                    child: FaIcon(FontAwesomeIcons.clock, color: PrimaryColor),
-                                  ),
-                                  Text("Close: ",style: TextStyle(color: yellowColor,fontWeight: FontWeight.bold),),
-                                  Text("${widget.roles[index]['store']!=null?widget.roles[index]['store']['closeTime']:""}",style: TextStyle(color: PrimaryColor,fontWeight: FontWeight.bold),),
-                                ],
-                              ),
-                            ],
-                          ),
-                        )
                       ],
-                    ),
-                  ),
+                    )
+                  )
+                  // Container(
+                  //   //alignment: Alignment.center,
+                  //   decoration: BoxDecoration(
+                  //    // border: Border.all(color: yellowColor, width: 2),
+                  //       borderRadius: BorderRadius.circular(4)),
+                  //   child: Column(
+                  //     children: [
+                  //       Container(
+                  //         decoration: BoxDecoration(
+                  //             border: Border.all(color: yellowColor, width: 2),
+                  //             image: DecorationImage(
+                  //               fit: BoxFit.fill,
+                  //               image: NetworkImage(widget.roles[index]['restaurant']["image"]!=null?widget.roles[index]['restaurant']["image"]:'http://www.4motiondarlington.org/wp-content/uploads/2013/06/No-image-found.jpg',),
+                  //             ),
+                  //             //color: Colors.lightGreen,
+                  //             borderRadius: BorderRadius.only(topRight: Radius.circular(15), topLeft:  Radius.circular(15) )),
+                  //         width: MediaQuery.of(context).size.width,
+                  //         height: 210,
+                  //         //child: Image.network(widget.roles[index]['image']!=null?widget.roles[index].image:'http://www.4motiondarlington.org/wp-content/uploads/2013/06/No-image-found.jpg',fit: BoxFit.fill),
+                  //       ),
+                  //       Padding(padding: EdgeInsets.all(2),),
+                  //       Padding(
+                  //         padding: const EdgeInsets.only(left: 8, bottom: 5),
+                  //         child: Row(
+                  //           children: [
+                  //             Padding(
+                  //               padding: const EdgeInsets.only(right: 11),
+                  //               child: FaIcon(FontAwesomeIcons.utensils, color: PrimaryColor, size: 15,),
+                  //             ),
+                  //             Text("Restaurant: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20,color: yellowColor),),
+                  //             Text("${widget.roles[index]['restaurant']!=null?widget.roles[index]['restaurant']['name']:" - "}",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20,color: PrimaryColor),),
+                  //           ],
+                  //         ),
+                  //       ),
+                  //       Padding(
+                  //         padding: const EdgeInsets.only(left: 8, bottom: 2),
+                  //         child: Row(
+                  //           children: [
+                  //             Padding(
+                  //               padding: const EdgeInsets.only(right: 5),
+                  //               child: FaIcon(FontAwesomeIcons.storeAlt, color: PrimaryColor, size: 15,),
+                  //             ),
+                  //             Text("Store: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20,color: yellowColor),),
+                  //             Text(widget.roles[index]['store']!=null?widget.roles[index]['store']['name']:" - ",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 17,color: PrimaryColor),),
+                  //           ],
+                  //         ),
+                  //       ),
+                  //       Padding(
+                  //         padding: const EdgeInsets.all(8.0),
+                  //         child: Row(
+                  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //           children: [
+                  //             Row(
+                  //               children: [
+                  //                 Padding(
+                  //                   padding: const EdgeInsets.only(right: 7),
+                  //                   child: FaIcon(FontAwesomeIcons.city, color: PrimaryColor, size: 15,),
+                  //                 ),
+                  //                 Text("City: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20,color: yellowColor),),
+                  //                 Text("${widget.roles[index]['store']['city']}",style: TextStyle(color: PrimaryColor,fontWeight: FontWeight.bold, fontSize: 17),),
+                  //               ],
+                  //             ),
+                  //             Row(
+                  //                 children: [
+                  //                   Padding(
+                  //                       padding: const EdgeInsets.only(right: 5),
+                  //                       child: FaIcon(FontAwesomeIcons.userTie, color: PrimaryColor, size: 20,),
+                  //                   ),
+                  //                   Text("Role: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20,color: yellowColor),),
+                  //                   Text("${getRoleName(widget.roles[index]['roleId'])}",style: TextStyle(color: PrimaryColor,fontWeight: FontWeight.bold, fontSize: 17),),
+                  //                 ],
+                  //               ),
+                  //           ],
+                  //         ),
+                  //       ),
+                  //       Padding(
+                  //         padding: const EdgeInsets.only(left: 4, right: 4),
+                  //         child: Row(
+                  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  //           children: [
+                  //             Row(
+                  //               children: [
+                  //                 Padding(
+                  //                   padding: const EdgeInsets.all(2.0),
+                  //                   child: FaIcon(FontAwesomeIcons.clock, color: PrimaryColor),
+                  //                 ),
+                  //                 Text("Open: ",style: TextStyle(color: yellowColor,fontWeight: FontWeight.bold),),
+                  //                 Text("${widget.roles[index]['store']!=null?widget.roles[index]['store']['openTime']:""}",style: TextStyle(color: PrimaryColor,fontWeight: FontWeight.bold),),
+                  //               ],
+                  //             ),
+                  //             Row(
+                  //               children: [
+                  //                 Padding(
+                  //                   padding: const EdgeInsets.all(2.0),
+                  //                   child: FaIcon(FontAwesomeIcons.clock, color: PrimaryColor),
+                  //                 ),
+                  //                 Text("Close: ",style: TextStyle(color: yellowColor,fontWeight: FontWeight.bold),),
+                  //                 Text("${widget.roles[index]['store']!=null?widget.roles[index]['store']['closeTime']:""}",style: TextStyle(color: PrimaryColor,fontWeight: FontWeight.bold),),
+                  //               ],
+                  //             ),
+                  //           ],
+                  //         ),
+                  //       )
+                  //     ],
+                  //   ),
+                  // ),
                 ),
               );
             }),
