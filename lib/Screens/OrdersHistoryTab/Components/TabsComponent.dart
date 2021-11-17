@@ -67,7 +67,8 @@ class OrderRecordTabsWidgetState extends State<OrderRecordTabsScreen> with Singl
                       alignment: Alignment.center,
                       child: Text("Active Orders",
                         style: TextStyle(
-                          fontSize: 13,
+                          fontSize: 20,
+                            //color: Colors.white,
                             fontWeight: FontWeight.bold,
 
                         //color: Color(0xff172a3a)
@@ -80,7 +81,8 @@ class OrderRecordTabsWidgetState extends State<OrderRecordTabsScreen> with Singl
                       alignment: Alignment.center,
                       child: Text("Previous Orders",
                         style: TextStyle(
-                            fontSize: 13,
+                          //color: Colors.white,
+                            fontSize: 20,
                             fontWeight: FontWeight.bold,
 
                         ),

@@ -145,15 +145,15 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                     //decoration: new BoxDecoration(color: Colors.black.withOpacity(0.3)),
                       child: Column(
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.all(3.0),
-                            child: Container(
-                                width: MediaQuery.of(context).size.width,
-                                height: 50,
-                                //color: Colors.white12,
-                                child: _buildChips()
-                            ),
-                          ),
+                          // Padding(
+                          //   padding: const EdgeInsets.all(3.0),
+                          //   child: Container(
+                          //       width: MediaQuery.of(context).size.width,
+                          //       height: 50,
+                          //       //color: Colors.white12,
+                          //       child: _buildChips()
+                          //   ),
+                          // ),
                           Padding(
                               padding: const EdgeInsets.all(3.0),
                               child: Row(
@@ -220,8 +220,8 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                               return Dialog(
                                                 //backgroundColor: Colors.transparent,
                                                   child: Container(
-                                                      height: MediaQuery.of(context).size.height / 1.2,
-                                                      width: MediaQuery.of(context).size.width / 3.2,
+                                                      height:MediaQuery.of(context).size.height -300,
+                                                      width: MediaQuery.of(context).size.width / 3,
                                                       child: ordersDetailPopupLayout(orderList[index])
                                                   )
                                               );
@@ -983,8 +983,8 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
             child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Container(
-                  height: MediaQuery.of(context).size.height / 1.2,
-                  width: MediaQuery.of(context).size.width / 3.2,
+                  height:MediaQuery.of(context).size.height -300,
+                  width: MediaQuery.of(context).size.width / 3,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
                     //border: Border.all(color: yellowColor, width: 2),
@@ -1352,65 +1352,64 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                         // color: Colors.white12,
                         child: Column(
                           children: [
-                            InkWell(
-                              onTap: (){
-                                //  _showDialog(orderList[index]['id']);
-                                var orderStatusData={
-                                  "Id":orders['id'],
-                                  "status":4,
-                                  "EstimatedPrepareTime":10,
-                                };
-                                print(orderStatusData);
-                                Network_Operations.changeOrderStatus(context, token, orderStatusData).then((res) {
-                                  if(res){
-                                    WidgetsBinding.instance
-                                        .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
-                                  }
-                                  //print(value);
-                                });
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: yellowColor),
-                                    borderRadius: BorderRadius.all(Radius.circular(10)) ,
-                                    color: yellowColor,
-                                  ),
-                                  width: MediaQuery.of(context).size.width,
-                                  height: 40,
-
-                                  child: Center(
-                                    child: Text('Mark as Preparing',style: TextStyle(color: BackgroundColor,fontSize: 25,fontWeight: FontWeight.bold),),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            InkWell(
-                              onTap: (){
-                                // Utils.urlToFile(context,_store.image).then((value){
-                                //   Navigator.push(context, MaterialPageRoute(builder: (context)=>PDFLaout(orderList[index]['id'],orderList[index]['orderItems'],orderList[index]['orderType'],orderList[index]['storeName'],value.readAsBytesSync())));
-                                // });
-                                //Navigator.push(context, MaterialPageRoute(builder: (context)=>PDFLaout(orderList[index]['id'],orderList[index]['orderItems'],orderList[index]['orderType'],orderList[index]['storeName'])));
-                                //Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => SplashScreen()), (route) => false);
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: yellowColor),
-                                    borderRadius: BorderRadius.all(Radius.circular(10)) ,
-                                    color: yellowColor,
-                                  ),
-                                  width: MediaQuery.of(context).size.width,
-                                  height: 40,
-
-                                  child: Center(
-                                    child: Text('Print',style: TextStyle(color: BackgroundColor,fontSize: 25,fontWeight: FontWeight.bold),),
-                                  ),
-                                ),
-                              ),
-                            ),
+                            // InkWell(
+                            //   onTap: (){
+                            //     //  _showDialog(orderList[index]['id']);
+                            //     var orderStatusData={
+                            //       "Id":orders['id'],
+                            //       "status":4,
+                            //       "EstimatedPrepareTime":10,
+                            //     };
+                            //     print(orderStatusData);
+                            //     Network_Operations.changeOrderStatus(context, token, orderStatusData).then((res) {
+                            //       if(res){
+                            //         WidgetsBinding.instance
+                            //             .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                            //       }
+                            //       //print(value);
+                            //     });
+                            //   },
+                            //   child: Padding(
+                            //     padding: const EdgeInsets.all(10.0),
+                            //     child: Container(
+                            //       decoration: BoxDecoration(
+                            //         border: Border.all(color: yellowColor),
+                            //         borderRadius: BorderRadius.all(Radius.circular(10)) ,
+                            //         color: yellowColor,
+                            //       ),
+                            //       width: MediaQuery.of(context).size.width,
+                            //       height: 40,
+                            //
+                            //       child: Center(
+                            //         child: Text('Mark as Preparing',style: TextStyle(color: BackgroundColor,fontSize: 25,fontWeight: FontWeight.bold),),
+                            //       ),
+                            //     ),
+                            //   ),
+                            // ),
+                            // InkWell(
+                            //   onTap: (){
+                            //     // Utils.urlToFile(context,_store.image).then((value){
+                            //     //   Navigator.push(context, MaterialPageRoute(builder: (context)=>PDFLaout(orderList[index]['id'],orderList[index]['orderItems'],orderList[index]['orderType'],orderList[index]['storeName'],value.readAsBytesSync())));
+                            //     // });
+                            //     //Navigator.push(context, MaterialPageRoute(builder: (context)=>PDFLaout(orderList[index]['id'],orderList[index]['orderItems'],orderList[index]['orderType'],orderList[index]['storeName'])));
+                            //     //Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => SplashScreen()), (route) => false);
+                            //   },
+                            //   child: Padding(
+                            //     padding: const EdgeInsets.all(10.0),
+                            //     child: Container(
+                            //       decoration: BoxDecoration(
+                            //         border: Border.all(color: yellowColor),
+                            //         borderRadius: BorderRadius.all(Radius.circular(10)) ,
+                            //         color: yellowColor,
+                            //       ),
+                            //       width: MediaQuery.of(context).size.width,
+                            //       height: 40,
+                            //       child: Center(
+                            //         child: Text('Print',style: TextStyle(color: BackgroundColor,fontSize: 25,fontWeight: FontWeight.bold),),
+                            //       ),
+                            //     ),
+                            //   ),
+                            // ),
                           ],
                         ),
                       )

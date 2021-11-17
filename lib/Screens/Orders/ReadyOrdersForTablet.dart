@@ -119,15 +119,15 @@ class _KitchenTabViewState extends State<ReadyOrdersScreenForTab> {
                       //decoration: new BoxDecoration(color: Colors.black.withOpacity(0.3)),
                       child: Column(
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.all(3.0),
-                            child: Container(
-                              width: MediaQuery.of(context).size.width,
-                              height: 50,
-                              //color: Colors.white12,
-                              child:  _buildChips()
-                            ),
-                          ),
+                          // Padding(
+                          //   padding: const EdgeInsets.all(3.0),
+                          //   child: Container(
+                          //     width: MediaQuery.of(context).size.width,
+                          //     height: 50,
+                          //     //color: Colors.white12,
+                          //     child:  _buildChips()
+                          //   ),
+                          // ),
                           Padding(
                             padding: const EdgeInsets.all(3.0),
                             child: Row(

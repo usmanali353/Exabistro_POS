@@ -129,17 +129,17 @@ class _KitchenTabViewState extends State<ReceivedOrdersScreenForTab>{
                       //decoration: new BoxDecoration(color: Colors.black.withOpacity(0.3)),
                       child: Column(
                         children: [
-                          Padding(
-                            padding: const EdgeInsets.all(3.0),
-                            child: Container(
-                              width: MediaQuery.of(context).size.width,
-                              height: 50,
-                              //color: Colors.black38,
-                              child: Center(
-                                child: _buildChips(),
-                              ),
-                            ),
-                          ),
+                          // Padding(
+                          //   padding: const EdgeInsets.all(3.0),
+                          //   child: Container(
+                          //     width: MediaQuery.of(context).size.width,
+                          //     height: 50,
+                          //     //color: Colors.black38,
+                          //     child: Center(
+                          //       child: _buildChips(),
+                          //     ),
+                          //   ),
+                          // ),
                           Padding(
                               padding: const EdgeInsets.all(3.0),
                               child: Row(
@@ -543,8 +543,8 @@ class _KitchenTabViewState extends State<ReceivedOrdersScreenForTab>{
           child: Padding(
               padding: const EdgeInsets.all(8.0),
               child: Container(
-                height: MediaQuery.of(context).size.height / 1.2,
-                width: MediaQuery.of(context).size.width / 3.2,
+                height:MediaQuery.of(context).size.height -300,
+                width: MediaQuery.of(context).size.width / 3,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   //border: Border.all(color: yellowColor, width: 2),
