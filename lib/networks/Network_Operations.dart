@@ -145,6 +145,7 @@ class Network_Operations{
         await APICacheManager().addCacheData(cacheDBModel);
 
         var data= jsonDecode(response.body);
+        print(data);
         if(response.statusCode==200){
           if(connectivityResult != ConnectivityResult.none){
           //  pd.hide();
