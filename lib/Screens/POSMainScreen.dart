@@ -1,19 +1,23 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:exabistro_pos/Screens/LoadingScreen.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/components/constants.dart';
+import 'package:exabistro_pos/model/Additionals.dart';
 import 'package:exabistro_pos/model/CartItems.dart';
 import 'package:exabistro_pos/model/Categories.dart';
 import 'package:exabistro_pos/model/Orderitems.dart';
 import 'package:exabistro_pos/model/Orders.dart';
 import 'package:exabistro_pos/model/Products.dart';
+import 'package:exabistro_pos/model/Toppings.dart';
 import 'package:exabistro_pos/model/orderItemTopping.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:exabistro_pos/networks/sqlite_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_counter/flutter_counter.dart';
+import 'package:numberpicker/numberpicker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class POSMainScreen extends StatefulWidget {
@@ -686,7 +690,14 @@ class _POSMainScreenState extends State<POSMainScreen> {
               showDialog(
                   context: context,
                   builder: (BuildContext context) {
-                    return dealsPopupLayout(dealsList[index]);
+                    return Dialog(
+                      backgroundColor: Colors.transparent,
+                        child: Container(
+                            height: MediaQuery.of(context).size.height / 1.25,
+                            width: MediaQuery.of(context).size.width / 2.7,
+                            child: dealsPopupLayout(dealsList[index])
+                        )
+                    );
                   });
             },
             child: Card(
@@ -763,7 +774,11 @@ class _POSMainScreenState extends State<POSMainScreen> {
       );
     });
   }
-
+  void callback(double height) {
+    setState(() {
+      productPopupHeight = height;
+    });
+  }
   Widget productsLayout() {
     return GridView.builder(
         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
@@ -775,7 +790,9 @@ class _POSMainScreenState extends State<POSMainScreen> {
         itemBuilder: (context, index) {
           return InkWell(
             onTap: () {
-              showDialog(context: context, builder:(BuildContext context){
+              showDialog(
+                  context: context,
+                  builder:(BuildContext context){
                 return productsPopupLayout(products[index]);
               });
             },
@@ -1168,42 +1185,77 @@ class _POSMainScreenState extends State<POSMainScreen> {
                   elevation: 8,
                   child: Container(
                       width: MediaQuery.of(context).size.width,
-                      height: 60,
+                      //height: 80,
                       color: Colors.white,
                       child: Padding(
                         padding: const EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        child: Column(
                           children: [
-                            Text(
-                              "Price: ",
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 28,
-                                  color: yellowColor),
-                            ),
                             Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  "Rs: ",
+                                  "Discounted Price: ",
                                   style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 28,
+                                      fontSize: 25,
                                       color: yellowColor),
                                 ),
+                                Row(
+                                  children: [
+                                    Text(
+                                      "Rs: ",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 25,
+                                          color: yellowColor),
+                                    ),
+                                    Text(
+                                      updatedPrice.toString() == "0.0"
+                                          ? price.toString()
+                                          : updatedPrice.toString(),
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 25,
+                                          color: blueColor),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
                                 Text(
-                                  updatedPrice.toString() == "0.0"
-                                      ? price.toString()
-                                      : updatedPrice.toString(),
+                                  "Actual Price: ",
                                   style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 28,
-                                      color: blueColor),
+                                      fontSize: 25,
+                                      color: yellowColor),
+                                ),
+                                Row(
+                                  children: [
+                                    Text(
+                                      "Rs: ",
+                                      style: TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 25,
+                                          color: yellowColor),
+                                    ),
+                                    Text(
+                                      deal["actualPrice"].toString(),
+                                      style: TextStyle(
+                                          decoration: TextDecoration.lineThrough,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 25,
+                                          color: blueColor),
+                                    ),
+                                  ],
                                 ),
                               ],
                             ),
                           ],
-                        ),
+                        )
                       )),
                 ),
                 Card(
@@ -1337,22 +1389,115 @@ class _POSMainScreenState extends State<POSMainScreen> {
       }),
     );
   }
-
+  var productPopupHeight=3.5;
   Widget productsPopupLayout(Products product) {
     var count = 1;
     var price=0.0;
     var updatedPrice=0.0;
     int selectedSizeId=0;
+    String selectedSizeName="";
+    List<Additionals> additionals = [];
+    List<Toppings> topping = [];
+    int quantity = 1;
+    bool isvisible = false;
+    List<int> _counter = List();
+    StreamController _event = StreamController<int>.broadcast();
+    List<bool> inputs = new List<bool>();
+    for (int i = 0; i < 20; i++) {
+      inputs.add(false);
+    }
     return Scaffold(
       backgroundColor: Colors.white.withOpacity(0.1),
       body: StatefulBuilder(
         builder: (context, innersetState) {
+          selectedSizeId=product.productSizes[0]["size"]["id"];
+          selectedSizeName=product.productSizes[0]["size"]["name"];
+          SharedPreferences.getInstance().then((prefs){
+            Network_Operations.getAdditionals(context, prefs.getString("token"), product.id, product.productSizes[0]["size"]["id"]).then((value){
+              innersetState(() {
+                additionals=value;
+                if(additionals.length>0){
+                  innersetState(() {
+                    isvisible=true;
+                    productPopupHeight=1.30;
+                  });
+                }else
+                  innersetState(() {
+                    isvisible=false;
+                    productPopupHeight=3.5;
+                  });
+              });
+            });
+          });
           innersetState(() {
             price=product.productSizes[0]["price"];
           });
+          void ItemChange(bool val, int index) {
+            innersetState(() {
+              inputs[index] = val;
+              if(!val) {
+                var uncheckedTopping = topping.where((element) =>
+                element.additionalitemid == additionals[index].id);
+                if (uncheckedTopping != null && uncheckedTopping.length > 0) {
+                  if(updatedPrice==0.0){
+                    updatedPrice=updatedPrice+price-uncheckedTopping.toList()[0].totalprice;
+              }else{
+                  updatedPrice=updatedPrice-uncheckedTopping.toList()[0].totalprice;
+              }
+                  topping.remove(uncheckedTopping.toList()[0]);
+
+                }
+              }
+            });
+          }
+          void ItemCount(int qty, int index) {
+            innersetState(() {
+
+              _counter[index] = qty;
+              _event.add(_counter[index]);
+            });
+          }
+          int _showDialog(int val, int index ) {
+            showDialog<int>(
+                context: context,
+                builder: (BuildContext context) {
+                  return  NumberPickerDialog.integer(
+                    initialIntegerValue: quantity,
+                    minValue: 0,
+                    maxValue: 10,
+
+                    title: new Text("Select Quantity"),
+                  );
+                }
+            ).then((int value){
+              if(value !=null) {
+                innersetState(() {
+
+                  ItemCount(value, index);
+                  print(value.toString());
+                  var a;
+                  if(inputs[index] ){
+                    a = _counter[index] * additionals[index].price;
+                    print(a.toString());
+                    topping.add( Toppings(name: additionals[index].name,quantity: _counter[index],totalprice: a,price: additionals[index].price,additionalitemid: additionals[index].id));
+                    if(updatedPrice==0.0){
+                      updatedPrice=updatedPrice+price+a;
+                    }else{
+                      updatedPrice=updatedPrice+a;
+                    }
+                  }else if(!inputs[index]){
+                    topping.removeAt(index);
+                  }
+                });
+                //setState(() => quantity = value);
+                print(_counter[index].toString());
+                return _counter[index];
+              }
+            });
+          }
           return Center(
               child: Container(
-                  height: MediaQuery.of(context).size.height / 3.0,
+                  height: MediaQuery.of(context).size.height / productPopupHeight,
                   width: MediaQuery.of(context).size.width / 3.0,
                   decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
@@ -1365,7 +1510,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                 child:Column(
                   children: [
                     Padding(
-                      padding: const EdgeInsets.all(16.0),
+                      padding: const EdgeInsets.only(top:16.0,left:16,right:16),
                       child: DropdownButtonFormField<dynamic>(
                         decoration: InputDecoration(
                           labelText: "Select Size",
@@ -1383,8 +1528,25 @@ class _POSMainScreenState extends State<POSMainScreen> {
                           innersetState(() {
                          var selectedSize= product.productSizes.where((element) => element["size"]["name"]==value.toString());
                            selectedSizeId=selectedSize.toList()[0]["size"]["id"];
-                         updatedPrice=selectedSize.toList()[0]["price"];
+                         selectedSizeName=selectedSize.toList()[0]["size"]["name"];
+                          updatedPrice=selectedSize.toList()[0]["price"];
                            price=selectedSize.toList()[0]["price"];
+                         if(selectedSizeId!=0){
+                           SharedPreferences.getInstance().then((prefs){
+                             Network_Operations.getAdditionals(context, prefs.getString("token"), product.id, selectedSizeId).then((value){
+                               innersetState(() {
+                                 var totalToppingPrice=0.0;
+                                 for(var t in topping){
+                                   totalToppingPrice=totalToppingPrice+t.totalprice;
+                                 }
+                                 topping.clear();
+                                 _counter.clear();
+                                 additionals.clear();
+                                 additionals=value;
+                               });
+                             });
+                           });
+                         }
                            //updatedPrice=selectedSizeId=selectedSize.toList()[0]["price"];
                             // priority = Value;
                             // priorityId = priorityList.indexOf(priority);
@@ -1408,8 +1570,15 @@ class _POSMainScreenState extends State<POSMainScreen> {
                       ),
                     ),
                     ListTile(
-                      title: Text("Quantity"),
+                      title: Text("Quantity",
+                      style: TextStyle(
+                        color: blueColor,
+                        fontWeight: FontWeight.w500,
+                        fontSize: 20
+                      ),
+                      ),
                       trailing: Counter(
+                        color: yellowColor,
                         initialValue: count,
                         maxValue: 10,
                         minValue: 1,
@@ -1419,12 +1588,159 @@ class _POSMainScreenState extends State<POSMainScreen> {
                           innersetState(() {
                             count=value;
                             updatedPrice=0.0;
-                            updatedPrice=price*count;
+                            if(topping.length==0) {
+                              updatedPrice = price * count;
+                            }else{
+                              var totalToppingPrice=0.0;
+                              for(var t in topping){
+                                totalToppingPrice=totalToppingPrice+t.totalprice;
+                              }
+                              updatedPrice = price * count+totalToppingPrice;
+                            }
                           });
                         },
                       ),
                     ),
-                    Center(child: Text("Price:  ${updatedPrice==0.0?price.toString():updatedPrice.toString()}",style: TextStyle(fontSize: 30),))
+                    Visibility(
+                      visible: isvisible,
+                      child: Expanded(
+                        child: ListView.builder(
+                            itemCount: additionals.length!=null?additionals.length:0,
+                            itemBuilder: (BuildContext context, int index) {
+                              if (_counter.length < additionals.length) {
+                                _counter.add(0);
+                              }
+                              return Card(
+                                elevation: 8,
+                                child: new Container(
+                                  decoration: BoxDecoration(
+                                      color: BackgroundColor,
+                                      // borderRadius: BorderRadius.only(
+                                      //   bottomRight: Radius.circular(15),
+                                      //   topLeft: Radius.circular(15),
+                                      // ),
+                                      border: Border.all(color: yellowColor, width: 1)
+                                  ),
+                                  padding: new EdgeInsets.all(10.0),
+                                  child: new Column(
+                                    children: <Widget>[
+                                      new CheckboxListTile(
+                                          value: inputs[index],
+                                          title: Row(
+                                            mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              new Text(additionals[index].name +
+                                                  "  \$" +
+                                                  additionals[index].price.toString(),style: TextStyle(color: yellowColor, fontSize: 17, fontWeight: FontWeight.bold),),
+                                              Container(
+                                                //color: Colors.black12,
+                                                height: 30,
+
+                                                child: Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                                                  children: [
+                                                    Text("x"+_counter[index].toString(),style: TextStyle(color: PrimaryColor, fontSize: 17, fontWeight: FontWeight.bold),),
+                                                    SizedBox(width: 10,),
+                                                    SizedBox(
+                                                      width: 25,
+                                                      height: 25,
+                                                      child: FloatingActionButton(
+                                                        onPressed: () {
+                                                          if(inputs[index]) {
+                                                            _showDialog(quantity, index);
+                                                          }
+                                                        },
+                                                        elevation: 2,
+                                                        heroTag: "qwe$index",
+                                                        tooltip: 'Add',
+                                                        child: Icon(Icons.add, color: Colors.white,),
+                                                        backgroundColor: yellowColor,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              )
+                                            ],
+                                          ),
+                                          controlAffinity: ListTileControlAffinity.leading,
+                                          onChanged: (bool val) {
+                                            ItemChange(val, index);
+                                            print(inputs[index].toString() +
+                                                index.toString());
+                                            innersetState(() {
+                                              if(!inputs[index]){
+                                                _counter[index] = 0;
+                                              }
+                                            });
+                                          })
+                                    ],
+                                  ),
+                                ),
+                              );
+                            }),
+                      ),
+                    ),
+                    Center(child: Text("Price:  ${updatedPrice==0.0?price.toString():updatedPrice.toString()}",style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold, color:blueColor),)),
+                    SizedBox(height: 1,),
+                    InkWell(
+                      onTap: () {
+                        sqlite_helper()
+                            .create_cart(CartItems(
+                            productId: null,
+                            productName: product.name,
+                            isDeal: 1,
+                            dealId: null,
+                            sizeId: selectedSizeId,
+                            sizeName: selectedSizeName,
+                            price: updatedPrice,
+                            totalPrice:
+                            updatedPrice == 0.0 ? price : updatedPrice,
+                            quantity: count,
+                            storeId: product.storeId,
+                            topping: topping.length>0?jsonEncode(topping):null))
+                            .then((isInserted) {
+                          if (isInserted > 0) {
+                            innersetState(() {
+                              sqlite_helper().getcart1().then((value) {
+                                setState(() {
+                                  cartList.clear();
+                                  cartList = value;
+                                  if (cartList.length > 0) {
+                                    print(cartList.toString());
+                                  }
+                                });
+                              });
+                            });
+                            Navigator.of(context).pop();
+                            Utils.showSuccess(
+                                context, "Added to Cart successfully");
+                          } else {
+                            Navigator.of(context).pop();
+                            Utils.showError(context, "Some Error Occur");
+                          }
+                        });
+                      },
+                      child: Card(
+                        elevation: 8,
+                        child: Container(
+                          width: MediaQuery.of(context).size.width,
+                          height: 65,
+                          decoration: BoxDecoration(
+                              color: yellowColor,
+                              borderRadius: BorderRadius.circular(4)),
+                          child: Center(
+                            child: Text(
+                              "Add To Cart",
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 30,
+                                  color: Colors.white),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
                 )
               )

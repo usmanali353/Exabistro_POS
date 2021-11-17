@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:api_cache_manager/models/cache_db_model.dart';
 import 'package:api_cache_manager/utils/cache_manager.dart';
 import 'package:connectivity/connectivity.dart';
+import 'package:exabistro_pos/model/Additionals.dart';
 import 'package:exabistro_pos/model/Products.dart';
 import 'package:exabistro_pos/model/Stores.dart';
 import 'package:http/http.dart' as http;
@@ -433,6 +434,26 @@ class Network_Operations{
       //pd.hide();
       print(e);
       Utils.showError(context, "Error Found:");
+    }
+    return null;
+  }
+  static Future<List<Additionals>> getAdditionals(BuildContext context,String token,int productId,int sizeId)async{
+    //ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
+    //pd.show();
+    try{
+      Map<String,String> headers = {'Authorization':'Bearer '+token};
+      var response=await http.get(Utils.baseUrl()+"additionalitems/GetAdditionalItemsByCategorySizeProductId/0/"+"$sizeId/"+productId.toString(),headers: headers);
+      var data= jsonDecode(response.body);
+      if(response.statusCode==200){
+       // pd.hide();
+        return Additionals.listAdditionalsFromJson(response.body);
+      }
+      else{
+      //  pd.hide();
+        Utils.showError(context, "Please Try Again");
+      }
+    }catch(e){
+      Utils.showError(context, e.toString());
     }
     return null;
   }
