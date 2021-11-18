@@ -1194,8 +1194,9 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                       Padding(
                         padding: const EdgeInsets.all(5),
                         child: Container(
-                          height: 215,
+                          height: 310,
                           //color: Colors.transparent,
+
                           child: ListView.builder(
                               padding: EdgeInsets.all(4),
                               scrollDirection: Axis.vertical,

@@ -1,6 +1,5 @@
-import 'package:exabistro_pos/Screens/DummyScreen.dart';
-import 'package:exabistro_pos/Screens/Orders/components/TabsComponent.dart';
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/TabsComponent.dart';
+import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/TabsComponents.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/components/paint/fancy_bottom_navigation.dart';
 import 'package:flutter/material.dart';
@@ -91,10 +90,10 @@ class _AdminNavBarState extends State<AdminNavBarForTablet> {
         return POSMainScreen(storeId:widget.storeId);
     //return AdminProfile(widget.storeId,widget.roleId);
       case 1:
-        return AdminTabletTabsScreen(storeId: widget.storeId);
+        return OrderListsTabsScreen(storeId:widget.storeId);
       case 2:
         return OrderRecordTabsScreen(storeId:widget.storeId);
-        //return DummyScreen();
+        //return OrderListsTabsScreen(storeId:widget.storeId);
       default:
         return POSMainScreen(storeId: widget.storeId);
     }

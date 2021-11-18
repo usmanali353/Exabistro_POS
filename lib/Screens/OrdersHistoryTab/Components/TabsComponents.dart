@@ -1,34 +1,35 @@
+import 'package:exabistro_pos/Screens/LoginScreen.dart';
 import 'package:exabistro_pos/Screens/Orders/PreparingOrdersForKitchen(Tab).dart';
 import 'package:exabistro_pos/Screens/Orders/ReadyOrdersForTablet.dart';
-import 'package:exabistro_pos/Screens/LoginScreen.dart';
+import 'package:exabistro_pos/Screens/Orders/ReceivedOrdersForKitchen(Tab).dart';
+import 'package:exabistro_pos/Screens/OrdersHistoryTab/DeliveredScreenForTablet.dart';
 import 'package:exabistro_pos/components/constants.dart';
 import 'package:flutter/material.dart';
+import 'dart:ui';
+
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../ReceivedOrdersForKitchen(Tab).dart';
 
+class OrderListsTabsScreen extends StatefulWidget {
+  var restaurantId,storeId,roleId;
+  OrderListsTabsScreen({this.restaurantId,this.storeId,this.roleId});
 
-class AdminTabletTabsScreen extends StatefulWidget {
-  var storeId,roleId,restaurantId;
-
-  AdminTabletTabsScreen({this.storeId, this.roleId, this.restaurantId});
 
   @override
   State<StatefulWidget> createState() {
-    return new KitchenWidgetState();
+    return new OrderListsTabsWidgetState();
   }
 }
 
-class KitchenWidgetState extends State<AdminTabletTabsScreen> with SingleTickerProviderStateMixin{
+class OrderListsTabsWidgetState extends State<OrderListsTabsScreen> with SingleTickerProviderStateMixin{
   var totalItems;
   String token;
   var recievedOrders, preparingOrders , readyOrders ;
-  final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
+
   @override
   void initState() {
-    super.initState();
     SharedPreferences.getInstance().then((value) {
       setState(() {
         this.token = value.getString("token");
@@ -39,19 +40,21 @@ class KitchenWidgetState extends State<AdminTabletTabsScreen> with SingleTickerP
       DeviceOrientation.landscapeRight,
       DeviceOrientation.landscapeLeft,
     ]);
+    super.initState();
   }
 
 
   @override
   Widget build(BuildContext context) {
+
     return DefaultTabController(
+
         length: 3,
         child: Scaffold(
           appBar: AppBar(
             iconTheme: IconThemeData(
                 color: Colors.white
             ),
-            centerTitle: true,
             actions: [
               IconButton(
                 icon:  FaIcon(FontAwesomeIcons.signOutAlt, color: PrimaryColor, size: 25,),
@@ -63,14 +66,12 @@ class KitchenWidgetState extends State<AdminTabletTabsScreen> with SingleTickerP
                 },
               ),
             ],
+            title: Text("Orders", style: TextStyle(color: yellowColor, fontWeight: FontWeight.bold, fontSize: 30),),
+            centerTitle: true,
             backgroundColor: BackgroundColor,
-            title: Text("Dashboard", style: TextStyle(
-                color: yellowColor, fontSize: 35, fontWeight: FontWeight.bold
-            ),
-            ),
-            elevation: 6,
+            elevation: 0,
             bottom: TabBar(
-               isScrollable: true,
+                isScrollable: false,
                 unselectedLabelColor: yellowColor,
                 indicatorSize: TabBarIndicatorSize.tab,
                 indicator: ShapeDecoration(
@@ -119,46 +120,12 @@ class KitchenWidgetState extends State<AdminTabletTabsScreen> with SingleTickerP
                       ),
                     ),
                   ),
-                  // Tab(
-                  //   child: Align(
-                  //     alignment: Alignment.center,
-                  //     child: Row(
-                  //       crossAxisAlignment: CrossAxisAlignment.center,
-                  //       mainAxisAlignment: MainAxisAlignment.center,
-                  //       children: [
-                  //         Text("Dashboard",
-                  //           style: TextStyle(
-                  //               fontSize: 17,
-                  //               fontWeight: FontWeight.bold
-                  //             //color: Color(0xff172a3a)
-                  //           ),
-                  //         ),
-                  //         // Badge(
-                  //         //   showBadge: true,
-                  //         //   borderRadius: 10,
-                  //         //   badgeContent: Center(child: Text(readyOrders!=null?readyOrders.toString():"0"
-                  //         //     ,style: TextStyle(color: BackgroundColor,fontWeight: FontWeight.bold),)),
-                  //         //   child: InkWell(
-                  //         //     onTap: () {
-                  //         //       //Navigator.push(context, MaterialPageRoute(builder: (context) => MyCartScreen(ishome: false,),));
-                  //         //     },
-                  //         //     child: Padding(
-                  //         //       padding: const EdgeInsets.all(8.0),
-                  //         //       child: Icon(Icons.done_all, color: PrimaryColor, size: 20,),
-                  //         //     ),
-                  //         //   ),
-                  //         // ),
-                  //       ],
-                  //     ),
-                  //   ),
-                  // ),
                 ]),
           ),
           body: TabBarView(children: [
             ReceivedOrdersScreenForTab(widget.storeId),
             PreparingOrdersScreenForTab(widget.storeId),
             ReadyOrdersScreenForTab(widget.storeId),
-           // POSMainScreen()
           ]),
         )
     );

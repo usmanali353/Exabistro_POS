@@ -349,7 +349,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                               children: [
                                 Container(
                                   width: MediaQuery.of(context).size.width,
-                                  height: 60,
+                                  height: 40,
                                   color: yellowColor,
                                   child: Center(
                                     child: Text(
@@ -364,19 +364,112 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 Container(
                                   //color: Colors.teal,
                                   width: MediaQuery.of(context).size.width,
-                                  height: 360,
+                                  height: 250,
                                   child: cartListLayout(),
+                                ),
+                                Container(
+                                  //color: Colors.teal,
+                                  width: MediaQuery.of(context).size.width,
+                                  height: 150,
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        width: MediaQuery.of(context).size.width,
+                                        height: 40,
+                                        color: yellowColor,
+                                        child: Center(
+                                          child: Text(
+                                            "Add Discount",
+                                            style: TextStyle(
+                                                fontSize: 22,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ),
+                                      // DropdownButtonFormField<dynamic>(
+                                      //   decoration: InputDecoration(
+                                      //     labelText: "Select Size",
+                                      //     alignLabelWithHint: true,
+                                      //     labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                      //     enabledBorder: OutlineInputBorder(
+                                      //     ),
+                                      //     focusedBorder:  OutlineInputBorder(
+                                      //       borderSide: BorderSide(color:yellowColor),
+                                      //     ),
+                                      //   ),
+                                      //
+                                      //   value: product.productSizes[0]["size"]["name"],
+                                      //   onChanged: (value) {
+                                      //     innersetState(() {
+                                      //       var selectedSize= product.productSizes.where((element) => element["size"]["name"]==value.toString());
+                                      //       selectedSizeId=selectedSize.toList()[0]["size"]["id"];
+                                      //       selectedSizeName=selectedSize.toList()[0]["size"]["name"];
+                                      //       selectedSizeObj=selectedSize.toList()[0];
+                                      //       updatedPrice=selectedSize.toList()[0]["price"];
+                                      //       price=selectedSize.toList()[0]["price"];
+                                      //       if(selectedSizeObj["discountedPrice"]!=0.0) {
+                                      //         updatedPrice = selectedSize.toList()[0]["discountedPrice"];
+                                      //         discountedPrice=selectedSize.toList()[0]["discountedPrice"];
+                                      //       }
+                                      //
+                                      //       if(selectedSizeId!=0){
+                                      //         SharedPreferences.getInstance().then((prefs){
+                                      //           Network_Operations.getAdditionals(context, prefs.getString("token"), product.id, selectedSizeId).then((value){
+                                      //             innersetState(() {
+                                      //               var totalToppingPrice=0.0;
+                                      //               for(var t in topping){
+                                      //                 totalToppingPrice=totalToppingPrice+t.totalprice;
+                                      //               }
+                                      //               topping.clear();
+                                      //               _counter.clear();
+                                      //               additionals.clear();
+                                      //               additionals=value;
+                                      //             });
+                                      //           });
+                                      //         });
+                                      //       }
+                                      //       //updatedPrice=selectedSizeId=selectedSize.toList()[0]["price"];
+                                      //       // priority = Value;
+                                      //       // priorityId = priorityList.indexOf(priority);
+                                      //     });
+                                      //   },
+                                      //   items: product.productSizes.map((value) {
+                                      //     return  DropdownMenuItem<String>(
+                                      //       value: value["size"]["name"],
+                                      //       child: Row(
+                                      //         children: <Widget>[
+                                      //           Text(
+                                      //             value["size"]["name"].toString(),
+                                      //             style:  TextStyle(color: yellowColor,fontSize: 13),
+                                      //           ),
+                                      //           //user.icon,
+                                      //           //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                      //         ],
+                                      //       ),
+                                      //     );
+                                      //   }).toList(),
+                                      // ),
+                                      SizedBox(height: 3,),
+                              TextField(
+                              decoration: const InputDecoration(
+                              border: OutlineInputBorder(),
+                              hintText: 'Enter Value'
+                              ),
+                             )
+                                    ],
+                                  ),
                                 ),
                                 Container(
                                   color: Colors.white,
                                   width: MediaQuery.of(context).size.width,
-                                  height: 340,
+                                  height: 330,
                                   child: Column(
                                     children: [
                                       Container(
                                         width:
                                             MediaQuery.of(context).size.width,
-                                        height: 60,
+                                        height: 40,
                                         color: yellowColor,
                                         child: Center(
                                           child: Text(
@@ -649,7 +742,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                   .size
                                                   .width -
                                               200,
-                                          height: 60,
+                                          height: 50,
                                           decoration: BoxDecoration(
                                               color: yellowColor,
                                               borderRadius:
@@ -1034,11 +1127,11 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 .replaceAll("[", "- ")
                                 .replaceAll(",", "- ")
                                 .replaceAll("]", "")
-                            : "-",
+                            :"-",
                         style: TextStyle(
                           color: PrimaryColor,
-                          fontSize: 14,
-                          //fontWeight: FontWeight.bold
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500
                         ),
                       ),
                     ),
@@ -1420,12 +1513,12 @@ class _POSMainScreenState extends State<POSMainScreen> {
                 if(additionals.length>0){
                   innersetState(() {
                     isvisible=true;
-                    productPopupHeight=1.30;
+                    productPopupHeight=1.20;
                   });
                 }else
                   innersetState(() {
                     isvisible=false;
-                    productPopupHeight=3.5;
+                    productPopupHeight=2.80;
                   });
               });
             });
@@ -1515,6 +1608,22 @@ class _POSMainScreenState extends State<POSMainScreen> {
                   ),
                 child:Column(
                   children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        IconButton(
+                          icon: Icon(
+                            Icons.clear,
+                            size: 40,
+                            color: Colors.red,
+                          ),
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                        )
+                      ],
+                    ),
                     Padding(
                       padding: const EdgeInsets.only(top:16.0,left:16,right:16),
                       child: DropdownButtonFormField<dynamic>(

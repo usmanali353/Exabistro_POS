@@ -41,10 +41,10 @@ class OrderRecordTabsWidgetState extends State<OrderRecordTabsScreen> with Singl
         length: 2,
         child: Scaffold(
           appBar: AppBar(
-            // iconTheme: IconThemeData(
-            //     color: yellowColor
-            // ),
-            title: Text("Orders History", style: TextStyle(color: yellowColor, fontWeight: FontWeight.bold, fontSize: 22),),
+            iconTheme: IconThemeData(
+                color: Colors.white
+            ),
+            title: Text("Orders History", style: TextStyle(color: yellowColor, fontWeight: FontWeight.bold, fontSize: 30),),
             centerTitle: true,
             backgroundColor: BackgroundColor,
             elevation: 0,
