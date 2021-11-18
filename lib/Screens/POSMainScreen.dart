@@ -36,7 +36,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
   bool isLoading = true;
   List<String> menuTypeDropdownItems = ["Products", "Deals"];
   String selectedMenuType;
-
+  var overallTotalPrice=0.0;
   List<CartItems> cartList = [];
   Order finalOrder;
   List<Orderitem> orderitem = [];
@@ -90,6 +90,9 @@ class _POSMainScreenState extends State<POSMainScreen> {
                         }
                       });
                     });
+                  });
+                  sqlite_helper().gettotal().then((value){
+                    print("Total Price  "+value[0].toString());
                   });
                   sqlite_helper().getcart1().then((value) {
                     setState(() {
@@ -774,11 +777,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
       );
     });
   }
-  void callback(double height) {
-    setState(() {
-      productPopupHeight = height;
-    });
-  }
+
   Widget productsLayout() {
     return GridView.builder(
         gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
@@ -1335,8 +1334,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                             sizeId: null,
                             sizeName: null,
                             price: deal["price"],
-                            totalPrice:
-                                updatedPrice == 0.0 ? price : updatedPrice,
+                            totalPrice: updatedPrice == 0.0 ? price : updatedPrice,
                             quantity: count,
                             storeId: deal["storeId"],
                             topping: null))
@@ -1393,6 +1391,8 @@ class _POSMainScreenState extends State<POSMainScreen> {
   Widget productsPopupLayout(Products product) {
     var count = 1;
     var price=0.0;
+    var discountedPrice=0.0;
+    var selectedSizeObj;
     var updatedPrice=0.0;
     int selectedSizeId=0;
     String selectedSizeName="";
@@ -1412,6 +1412,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
         builder: (context, innersetState) {
           selectedSizeId=product.productSizes[0]["size"]["id"];
           selectedSizeName=product.productSizes[0]["size"]["name"];
+          selectedSizeObj=product.productSizes[0];
           SharedPreferences.getInstance().then((prefs){
             Network_Operations.getAdditionals(context, prefs.getString("token"), product.id, product.productSizes[0]["size"]["id"]).then((value){
               innersetState(() {
@@ -1431,15 +1432,20 @@ class _POSMainScreenState extends State<POSMainScreen> {
           });
           innersetState(() {
             price=product.productSizes[0]["price"];
+            discountedPrice=product.productSizes[0]["discountedPrice"];
           });
           void ItemChange(bool val, int index) {
             innersetState(() {
               inputs[index] = val;
               if(!val) {
+                print("Discounted Price ${discountedPrice}");
                 var uncheckedTopping = topping.where((element) =>
                 element.additionalitemid == additionals[index].id);
                 if (uncheckedTopping != null && uncheckedTopping.length > 0) {
                   if(updatedPrice==0.0){
+                    if(discountedPrice!=0.0){
+                      updatedPrice=updatedPrice+discountedPrice-uncheckedTopping.toList()[0].totalprice;
+                    }
                     updatedPrice=updatedPrice+price-uncheckedTopping.toList()[0].totalprice;
               }else{
                   updatedPrice=updatedPrice-uncheckedTopping.toList()[0].totalprice;
@@ -1529,8 +1535,14 @@ class _POSMainScreenState extends State<POSMainScreen> {
                          var selectedSize= product.productSizes.where((element) => element["size"]["name"]==value.toString());
                            selectedSizeId=selectedSize.toList()[0]["size"]["id"];
                          selectedSizeName=selectedSize.toList()[0]["size"]["name"];
+                         selectedSizeObj=selectedSize.toList()[0];
                           updatedPrice=selectedSize.toList()[0]["price"];
                            price=selectedSize.toList()[0]["price"];
+                           if(selectedSizeObj["discountedPrice"]!=0.0) {
+                             updatedPrice = selectedSize.toList()[0]["discountedPrice"];
+                             discountedPrice=selectedSize.toList()[0]["discountedPrice"];
+                           }
+
                          if(selectedSizeId!=0){
                            SharedPreferences.getInstance().then((prefs){
                              Network_Operations.getAdditionals(context, prefs.getString("token"), product.id, selectedSizeId).then((value){
@@ -1589,13 +1601,21 @@ class _POSMainScreenState extends State<POSMainScreen> {
                             count=value;
                             updatedPrice=0.0;
                             if(topping.length==0) {
-                              updatedPrice = price * count;
+                              if(selectedSizeObj["discountedPrice"]!=0.0){
+                                updatedPrice = selectedSizeObj["discountedPrice"] * count;
+                              }else{
+                                updatedPrice = price * count;
+                              }
                             }else{
                               var totalToppingPrice=0.0;
                               for(var t in topping){
                                 totalToppingPrice=totalToppingPrice+t.totalprice;
                               }
-                              updatedPrice = price * count+totalToppingPrice;
+                              if(selectedSizeObj["discountedPrice"]!=0.0){
+                                updatedPrice = discountedPrice * count+totalToppingPrice;
+                              }else {
+                                updatedPrice = price * count + totalToppingPrice;
+                              }
                             }
                           });
                         },
@@ -1681,7 +1701,41 @@ class _POSMainScreenState extends State<POSMainScreen> {
                             }),
                       ),
                     ),
-                    Center(child: Text("Price:  ${updatedPrice==0.0?price.toString():updatedPrice.toString()}",style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold, color:blueColor),)),
+                    selectedSizeObj["discountedPrice"]==0.0?
+                    Center(
+                        child: Text(
+                          "Price:  ${updatedPrice==0.0?price.toString():updatedPrice.toString()}",
+                          style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold, color:blueColor),)
+                      ):Center(
+                         child: RichText(
+                           textAlign: TextAlign.center,
+                           text: (
+                            TextSpan(
+                              text: "Price",
+                              style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold, color:yellowColor),
+                              children: [
+                                 TextSpan(
+                                   text: "  ${price.toString()}",
+                                   style: TextStyle(
+                                       fontSize: 30,
+                                       fontWeight: FontWeight.bold,
+                                       color:blueColor,
+                                       decoration: TextDecoration.lineThrough,
+                                   ),
+                                 ),
+                                TextSpan(
+                                  text: "  ${updatedPrice==0.0?discountedPrice.toString():updatedPrice.toString()}",
+                                  style: TextStyle(
+                                    fontSize: 30,
+                                    fontWeight: FontWeight.bold,
+                                    color:blueColor,
+                                  ),
+                                ),
+                              ]
+                            )
+                           ),
+                         ),
+                      ),
                     SizedBox(height: 1,),
                     InkWell(
                       onTap: () {
