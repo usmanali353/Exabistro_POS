@@ -145,7 +145,7 @@ class sqlite_helper{
    var result = await dbClient.insert("Cart", cartItems.toJson());
    return result;
  }
-  updateCart(CartItems cartItems) async {
+ Future<int> updateCart(CartItems cartItems) async {
     final dbClient = await db;
     var response = await dbClient.update("Cart", cartItems.toJson(),
         where: "id = ?", whereArgs: [cartItems.id]);

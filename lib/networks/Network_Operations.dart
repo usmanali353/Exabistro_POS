@@ -5,6 +5,7 @@ import 'package:connectivity/connectivity.dart';
 import 'package:exabistro_pos/model/Additionals.dart';
 import 'package:exabistro_pos/model/Products.dart';
 import 'package:exabistro_pos/model/Stores.dart';
+import 'package:exabistro_pos/model/Tax.dart';
 import 'package:http/http.dart' as http;
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/model/Categories.dart';
@@ -453,7 +454,25 @@ class Network_Operations{
         Utils.showError(context, "Please Try Again");
       }
     }catch(e){
-      Utils.showError(context, e.toString());
+
+    }
+    return null;
+  }
+  static Future<List<Tax>> getTaxListByStoreId(BuildContext context,int storeId )async{
+    try{
+      var response=await http.get(Utils.baseUrl()+"Taxes/GetAll/"+storeId.toString());
+      var data= jsonDecode(response.body);
+      print(data);
+      if(response.statusCode==200){
+        return Tax.taxListFromJson(response.body);
+      }
+      else{
+        Utils.showError(context, "Please Try Again");
+        return null;
+      }
+    }catch(e){
+      print(e);
+      Utils.showError(context, "Error Found:");
     }
     return null;
   }

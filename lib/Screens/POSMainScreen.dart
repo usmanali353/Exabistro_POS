@@ -10,6 +10,7 @@ import 'package:exabistro_pos/model/Categories.dart';
 import 'package:exabistro_pos/model/Orderitems.dart';
 import 'package:exabistro_pos/model/Orders.dart';
 import 'package:exabistro_pos/model/Products.dart';
+import 'package:exabistro_pos/model/Tax.dart';
 import 'package:exabistro_pos/model/Toppings.dart';
 import 'package:exabistro_pos/model/orderItemTopping.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
@@ -35,6 +36,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
   String categoryName = "";
   bool isLoading = true;
   List<String> menuTypeDropdownItems = ["Products", "Deals"];
+  List<String> discountTypeDropdownItems = ["Percentage", "Cash"];
   String selectedMenuType;
   var overallTotalPrice=0.0;
   List<CartItems> cartList = [];
@@ -42,7 +44,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
   List<Orderitem> orderitem = [];
   List<Orderitemstopping> itemToppingList = [];
   List<Map> orderitem1 = [];
-
+  List<Tax> orderTaxes=[];
   dynamic ordersList;
   List<dynamic> toppingList = [], orderItems = [];
   List<String> topping = [];
@@ -92,7 +94,9 @@ class _POSMainScreenState extends State<POSMainScreen> {
                     });
                   });
                   sqlite_helper().gettotal().then((value){
-                    print("Total Price  "+value[0].toString());
+                    setState(() {
+                      overallTotalPrice=value[0]["SUM(totalPrice)"];
+                    });
                   });
                   sqlite_helper().getcart1().then((value) {
                     setState(() {
@@ -101,6 +105,11 @@ class _POSMainScreenState extends State<POSMainScreen> {
                       if (cartList.length > 0) {
                         print(cartList.toString());
                       }
+                    });
+                  });
+                  Network_Operations.getTaxListByStoreId(context,widget.storeId).then((taxes){
+                    setState(() {
+                      this.orderTaxes=taxes;
                     });
                   });
                 });
@@ -328,7 +337,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 Container(
                                     //color: Colors.teal,
                                     width: MediaQuery.of(context).size.width,
-                                    height: 440,
+                                    height: 460,
                                     child: selectedMenuType == "Products" ||
                                             selectedMenuType == null
                                         ?
@@ -364,102 +373,151 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 Container(
                                   //color: Colors.teal,
                                   width: MediaQuery.of(context).size.width,
-                                  height: 250,
+                                  height: 410,
                                   child: cartListLayout(),
                                 ),
-                                Container(
-                                  //color: Colors.teal,
-                                  width: MediaQuery.of(context).size.width,
-                                  height: 150,
-                                  child: Column(
-                                    children: [
-                                      Container(
-                                        width: MediaQuery.of(context).size.width,
-                                        height: 40,
-                                        color: yellowColor,
-                                        child: Center(
-                                          child: Text(
-                                            "Add Discount",
-                                            style: TextStyle(
-                                                fontSize: 22,
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                      ),
-                                      // DropdownButtonFormField<dynamic>(
-                                      //   decoration: InputDecoration(
-                                      //     labelText: "Select Size",
-                                      //     alignLabelWithHint: true,
-                                      //     labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                      //     enabledBorder: OutlineInputBorder(
-                                      //     ),
-                                      //     focusedBorder:  OutlineInputBorder(
-                                      //       borderSide: BorderSide(color:yellowColor),
-                                      //     ),
-                                      //   ),
-                                      //
-                                      //   value: product.productSizes[0]["size"]["name"],
-                                      //   onChanged: (value) {
-                                      //     innersetState(() {
-                                      //       var selectedSize= product.productSizes.where((element) => element["size"]["name"]==value.toString());
-                                      //       selectedSizeId=selectedSize.toList()[0]["size"]["id"];
-                                      //       selectedSizeName=selectedSize.toList()[0]["size"]["name"];
-                                      //       selectedSizeObj=selectedSize.toList()[0];
-                                      //       updatedPrice=selectedSize.toList()[0]["price"];
-                                      //       price=selectedSize.toList()[0]["price"];
-                                      //       if(selectedSizeObj["discountedPrice"]!=0.0) {
-                                      //         updatedPrice = selectedSize.toList()[0]["discountedPrice"];
-                                      //         discountedPrice=selectedSize.toList()[0]["discountedPrice"];
-                                      //       }
-                                      //
-                                      //       if(selectedSizeId!=0){
-                                      //         SharedPreferences.getInstance().then((prefs){
-                                      //           Network_Operations.getAdditionals(context, prefs.getString("token"), product.id, selectedSizeId).then((value){
-                                      //             innersetState(() {
-                                      //               var totalToppingPrice=0.0;
-                                      //               for(var t in topping){
-                                      //                 totalToppingPrice=totalToppingPrice+t.totalprice;
-                                      //               }
-                                      //               topping.clear();
-                                      //               _counter.clear();
-                                      //               additionals.clear();
-                                      //               additionals=value;
-                                      //             });
-                                      //           });
-                                      //         });
-                                      //       }
-                                      //       //updatedPrice=selectedSizeId=selectedSize.toList()[0]["price"];
-                                      //       // priority = Value;
-                                      //       // priorityId = priorityList.indexOf(priority);
-                                      //     });
-                                      //   },
-                                      //   items: product.productSizes.map((value) {
-                                      //     return  DropdownMenuItem<String>(
-                                      //       value: value["size"]["name"],
-                                      //       child: Row(
-                                      //         children: <Widget>[
-                                      //           Text(
-                                      //             value["size"]["name"].toString(),
-                                      //             style:  TextStyle(color: yellowColor,fontSize: 13),
-                                      //           ),
-                                      //           //user.icon,
-                                      //           //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                      //         ],
-                                      //       ),
-                                      //     );
-                                      //   }).toList(),
-                                      // ),
-                                      SizedBox(height: 3,),
-                              TextField(
-                              decoration: const InputDecoration(
-                              border: OutlineInputBorder(),
-                              hintText: 'Enter Value'
-                              ),
-                             )
-                                    ],
-                                  ),
-                                ),
+                             //    Container(
+                             //      //color: Colors.teal,
+                             //      width: MediaQuery.of(context).size.width,
+                             //      height: 175,
+                             //      child: Column(
+                             //        children: [
+                             //          Container(
+                             //            width: MediaQuery.of(context).size.width,
+                             //            height: 40,
+                             //            color: yellowColor,
+                             //            child: Center(
+                             //              child: Text(
+                             //                "Add Discount",
+                             //                style: TextStyle(
+                             //                    fontSize: 22,
+                             //                    color: Colors.white,
+                             //                    fontWeight: FontWeight.bold),
+                             //              ),
+                             //            ),
+                             //          ),
+                             //          SizedBox(
+                             //            height: 8,
+                             //          ),
+                             //          Container(
+                             //            width: MediaQuery.of(context).size.width,
+                             //            height: 120,
+                             //            child: ListView(
+                             //              children: [
+                             //                Padding(
+                             //                  padding: const EdgeInsets.all(4.0),
+                             //                  child: DropdownButtonFormField<String>(
+                             //                    decoration: InputDecoration(
+                             //                      labelText: "Select Discount Type",
+                             //                      alignLabelWithHint: true,
+                             //                      labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                             //                      enabledBorder: OutlineInputBorder(
+                             //                      ),
+                             //                      focusedBorder:  OutlineInputBorder(
+                             //                        borderSide: BorderSide(color:yellowColor),
+                             //                      ),
+                             //                    ),
+                             //
+                             //                    value: discountTypeDropdownItems[0],
+                             //                    onChanged: (value) {
+                             //                      setState(() {
+                             //
+                             //                      });
+                             //                    },
+                             //                    items: discountTypeDropdownItems.map((value) {
+                             //                      return  DropdownMenuItem<String>(
+                             //                        value: value,
+                             //                        child: Row(
+                             //                          children: <Widget>[
+                             //                            Text(
+                             //                              value,
+                             //                              style:  TextStyle(color: yellowColor,fontSize: 13),
+                             //                            ),
+                             //                            //user.icon,
+                             //                            //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                             //                          ],
+                             //                        ),
+                             //                      );
+                             //                    }).toList(),
+                             //                  ),
+                             //                ),
+                             //                Padding(
+                             //                  padding: const EdgeInsets.all(4.0),
+                             //                  child: TextFormField(
+                             //                    decoration: const InputDecoration(
+                             //                        suffixIcon: Icon(Icons.add_task_outlined,color: yellowColor,size: 35,),
+                             //                        border: OutlineInputBorder(),
+                             //                        hintText: 'Enter Value'
+                             //
+                             //                    ),
+                             //                  ),
+                             //                )
+                             //              ],
+                             //            ),
+                             //          )
+                             //
+                             //        ],
+                             //      )
+                             // //      ListView(
+                             // //        children: [
+                             // //          Container(
+                             // //            width: MediaQuery.of(context).size.width,
+                             // //            height: 40,
+                             // //            color: yellowColor,
+                             // //            child: Center(
+                             // //              child: Text(
+                             // //                "Add Discount",
+                             // //                style: TextStyle(
+                             // //                    fontSize: 22,
+                             // //                    color: Colors.white,
+                             // //                    fontWeight: FontWeight.bold),
+                             // //              ),
+                             // //            ),
+                             // //          ),
+                             // //          DropdownButtonFormField<String>(
+                             // //            decoration: InputDecoration(
+                             // //              labelText: "Select Discount Type",
+                             // //              alignLabelWithHint: true,
+                             // //              labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                             // //              enabledBorder: OutlineInputBorder(
+                             // //              ),
+                             // //              focusedBorder:  OutlineInputBorder(
+                             // //                borderSide: BorderSide(color:yellowColor),
+                             // //              ),
+                             // //            ),
+                             // //
+                             // //            value: discountTypeDropdownItems[0],
+                             // //            onChanged: (value) {
+                             // //              setState(() {
+                             // //
+                             // //              });
+                             // //            },
+                             // //            items: discountTypeDropdownItems.map((value) {
+                             // //              return  DropdownMenuItem<String>(
+                             // //                value: value,
+                             // //                child: Row(
+                             // //                  children: <Widget>[
+                             // //                    Text(
+                             // //                      value,
+                             // //                      style:  TextStyle(color: yellowColor,fontSize: 13),
+                             // //                    ),
+                             // //                    //user.icon,
+                             // //                    //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                             // //                  ],
+                             // //                ),
+                             // //              );
+                             // //            }).toList(),
+                             // //          ),
+                             // //
+                             // //  TextField(
+                             // //  decoration: const InputDecoration(
+                             // //  border: OutlineInputBorder(),
+                             // //  hintText: 'Enter Value'
+                             // //  ),
+                             // // )
+                             // //        ],
+                             // //      ),
+                             //    ),
                                 Container(
                                   color: Colors.white,
                                   width: MediaQuery.of(context).size.width,
@@ -540,7 +598,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                                     width: 2,
                                                                   ),
                                                                   Text(
-                                                                    "120/- ",
+                                                                    overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
                                                                     style: TextStyle(
                                                                         fontSize:
                                                                             25,
@@ -718,7 +776,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                             width: 2,
                                                           ),
                                                           Text(
-                                                            "120/- ",
+                                                            overallTotalPrice.toString(),
                                                             style: TextStyle(
                                                                 fontSize: 25,
                                                                 color: Colors
@@ -742,7 +800,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                   .size
                                                   .width -
                                               200,
-                                          height: 50,
+                                          height: 60,
                                           decoration: BoxDecoration(
                                               color: yellowColor,
                                               borderRadius:
@@ -1006,9 +1064,11 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                     setState(() {
                                       cartList.clear();
                                       cartList = value;
-                                      if (cartList.length > 0) {
-                                        print(cartList.toString());
-                                      }
+                                    });
+                                  });
+                                  sqlite_helper().gettotal().then((value){
+                                    setState(() {
+                                      overallTotalPrice=value[0]["SUM(totalPrice)"];
                                     });
                                   });
                                 }),
@@ -1418,8 +1478,56 @@ class _POSMainScreenState extends State<POSMainScreen> {
                 ),
                 InkWell(
                   onTap: () {
-                    sqlite_helper()
-                        .create_cart(CartItems(
+                    sqlite_helper().dealCheckAlreadyExists(deal["id"]).then((foundDeals){
+                      if(foundDeals!=null&&foundDeals.length>0){
+                        var tempDeals=CartItems(
+                            id: foundDeals[0]["id"],
+                            productId: null,
+                            productName: deal["name"],
+                            isDeal: 1,
+                            dealId: deal["id"],
+                            sizeId: null,
+                            sizeName: null,
+                            price: deal["price"],
+                            totalPrice: updatedPrice == 0.0 ? price : updatedPrice,
+                            quantity: count,
+                            storeId: deal["storeId"],
+                            topping: null);
+                        sqlite_helper().updateCart(tempDeals).then((updatedEntries){
+                          print("Updated Entries "+updatedEntries.toString());
+                          sqlite_helper().getcart1().then((value) {
+                            setState(() {
+                              cartList.clear();
+                              cartList = value;
+                              if (cartList.length > 0) {
+                                print(cartList.toString());
+                              }
+                            });
+                          });
+                          sqlite_helper().gettotal().then((value){
+                            setState(() {
+                              overallTotalPrice=value[0]["SUM(totalPrice)"];
+                              var taxes=orderTaxes.where((element) => element.takeAway);
+                              if(taxes!=null&&taxes.length>0) {
+                                for (var t in taxes.toList()) {
+                                  if(t.price!=null&&t.price!=0.0){
+                                    overallTotalPrice=overallTotalPrice+t.price;
+                                  }else if(t.percentage!=null&&t.percentage!=0.0){
+                                    var percentTax=t.percentage/100*overallTotalPrice;
+                                    print("Percent Tax "+percentTax.toString());
+                                    overallTotalPrice=overallTotalPrice+percentTax;
+                                  }
+                                }
+                              }
+
+                            });
+                          });
+                        });
+                        Navigator.of(context).pop();
+                        Utils.showSuccess(context, "Updated to Cart successfully");
+                      }else{
+                        sqlite_helper()
+                            .create_cart(CartItems(
                             productId: null,
                             productName: deal["name"],
                             isDeal: 1,
@@ -1431,27 +1539,49 @@ class _POSMainScreenState extends State<POSMainScreen> {
                             quantity: count,
                             storeId: deal["storeId"],
                             topping: null))
-                        .then((isInserted) {
-                      if (isInserted > 0) {
-                        innerSetState(() {
-                          sqlite_helper().getcart1().then((value) {
-                            setState(() {
-                              cartList.clear();
-                              cartList = value;
-                              if (cartList.length > 0) {
-                                print(cartList.toString());
-                              }
+                            .then((isInserted) {
+                          if (isInserted > 0) {
+                            innerSetState(() {
+
+                              sqlite_helper().getcart1().then((value) {
+                                setState(() {
+                                  cartList.clear();
+                                  cartList = value;
+                                  if (cartList.length > 0) {
+                                    print(cartList.toString());
+                                  }
+                                });
+                              });
+                              sqlite_helper().gettotal().then((value){
+                                setState(() {
+                                  overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                  var taxes=orderTaxes.where((element) => element.takeAway);
+                                  if(taxes!=null&&taxes.length>0) {
+                                    for (var t in taxes.toList()) {
+                                      if(t.price!=null&&t.price!=0.0){
+                                        overallTotalPrice=overallTotalPrice+t.price;
+                                      }else if(t.percentage!=null&&t.percentage!=0.0){
+                                        var percentTax=t.percentage/100*overallTotalPrice;
+                                        print("Percent Tax "+percentTax.toString());
+                                        overallTotalPrice=overallTotalPrice+percentTax;
+                                      }
+                                    }
+                                  }
+
+                                });
+                              });
                             });
-                          });
+                            Navigator.of(context).pop();
+                            Utils.showSuccess(
+                                context, "Added to Cart successfully");
+                          } else {
+                            Navigator.of(context).pop();
+                            Utils.showError(context, "Some Error Occur");
+                          }
                         });
-                        Navigator.of(context).pop();
-                        Utils.showSuccess(
-                            context, "Added to Cart successfully");
-                      } else {
-                        Navigator.of(context).pop();
-                        Utils.showError(context, "Some Error Occur");
                       }
                     });
+
                   },
                   child: Card(
                     elevation: 8,
@@ -1848,41 +1978,106 @@ class _POSMainScreenState extends State<POSMainScreen> {
                     SizedBox(height: 1,),
                     InkWell(
                       onTap: () {
-                        sqlite_helper()
-                            .create_cart(CartItems(
-                            productId: null,
-                            productName: product.name,
-                            isDeal: 1,
-                            dealId: null,
-                            sizeId: selectedSizeId,
-                            sizeName: selectedSizeName,
-                            price: updatedPrice,
-                            totalPrice:
-                            updatedPrice == 0.0 ? price : updatedPrice,
-                            quantity: count,
-                            storeId: product.storeId,
-                            topping: topping.length>0?jsonEncode(topping):null))
-                            .then((isInserted) {
-                          if (isInserted > 0) {
-                            innersetState(() {
+                        sqlite_helper().checkAlreadyExists(product.id).then((foundProducts){
+                          print("Found Products Length "+foundProducts[0].toString());
+                          if(foundProducts.length>0){
+                            var tempCartItem =CartItems(
+                                id: foundProducts[0]["id"],
+                                productId: product.id,
+                                productName: product.name,
+                                isDeal: 1,
+                                dealId: null,
+                                sizeId: selectedSizeId,
+                                sizeName: selectedSizeName,
+                                price: updatedPrice,
+                                totalPrice:selectedSizeObj["discountedPrice"]==0.0&&updatedPrice == 0.0 ? price:selectedSizeObj["discountedPrice"]!=0.0&&updatedPrice == 0.0?selectedSizeObj["discountedPrice"] : updatedPrice,
+                                quantity: count,
+                                storeId: product.storeId,
+                                topping: topping.length>0?jsonEncode(topping):null
+                            );
+                            sqlite_helper().updateCart(tempCartItem).then((value){
+                              print("Update Response "+value.toString());
                               sqlite_helper().getcart1().then((value) {
                                 setState(() {
                                   cartList.clear();
                                   cartList = value;
-                                  if (cartList.length > 0) {
-                                    print(cartList.toString());
-                                  }
+                                  sqlite_helper().gettotal().then((value){
+                                    setState(() {
+                                      overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                      var taxes=orderTaxes.where((element) => element.takeAway);
+                                      if(taxes!=null&&taxes.length>0) {
+                                        for (var t in taxes.toList()) {
+                                          if(t.price!=null&&t.price!=0.0){
+                                            overallTotalPrice=overallTotalPrice+t.price;
+                                          }else if(t.percentage!=null&&t.percentage!=0.0){
+                                            var percentTax=t.percentage/100*overallTotalPrice;
+                                            print("Percent Tax "+percentTax.toString());
+                                            overallTotalPrice=overallTotalPrice+percentTax;
+                                          }
+                                        }
+                                      }
+
+                                    });
+                                  });
                                 });
                               });
                             });
                             Navigator.of(context).pop();
-                            Utils.showSuccess(
-                                context, "Added to Cart successfully");
-                          } else {
-                            Navigator.of(context).pop();
-                            Utils.showError(context, "Some Error Occur");
+                            Utils.showSuccess(context, "Updated to Cart successfully");
+                          }else{
+                            sqlite_helper()
+                                .create_cart(CartItems(
+                                productId: product.id,
+                                productName: product.name,
+                                isDeal: 1,
+                                dealId: null,
+                                sizeId: selectedSizeId,
+                                sizeName: selectedSizeName,
+                                price: updatedPrice,
+                                totalPrice:selectedSizeObj["discountedPrice"]==0.0&&updatedPrice == 0.0 ? price:selectedSizeObj["discountedPrice"]!=0.0&&updatedPrice == 0.0?selectedSizeObj["discountedPrice"] : updatedPrice,
+                                quantity: count,
+                                storeId: product.storeId,
+                                topping: topping.length>0?jsonEncode(topping):null))
+                                .then((isInserted) {
+                              if (isInserted > 0) {
+                                innersetState(() {
+                                  sqlite_helper().getcart1().then((value) {
+                                    setState(() {
+                                      cartList.clear();
+                                      cartList = value;
+                                      sqlite_helper().gettotal().then((value){
+                                        setState(() {
+                                          overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                          var taxes=orderTaxes.where((element) => element.takeAway);
+                                          if(taxes!=null&&taxes.length>0) {
+                                            for (var t in taxes.toList()) {
+                                              if(t.price!=null&&t.price!=0.0){
+                                                overallTotalPrice=overallTotalPrice+t.price;
+                                              }else if(t.percentage!=null&&t.percentage!=0.0){
+                                                var percentTax=t.percentage/100*overallTotalPrice;
+                                                print("Percent Tax "+percentTax.toString());
+                                                overallTotalPrice=overallTotalPrice+percentTax;
+                                              }
+                                            }
+                                          }
+
+                                        });
+                                      });
+                                    });
+                                  });
+                                });
+                                Navigator.of(context).pop();
+                                Utils.showSuccess(
+                                    context, "Added to Cart successfully");
+                              } else {
+                                Navigator.of(context).pop();
+                                Utils.showError(context, "Some Error Occur");
+                              }
+                            });
                           }
                         });
+
+
                       },
                       child: Card(
                         elevation: 8,
