@@ -38,8 +38,9 @@ class _POSMainScreenState extends State<POSMainScreen> {
   List<String> menuTypeDropdownItems = ["Products", "Deals"];
   List<String> discountTypeDropdownItems = ["Percentage", "Cash"];
   String selectedMenuType;
-  var overallTotalPrice=0.0;
+  var overallTotalPrice=0.0,overallTotalPricewitOoutTax=0.0;
   List<CartItems> cartList = [];
+
   Order finalOrder;
   List<Orderitem> orderitem = [];
   List<Orderitemstopping> itemToppingList = [];
@@ -53,7 +54,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
   String orderType;
   int orderTypeId;
   var voucherValidity;
-  List orderTypeList = ["None", "DineIn ", "TakeAway ", "HomeDelivery "];
+  List orderTypeList = ["Dine-In", "TakeAway"];
 
   @override
   void initState() {
@@ -93,11 +94,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                       });
                     });
                   });
-                  sqlite_helper().gettotal().then((value){
-                    setState(() {
-                      overallTotalPrice=value[0]["SUM(totalPrice)"];
-                    });
-                  });
+
                   sqlite_helper().getcart1().then((value) {
                     setState(() {
                       cartList.clear();
@@ -110,6 +107,24 @@ class _POSMainScreenState extends State<POSMainScreen> {
                   Network_Operations.getTaxListByStoreId(context,widget.storeId).then((taxes){
                     setState(() {
                       this.orderTaxes=taxes;
+                      sqlite_helper().gettotal().then((value){
+                        setState(() {
+                          overallTotalPrice=value[0]["SUM(totalPrice)"];
+                          overallTotalPricewitOoutTax=value[0]["SUM(totalPrice)"];
+                          var taxes=orderTaxes.where((element) => element.takeAway);
+                          if(taxes!=null&&taxes.length>0) {
+                            for (var t in taxes.toList()) {
+                              if(t.price!=null&&t.price!=0.0){
+                                overallTotalPrice=overallTotalPrice+t.price;
+                              }else if(t.percentage!=null&&t.percentage!=0.0){
+                                var percentTax=t.percentage/100*overallTotalPrice;
+                                overallTotalPrice=overallTotalPrice+percentTax;
+                              }
+                            }
+                          }
+
+                        });
+                      });
                     });
                   });
                 });
@@ -598,67 +613,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                                     width: 2,
                                                                   ),
                                                                   Text(
-                                                                    overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
-                                                                    style: TextStyle(
-                                                                        fontSize:
-                                                                            25,
-                                                                        color:
-                                                                            blueColor,
-                                                                        fontWeight:
-                                                                            FontWeight.bold),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Card(
-                                                      elevation: 6,
-                                                      child: Container(
-                                                        width: MediaQuery.of(
-                                                                context)
-                                                            .size
-                                                            .width,
-                                                        height: 60,
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(8.0),
-                                                          child: Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: [
-                                                              Text(
-                                                                "Discount: ",
-                                                                style: TextStyle(
-                                                                    fontSize:
-                                                                        25,
-                                                                    color:
-                                                                        yellowColor,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold),
-                                                              ),
-                                                              Row(
-                                                                children: [
-                                                                  Text(
-                                                                    "Rs: ",
-                                                                    style: TextStyle(
-                                                                        fontSize:
-                                                                            25,
-                                                                        color:
-                                                                            yellowColor,
-                                                                        fontWeight:
-                                                                            FontWeight.bold),
-                                                                  ),
-                                                                  SizedBox(
-                                                                    width: 2,
-                                                                  ),
-                                                                  Text(
-                                                                    "120/- ",
+                                                                    overallTotalPricewitOoutTax!=null?overallTotalPricewitOoutTax.toString()+"/-":"0.0/-",
                                                                     style: TextStyle(
                                                                         fontSize:
                                                                             25,
@@ -776,7 +731,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                             width: 2,
                                                           ),
                                                           Text(
-                                                            overallTotalPrice.toString(),
+                                                            overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
                                                             style: TextStyle(
                                                                 fontSize: 25,
                                                                 color: Colors
@@ -795,23 +750,37 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                           )),
                                       Card(
                                         elevation: 12,
-                                        child: Container(
-                                          width: MediaQuery.of(context)
-                                                  .size
-                                                  .width -
-                                              200,
-                                          height: 60,
-                                          decoration: BoxDecoration(
-                                              color: yellowColor,
-                                              borderRadius:
-                                                  BorderRadius.circular(8)),
-                                          child: Center(
-                                            child: Text(
-                                              "Create An Order ",
-                                              style: TextStyle(
-                                                  fontSize: 25,
-                                                  color: Colors.white,
-                                                  fontWeight: FontWeight.bold),
+                                        child: InkWell(
+                                          onTap: () {
+                                            showDialog(context: context, builder:(BuildContext context){
+                                              return Dialog(
+                                                //backgroundColor: Colors.transparent,
+                                                  child: Container(
+                                                      height:MediaQuery.of(context).size.height -200,
+                                                      width: MediaQuery.of(context).size.width / 3,
+                                                      child: finalizingOrderPopUp()
+                                                  )
+                                              );
+                                            });
+                                          },
+                                          child: Container(
+                                            width: MediaQuery.of(context)
+                                                    .size
+                                                    .width -
+                                                200,
+                                            height: 60,
+                                            decoration: BoxDecoration(
+                                                color: yellowColor,
+                                                borderRadius:
+                                                    BorderRadius.circular(8)),
+                                            child: Center(
+                                              child: Text(
+                                                "Create An Order ",
+                                                style: TextStyle(
+                                                    fontSize: 25,
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold),
+                                              ),
                                             ),
                                           ),
                                         ),
@@ -1069,6 +1038,20 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                   sqlite_helper().gettotal().then((value){
                                     setState(() {
                                       overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                      overallTotalPricewitOoutTax=value[0]["SUM(totalPrice)"];
+                                      var taxes=orderTaxes.where((element) => element.takeAway);
+                                      if(taxes!=null&&taxes.length>0) {
+                                        for (var t in taxes.toList()) {
+                                          if(t.price!=null&&t.price!=0.0){
+                                            overallTotalPrice=overallTotalPrice+t.price;
+                                          }else if(t.percentage!=null&&t.percentage!=0.0){
+                                            var percentTax=t.percentage/100*overallTotalPrice;
+                                            print("Percent Tax "+percentTax.toString());
+                                            overallTotalPrice=overallTotalPrice+percentTax;
+                                          }
+                                        }
+                                      }
+
                                     });
                                   });
                                 }),
@@ -1247,8 +1230,8 @@ class _POSMainScreenState extends State<POSMainScreen> {
   //Popup's
   Widget dealsPopupLayout(dynamic deal) {
     var count = 1;
-    var price = 0.0;
-    var updatedPrice = 0.0;
+    var price = 0.0,actualPrice=0.0;
+    var updatedPrice = 0.0,updatedActualPrice=0.0;
     List<String> dealProducts = [];
     if (deal["productDeals"] != null && deal["productDeals"].length > 0) {
       for (var pd in deal["productDeals"]) {
@@ -1267,6 +1250,8 @@ class _POSMainScreenState extends State<POSMainScreen> {
         if (deal != null) {
           innerSetState(() {
             price = deal["price"];
+            actualPrice = deal["actualPrice"];
+            print("Actual Deal Price $actualPrice");
           });
         }
         return Center(
@@ -1395,7 +1380,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                           color: yellowColor),
                                     ),
                                     Text(
-                                      deal["actualPrice"].toString(),
+                                     updatedActualPrice.toString()=="0.0"? actualPrice.toString():updatedActualPrice.toString(),
                                       style: TextStyle(
                                           decoration: TextDecoration.lineThrough,
                                           fontWeight: FontWeight.bold,
@@ -1465,6 +1450,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                     count = value;
                                     updatedPrice = 0.0;
                                     updatedPrice = price * count;
+                                    updatedActualPrice = actualPrice * count;
                                   });
                                 },
                                 step: 1,
@@ -1494,7 +1480,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                             storeId: deal["storeId"],
                             topping: null);
                         sqlite_helper().updateCart(tempDeals).then((updatedEntries){
-                          print("Updated Entries "+updatedEntries.toString());
                           sqlite_helper().getcart1().then((value) {
                             setState(() {
                               cartList.clear();
@@ -1507,6 +1492,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                           sqlite_helper().gettotal().then((value){
                             setState(() {
                               overallTotalPrice=value[0]["SUM(totalPrice)"];
+                              overallTotalPricewitOoutTax=value[0]["SUM(totalPrice)"];
                               var taxes=orderTaxes.where((element) => element.takeAway);
                               if(taxes!=null&&taxes.length>0) {
                                 for (var t in taxes.toList()) {
@@ -1514,7 +1500,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                     overallTotalPrice=overallTotalPrice+t.price;
                                   }else if(t.percentage!=null&&t.percentage!=0.0){
                                     var percentTax=t.percentage/100*overallTotalPrice;
-                                    print("Percent Tax "+percentTax.toString());
                                     overallTotalPrice=overallTotalPrice+percentTax;
                                   }
                                 }
@@ -1555,6 +1540,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                               sqlite_helper().gettotal().then((value){
                                 setState(() {
                                   overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                  overallTotalPricewitOoutTax=value[0]["SUM(totalPrice)"];
                                   var taxes=orderTaxes.where((element) => element.takeAway);
                                   if(taxes!=null&&taxes.length>0) {
                                     for (var t in taxes.toList()) {
@@ -1562,7 +1548,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         overallTotalPrice=overallTotalPrice+t.price;
                                       }else if(t.percentage!=null&&t.percentage!=0.0){
                                         var percentTax=t.percentage/100*overallTotalPrice;
-                                        print("Percent Tax "+percentTax.toString());
                                         overallTotalPrice=overallTotalPrice+percentTax;
                                       }
                                     }
@@ -1610,11 +1595,567 @@ class _POSMainScreenState extends State<POSMainScreen> {
       }),
     );
   }
+
+  Widget finalizingOrderPopUp(){
+    return Scaffold(
+      body: Container(
+        decoration: BoxDecoration(
+            image: DecorationImage(
+              fit: BoxFit.cover,
+              //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
+              image: AssetImage('assets/bb.jpg'),
+            )
+        ),
+        height:MediaQuery.of(context).size.height -200,
+        width: MediaQuery.of(context).size.width / 3,
+        child: Column(
+
+          children: [
+            Container(
+              width:
+              MediaQuery.of(context).size.width,
+              height: 50,
+              color: yellowColor,
+              child: Center(
+                child: Text(
+                  "Order Summary",
+                  style: TextStyle(
+                      fontSize: 22,
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            ///Order Type
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  labelText: "Order Type",
+
+                  alignLabelWithHint: true,
+                  labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                  enabledBorder: OutlineInputBorder(
+                  ),
+                  focusedBorder:  OutlineInputBorder(
+                    borderSide: BorderSide(color:yellowColor),
+                  ),
+                ),
+
+                value: orderType,
+                onChanged: (Value) {
+                  setState(() {
+                    orderType = Value;
+                    orderTypeId = orderTypeList.indexOf(orderType)+1;
+                    print(orderTypeId);
+                  });
+                  //taxList.clear();
+                  // networksOperation.getTaxListByStoreIdWithOrderType(context, widget.storeId, orderType=="Dine In"?1:orderType=="Take Away"?2:orderType=="Delivery"?3:0).then((value) {
+                  //   setState(() {
+                  //     taxList = value;
+                  //     print(taxList.toString()+"mnbvcxz");
+                  //     totalPercentage=0.0;
+                  //     totalTaxPrice =0.0;
+                  //     orderTaxList.clear();
+                  //     for(int i=0;i<taxList.length;i++){
+                  //       totalTaxPrice += taxList[i].price;
+                  //       totalPercentage += taxList[i].percentage;
+                  //       orderTaxList.add({
+                  //         "TaxId": taxList[i].id
+                  //       });
+                  //     }
+                  //     print(orderTaxList.toString());
+                  //   });
+                  // });
+                },
+                items: orderTypeList.map((value) {
+                  return  DropdownMenuItem<String>(
+                    value: value,
+                    child: Row(
+                      children: <Widget>[
+                        Text(
+                          value,
+                          style:  TextStyle(color: yellowColor,fontSize: 13),
+                        ),
+                        //user.icon,
+                        //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
+            ///Set Tables & Chairs
+            // Visibility(
+            //   visible: orderType=="Dine In",
+            //   child: Card(
+            //     elevation: 5,
+            //     //color: Colors.white24,
+            //     child: Container(
+            //       decoration: BoxDecoration(
+            //           color:BackgroundColor,
+            //           borderRadius: BorderRadius.circular(9),
+            //           border: Border.all(color: yellowColor, width: 2)
+            //       ),
+            //       width: MediaQuery.of(context).size.width*0.98,
+            //       padding: EdgeInsets.all(14),
+            //       child: DropdownButtonFormField<String>(
+            //         decoration: InputDecoration(
+            //           labelText: " Tables ",
+            //
+            //           alignLabelWithHint: true,
+            //           labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color: yellowColor),
+            //           enabledBorder: OutlineInputBorder(
+            //             // borderSide: BorderSide(color:
+            //             // Colors.white),
+            //           ),
+            //           focusedBorder:  OutlineInputBorder(
+            //             borderSide: BorderSide(color:
+            //             yellowColor),
+            //           ),
+            //         ),
+            //
+            //         // hint:  Text(translate('add_to_cart_screen.sauce')),
+            //         value: tableName,
+            //         // onSaved:(Value){
+            //         //     orderType = Value;
+            //         //     orderTypeId = orderTypeList.indexOf(orderTypeId);
+            //         // },
+            //         onChanged: (Value) {
+            //           setState(() {
+            //             tableName = Value;
+            //             tableId = tableDDList.indexOf(tableName);
+            //           });
+            //           networksOperation.getChairsListByTable(context, allTableList[tableId]['id']).then((value) {
+            //
+            //             if(value!=null){
+            //               countList.clear();
+            //               allChairList.clear();
+            //               for(int i=0;i<value.length;i++){
+            //                 countList.add(value[i]['name']);
+            //                 allChairList.add(value[i]);
+            //
+            //               }
+            //             }else{
+            //
+            //             }
+            //
+            //           });
+            //         },
+            //         items: tableDDList.map((value) {
+            //           return  DropdownMenuItem<String>(
+            //             value: value,
+            //             child: Row(
+            //               children: <Widget>[
+            //                 Text(
+            //                   value,
+            //                   style:  TextStyle(color: yellowColor,fontSize: 15, fontWeight: FontWeight.bold),
+            //                 ),
+            //                 //user.icon,
+            //                 //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+            //               ],
+            //             ),
+            //           );
+            //         }).toList(),
+            //       ),
+            //     ),
+            //   ),
+            // ),
+            // Visibility(
+            //   visible:   countList.length>0 && orderType =="Dine In",
+            //   child: Card(
+            //     elevation: 5,
+            //     color: BackgroundColor,
+            //     child: InkWell(
+            //       onTap: () async{
+            //         _openFilterDialog();
+            //       },
+            //       child: InputDecorator(
+            //         decoration: InputDecoration(
+            //           contentPadding: EdgeInsets.all(25),
+            //           filled: true,
+            //           errorMaxLines: 4,
+            //         ),
+            //         child: Column(
+            //           crossAxisAlignment: CrossAxisAlignment.start,
+            //           children: <Widget>[
+            //             Row(
+            //               crossAxisAlignment: CrossAxisAlignment.start,
+            //               children: <Widget>[
+            //                 Expanded(
+            //                     child: Text(
+            //                       'Select Chairs For Order',
+            //                       style: TextStyle(fontSize: 15.0, color:yellowColor,fontWeight: FontWeight.bold),
+            //                     )),
+            //                 Icon(
+            //                   Icons.arrow_drop_down,
+            //                   color: Colors.black87,
+            //                   size: 25.0,
+            //                 ),
+            //               ],
+            //             ),
+            //             orderSelectedChairsList != null && orderSelectedChairsList.length > 0
+            //                 ? Wrap(
+            //               spacing: 8.0,
+            //               runSpacing: 0.0,
+            //               children: chairChips,
+            //             )
+            //                 : new Container(
+            //               padding: EdgeInsets.only(top: 4),
+            //               child: Text(
+            //                 'No Chairs selected',
+            //                 style: TextStyle(
+            //                   fontSize: 16,
+            //                   color: PrimaryColor,
+            //                 ),
+            //               ),
+            //             )
+            //           ],
+            //         ),
+            //       ),
+            //     ),
+            //   ),
+            // ),
+            ///Adding Voucher
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Card(
+                child: Container(
+                  width: MediaQuery.of(context).size.width,
+                  height: 70,
+                  child: Padding(
+                    padding: const EdgeInsets.all(2.0),
+                    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: <Widget>[
+                        SizedBox(
+                          height: 30,
+                          width: 170,
+                          child: TextField(
+                            controller: applyVoucher,
+                            style: TextStyle(color: yellowColor),
+                            decoration: InputDecoration(
+                              hintText: "Voucher Code",hintStyle: TextStyle(color: yellowColor),
+                            ),
+                          ),
+                        ),
+                        Row(
+                          children: <Widget>[
+                            //FaIcon(FontAwesomeIcons.dollarSign, color: Colors.amberAccent, size: 30,),
+                            InkWell(
+                              // onTap: () {
+                              //   print(applyVoucher.text);
+                              //
+                              //   voucherValidity =null;
+                              //   networksOperation.checkVoucherValidity(context, applyVoucher.text, totalprice).then((value){
+                              //     setState(() {
+                              //       applyVoucher.text="";
+                              //       voucherValidity = value;
+                              //       voucherVisiblity =true;
+                              //
+                              //     });
+                              //   });
+                              //   print(voucherVisiblity);
+                              // },
+                              child: Container(
+                                // width: 70,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                  color: yellowColor,
+                                  borderRadius: BorderRadius.circular(8)
+                                ),
+                                child: Center(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(3.0),
+                                    child: Text("Apply Voucher", style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.bold
+                                    ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+
+            ///Picking Time
+            // Visibility(
+            //   visible: orderType =="Take Away",
+            //   child: Padding(
+            //     padding: const EdgeInsets.all(8.0),
+            //     child: Padding(
+            //       padding: const EdgeInsets.all(8.0),
+            //       child: FormBuilderDateTimePicker(
+            //         name: "Estimate Picking time",
+            //         style: Theme.of(context).textTheme.bodyText1,
+            //         inputType: InputType.time,
+            //         validator: FormBuilderValidators.compose( [FormBuilderValidators.required(context)]),
+            //         format: DateFormat("hh:mm:ss"),
+            //         decoration: InputDecoration(labelText: "Estimate Picking time",labelStyle: TextStyle(color: yellowColor, fontWeight: FontWeight.bold),
+            //           border: OutlineInputBorder(
+            //               borderRadius: BorderRadius.circular(9.0),
+            //               borderSide: BorderSide(color: yellowColor, width: 2.0)
+            //           ),),
+            //         onChanged: (value){
+            //           setState(() {
+            //             this.pickingTime=value;
+            //           });
+            //         },
+            //       ),
+            //     ),
+            //   ),
+            // ),
+
+            ///Payment Method
+            // Padding(
+            //   padding: const EdgeInsets.all(8.0),
+            //   child: Container(
+            //       decoration: BoxDecoration(
+            //           color:BackgroundColor,
+            //           borderRadius: BorderRadius.circular(9),
+            //           border: Border.all(color: yellowColor, width: 2)
+            //       ),
+            //       child: Column(
+            //         children: [
+            //           Padding(
+            //             padding: const EdgeInsets.all(8.0),
+            //             child: Text('Payment Method',style: TextStyle(color: yellowColor,fontSize: 20,fontWeight: FontWeight.bold),),
+            //           ),
+            //           Container(
+            //             width: MediaQuery.of(context).size.width,
+            //             height: 1,
+            //             color: yellowColor,
+            //           ),
+            //
+            //           _myRadioButton(
+            //             title: orderType=="Dine In"?"Cash ":orderType=="Take Away"?"Cash on Picking ":"Cash On Delivery",
+            //             value: 1,
+            //             onChanged: (newValue) => setState(() => _groupValue = newValue,
+            //             ),
+            //           ),
+            //           _myRadioButton(
+            //               title: "Credit Card",
+            //               value: 2,
+            //               //  onChanged: (newValue) => setState(() => _groupValue = newValue,
+            //               // ),
+            //               onChanged: (value)async{
+            //                 setState(() async{
+            //                   _groupValue = value;
+            //
+            //                   cardData = await Navigator.push(context, MaterialPageRoute(builder: (context) =>  CardPayment() ));
+            //                 });
+            //               }
+            //           ),
+            //         ],
+            //       )
+            //   ),
+            // ),
+            SizedBox(height: 10,)
+            ///Submit Button
+            // InkWell(
+            //   onTap: (){
+            //     if(orderType == "Dine In" ){
+            //       if(tableId==null || tableId.isNaN){
+            //         Utils.showError(context, "Please Select Table");
+            //       }
+            //       else if(_groupValue==2 && cardData==null){
+            //         Utils.showError(context, "Please Add Debit / Credit Card");
+            //       }
+            //       else if(dailySession==null){
+            //         Utils.showError(context, "Restaurant can't Accept Order This Time");
+            //       }
+            //       else{
+            //         print("print 1");
+            //         var body= Order.OrderToJson(Order(
+            //             dailySessionNo: 1,
+            //             storeId: widget.storeId,
+            //             grosstotal: widget.netTotal,
+            //             comment: widget.notes,
+            //             netTotal: widget.netTotal,
+            //             DeviceToken: deviceId,
+            //             deliveryAddress: null,
+            //             deliveryLatitude: null,
+            //             deliveryLongitude: null,
+            //             paymentType: _groupValue,
+            //             paymentOptions: 1,
+            //             ordertype: 1,
+            //             TableId: tableId!=null?allTableList[tableId]['id']:null,
+            //             //orderitems: orderitem,//orderItems1!=null?orderItems1:orderitem,
+            //             orderChairs: orderSelectedChairsListIds,
+            //             orderPayments: selectedChairListForPayment//selectedChairListForPayment
+            //         ));
+            //         dynamic order = {
+            //
+            //           // "date":DateFormat("dd:mm:yyyy").format(DateTime.now()),
+            //           // "StartTime":DateFormat("HH:mm:ss").format(DateTime.now()),
+            //           "DineInEndTime":DateFormat("HH:mm:ss").format(DateTime.now().add(Duration(hours: 1))),
+            //           "DailySessionNo": dailySession,
+            //           "storeId":widget.storeId,
+            //           "DeviceToken":deviceId,
+            //           "ordertype": 1,
+            //           "NetTotal":widget.netTotal,
+            //           //"grosstotal":widget.netTotal,
+            //           "comment":widget.notes,
+            //           "TableId":tableId!=null?allTableList[tableId]['id']:null,
+            //           "DeliveryAddress" : null,
+            //           "DeliveryLongitude" : null,
+            //           "DeliveryLatitude" : null,
+            //           "PaymentType" : _groupValue,
+            //           "PaymentOptions": 1,
+            //           "orderitems":widget.orderItems,
+            //           "OrderChairs": orderSelectedChairsListIds,
+            //           //  "OrderPayments": selectedChairListForPayment,
+            //           "CardNumber": cardData!=null?cardData['CardNumber']:null,
+            //           "CVV": cardData!=null?cardData['CVV']:null,
+            //           "ExpiryDate": cardData!=null?cardData['ExpiryDate']:null,
+            //           "OrderTaxes":orderTaxList,
+            //           "VoucherCode": widget.voucher,
+            //           // "MobileNo": "03123456789",
+            //           // "CnicLast6Digits": "345678"
+            //
+            //         };
+            //         print(jsonEncode(order));
+            //         networksOperation.placeOrder(context, widget.token, order).then((value) {
+            //           if(value){
+            //             // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ClientNavBar()));
+            //             Navigator.pushAndRemoveUntil(context,
+            //                 MaterialPageRoute(builder: (context) =>ClientNavBar()), (
+            //                     Route<dynamic> route) => false);
+            //           }
+            //         });
+            //       }
+            //
+            //     }
+            //     else if( orderType =="Delivery"){
+            //       if(userDetail['latitude']==null && userDetail['longitude']==null && address ==null){
+            //         Utils.showError(context, "please select Secondary address");
+            //       } else if(dailySession==null){
+            //         Utils.showError(context, "Restaurant can't Accept Order This Time");
+            //       }
+            //       // else if(_groupValue==2){
+            //       //   cardData==null??Utils.showError(context, "Please Add Debit / Credit Card");
+            //       // }
+            //       else {
+            //         print("print 3");
+            //         dynamic order = {
+            //           "DailySessionNo": dailySession,
+            //           "StoreId":widget.storeId,
+            //           "DeviceToken":deviceId,
+            //           "ordertype":3,
+            //           "NetTotal":widget.netTotal,
+            //           //  "grosstotal":widget.netTotal,
+            //           "comment":widget.notes!=null?widget.notes:null,
+            //           "TableId":null,
+            //           "DeliveryAddress" : secondryAddress.text!=null?secondryAddress.text:address.toString()!=null?address.address:null,
+            //           "DeliveryLongitude" : address.longitude==null?userDetail['longitude']!=null?userDetail['longitude']:address.toString()!=null?address.longitude:0.0:0.0,
+            //           "DeliveryLatitude" : address.latitude==null?userDetail['latitude']!=null?userDetail['latitude']:address.toString()!=null?address.latitude:0.0:0.0,
+            //           "PaymentType" : _groupValue,
+            //           "orderitems":widget.orderItems,
+            //           "CardNumber": cardData!=null?cardData['CardNumber']:null,
+            //           "CVV": cardData!=null?cardData['CVV']:null,
+            //           "ExpiryDate": cardData!=null?cardData['ExpiryDate']:null,
+            //           "OrderTaxes":orderTaxList,
+            //           "VoucherCode": widget.voucher,
+            //           // "MobileNo": "03123456789",
+            //           // "CnicLast6Digits": "345678"
+            //         };
+            //         print(jsonEncode(order));
+            //         networksOperation.placeOrder(context, widget.token, order).then((value) {
+            //           if(value){
+            //             Navigator.pushAndRemoveUntil(context,
+            //                 MaterialPageRoute(builder: (context) => ClientNavBar()), (
+            //                     Route<dynamic> route) => false);
+            //             //Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ClientNavBar()));
+            //
+            //           }
+            //         });
+            //       }
+            //     }else if( orderType =="Take Away"){
+            //       if(_groupValue==2 && cardData==null){
+            //         Utils.showError(context, "Please Add Debit / Credit Card");
+            //       }else if(dailySession==null){
+            //         Utils.showError(context, "Restaurant can't Accept Order This Time");
+            //       }else if(pickingTime==null){
+            //         Utils.showError(context, "Please Enter Picking Time");
+            //       }
+            //       else{
+            //         print("print 2");
+            //         dynamic order = {
+            //           "DailySessionNo": dailySession,
+            //           "storeId":widget.storeId,
+            //           "DeviceToken":deviceId,
+            //           "ordertype":2,
+            //           "NetTotal":widget.netTotal,
+            //           //  "grosstotal":widget.netTotal,
+            //           "comment":widget.notes,
+            //           "TableId":null,
+            //           "DeliveryAddress" : null,
+            //           "DeliveryLongitude" : null,
+            //           "DeliveryLatitude" : null,
+            //           "PaymentType" : _groupValue,
+            //           "orderitems":widget.orderItems,
+            //           "CardNumber": cardData!=null?cardData['CardNumber']:null,
+            //           "CVV": cardData!=null?cardData['CVV']:null,
+            //           "ExpiryDate": cardData!=null?cardData['ExpiryDate']:null,
+            //           "EstimatedTakeAwayTime": pickingTime.toString().substring(10,16),
+            //           "OrderTaxes":orderTaxList,
+            //           "VoucherCode": widget.voucher,
+            //           // "MobileNo": "03123456789",
+            //           // "CnicLast6Digits": "345678"
+            //         };
+            //         print(jsonEncode(order));
+            //         networksOperation.placeOrder(context, widget.token, order).then((value) {
+            //           if(value){
+            //             // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ClientNavBar()));
+            //             Navigator.pushAndRemoveUntil(context,
+            //                 MaterialPageRoute(builder: (context) => ClientNavBar()), (
+            //                     Route<dynamic> route) => false);
+            //           }
+            //         });
+            //       }
+            //
+            //     }
+            //     else{
+            //       Utils.showError(context, "Please select Order Type");
+            //     }
+            //
+            //   },
+            //   child: Padding(
+            //     padding: const EdgeInsets.all(8.0),
+            //     child: Container(
+            //       decoration: BoxDecoration(
+            //         borderRadius: BorderRadius.all(Radius.circular(10)) ,
+            //         color: yellowColor,
+            //       ),
+            //       width: MediaQuery.of(context).size.width,
+            //       height: MediaQuery.of(context).size.height  * 0.08,
+            //
+            //       child: Center(
+            //         child: Text('Submit Order',style: TextStyle(color: BackgroundColor,fontSize: 20,fontWeight: FontWeight.bold),),
+            //       ),
+            //     ),
+            //   ),
+            // )
+          ],
+        ),
+      )
+    );
+  }
+
+
   var productPopupHeight=3.5;
   Widget productsPopupLayout(Products product) {
     var count = 1;
     var price=0.0;
     var discountedPrice=0.0;
+    var updatedActualPrice=0.0;
     var selectedSizeObj;
     var updatedPrice=0.0;
     int selectedSizeId=0;
@@ -1668,6 +2209,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                   if(updatedPrice==0.0){
                     if(discountedPrice!=0.0){
                       updatedPrice=updatedPrice+discountedPrice-uncheckedTopping.toList()[0].totalprice;
+                      updatedActualPrice=updatedActualPrice+price-uncheckedTopping.toList()[0].totalprice;
                     }
                     updatedPrice=updatedPrice+price-uncheckedTopping.toList()[0].totalprice;
               }else{
@@ -1710,9 +2252,15 @@ class _POSMainScreenState extends State<POSMainScreen> {
                     print(a.toString());
                     topping.add( Toppings(name: additionals[index].name,quantity: _counter[index],totalprice: a,price: additionals[index].price,additionalitemid: additionals[index].id));
                     if(updatedPrice==0.0){
-                      updatedPrice=updatedPrice+price+a;
+                      if(selectedSizeObj["discountedPrice"]!=0.0){
+                        updatedPrice = updatedPrice + selectedSizeObj["discountedPrice"] + a;
+                        updatedActualPrice=updatedActualPrice+price+a;
+                      }else {
+                        updatedPrice = updatedPrice + price + a;
+                      }
                     }else{
                       updatedPrice=updatedPrice+a;
+                      updatedActualPrice=updatedActualPrice+a;
                     }
                   }else if(!inputs[index]){
                     topping.removeAt(index);
@@ -1780,6 +2328,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                            if(selectedSizeObj["discountedPrice"]!=0.0) {
                              updatedPrice = selectedSize.toList()[0]["discountedPrice"];
                              discountedPrice=selectedSize.toList()[0]["discountedPrice"];
+                             updatedActualPrice=selectedSize.toList()[0]["price"];
                            }
 
                          if(selectedSizeId!=0){
@@ -1842,6 +2391,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                             if(topping.length==0) {
                               if(selectedSizeObj["discountedPrice"]!=0.0){
                                 updatedPrice = selectedSizeObj["discountedPrice"] * count;
+                                updatedActualPrice=selectedSizeObj["price"]*count;
                               }else{
                                 updatedPrice = price * count;
                               }
@@ -1852,6 +2402,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                               }
                               if(selectedSizeObj["discountedPrice"]!=0.0){
                                 updatedPrice = discountedPrice * count+totalToppingPrice;
+                                updatedActualPrice= price * count+totalToppingPrice;
                               }else {
                                 updatedPrice = price * count + totalToppingPrice;
                               }
@@ -1954,7 +2505,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                               style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold, color:yellowColor),
                               children: [
                                  TextSpan(
-                                   text: "  ${price.toString()}",
+                                   text: "  ${updatedActualPrice==0.0?price.toString():updatedActualPrice.toString()}",
                                    style: TextStyle(
                                        fontSize: 30,
                                        fontWeight: FontWeight.bold,
@@ -1979,7 +2530,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                     InkWell(
                       onTap: () {
                         sqlite_helper().checkAlreadyExists(product.id).then((foundProducts){
-                          print("Found Products Length "+foundProducts[0].toString());
                           if(foundProducts.length>0){
                             var tempCartItem =CartItems(
                                 id: foundProducts[0]["id"],
@@ -1996,7 +2546,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 topping: topping.length>0?jsonEncode(topping):null
                             );
                             sqlite_helper().updateCart(tempCartItem).then((value){
-                              print("Update Response "+value.toString());
                               sqlite_helper().getcart1().then((value) {
                                 setState(() {
                                   cartList.clear();
@@ -2004,6 +2553,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                   sqlite_helper().gettotal().then((value){
                                     setState(() {
                                       overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                      overallTotalPricewitOoutTax=value[0]["SUM(totalPrice)"];
                                       var taxes=orderTaxes.where((element) => element.takeAway);
                                       if(taxes!=null&&taxes.length>0) {
                                         for (var t in taxes.toList()) {
@@ -2011,7 +2561,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             overallTotalPrice=overallTotalPrice+t.price;
                                           }else if(t.percentage!=null&&t.percentage!=0.0){
                                             var percentTax=t.percentage/100*overallTotalPrice;
-                                            print("Percent Tax "+percentTax.toString());
                                             overallTotalPrice=overallTotalPrice+percentTax;
                                           }
                                         }
@@ -2048,6 +2597,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                       sqlite_helper().gettotal().then((value){
                                         setState(() {
                                           overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                          overallTotalPricewitOoutTax=value[0]["SUM(totalPrice)"];
                                           var taxes=orderTaxes.where((element) => element.takeAway);
                                           if(taxes!=null&&taxes.length>0) {
                                             for (var t in taxes.toList()) {
