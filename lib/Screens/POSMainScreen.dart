@@ -38,7 +38,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
   List<String> menuTypeDropdownItems = ["Products", "Deals"];
   List<String> discountTypeDropdownItems = ["Percentage", "Cash"];
   String selectedMenuType;
-  var overallTotalPrice=0.0,overallTotalPricewitOoutTax=0.0;
+  var overallTotalPrice=0.0;
   List<CartItems> cartList = [];
 
   Order finalOrder;
@@ -47,24 +47,27 @@ class _POSMainScreenState extends State<POSMainScreen> {
   List<Map> orderitem1 = [];
   List<Tax> orderTaxes=[];
   dynamic ordersList;
-  List<dynamic> toppingList = [], orderItems = [];
+  List<dynamic> toppingList = [], orderItems = [],priorities=[];
   List<String> topping = [];
   double totalprice = 0.00, applyVoucherPrice;
   TextEditingController addnotes, applyVoucher;
   String orderType;
   int orderTypeId;
   var voucherValidity;
-  List orderTypeList = ["Dine-In", "TakeAway"];
+  var selectedOrderType,selectedOrderTypeId,selectedPriority,selectedPriorityId,selectedWaiter,selectedWaiterId;
+  TextEditingController timePickerField;
+  List orderTypeList = ["Dine-In", "TakeAway","Home Delivery"];
 
   @override
   void initState() {
+    timePickerField=TextEditingController();
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeRight,
       DeviceOrientation.landscapeLeft,
     ]);
     Utils.check_connectivity().then((isConnected) {
       if (isConnected) {
-        Network_Operations.getSubcategories(context, widget.storeId)
+        Network_Operations.getCategories(context, widget.storeId)
             .then((sub) {
           setState(() {
             if (sub != null && sub.length > 0) {
@@ -72,7 +75,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
               categoryName = subCategories[0].name;
               Network_Operations.getProduct(
                       context,
-                      subCategories[0].categoryId,
                       subCategories[0].id,
                       widget.storeId,
                       "")
@@ -104,25 +106,18 @@ class _POSMainScreenState extends State<POSMainScreen> {
                       }
                     });
                   });
+                  Network_Operations.getOrderPriorityDropDown(context, widget.storeId).then((orderPriorities){
+                    setState(() {
+                      if(orderPriorities!=null&&orderPriorities.length>0)
+                      this.priorities=orderPriorities;
+                    });
+                  });
                   Network_Operations.getTaxListByStoreId(context,widget.storeId).then((taxes){
                     setState(() {
                       this.orderTaxes=taxes;
                       sqlite_helper().gettotal().then((value){
                         setState(() {
                           overallTotalPrice=value[0]["SUM(totalPrice)"];
-                          overallTotalPricewitOoutTax=value[0]["SUM(totalPrice)"];
-                          var taxes=orderTaxes.where((element) => element.takeAway);
-                          if(taxes!=null&&taxes.length>0) {
-                            for (var t in taxes.toList()) {
-                              if(t.price!=null&&t.price!=0.0){
-                                overallTotalPrice=overallTotalPrice+t.price;
-                              }else if(t.percentage!=null&&t.percentage!=0.0){
-                                var percentTax=t.percentage/100*overallTotalPrice;
-                                overallTotalPrice=overallTotalPrice+percentTax;
-                              }
-                            }
-                          }
-
                         });
                       });
                     });
@@ -208,8 +203,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                               Network_Operations.getProduct(
                                                       context,
                                                       subCategories[index]
-                                                          .categoryId,
-                                                      subCategories[index].id,
+                                                          .id,
                                                       widget.storeId,
                                                       "")
                                                   .then((p) {
@@ -352,7 +346,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 Container(
                                     //color: Colors.teal,
                                     width: MediaQuery.of(context).size.width,
-                                    height: 460,
+                                    height: 500,
                                     child: selectedMenuType == "Products" ||
                                             selectedMenuType == null
                                         ?
@@ -373,7 +367,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                               children: [
                                 Container(
                                   width: MediaQuery.of(context).size.width,
-                                  height: 40,
+                                  height: 60,
                                   color: yellowColor,
                                   child: Center(
                                     child: Text(
@@ -388,7 +382,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 Container(
                                   //color: Colors.teal,
                                   width: MediaQuery.of(context).size.width,
-                                  height: 410,
+                                  height: 480,
                                   child: cartListLayout(),
                                 ),
                              //    Container(
@@ -536,255 +530,241 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 Container(
                                   color: Colors.white,
                                   width: MediaQuery.of(context).size.width,
-                                  height: 330,
+                                  height: 230,
                                   child: Column(
                                     children: [
+                                      Column(
+                                        children: [
+
+                                          Container(
+                                            color: blueColor,
+                                            width: MediaQuery.of(context)
+                                                .size
+                                                .width,
+                                            height: 70,
+                                            child: Padding(
+                                              padding:
+                                                  const EdgeInsets.all(8.0),
+                                              child: Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Text(
+                                                    "TOTAL: ",
+                                                    style: TextStyle(
+                                                        fontSize: 25,
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight
+                                                                .bold),
+                                                  ),
+                                                  Row(
+                                                    children: [
+                                                      Text(
+                                                        "Rs: ",
+                                                        style: TextStyle(
+                                                            fontSize: 25,
+                                                            color: Colors
+                                                                .white,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                      SizedBox(
+                                                        width: 2,
+                                                      ),
+                                                      Text(
+                                                        overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
+                                                        style: TextStyle(
+                                                            fontSize: 25,
+                                                            color: Colors
+                                                                .white,
+                                                            fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      // Card(
+                                      //   elevation: 12,
+                                      //   child: InkWell(
+                                      //     onTap: () {
+                                      //       showDialog(context: context, builder:(BuildContext context){
+                                      //         return orderPopupHorizontal();
+                                      //       });
+                                      //     },
+                                      //     child: Container(
+                                      //       width: MediaQuery.of(context)
+                                      //               .size
+                                      //               .width -
+                                      //           200,
+                                      //       height: 60,
+                                      //       decoration: BoxDecoration(
+                                      //           color: yellowColor,
+                                      //           borderRadius:
+                                      //               BorderRadius.circular(8)),
+                                      //       child: Center(
+                                      //         child: Text(
+                                      //           "Create An Order ",
+                                      //           style: TextStyle(
+                                      //               fontSize: 25,
+                                      //               color: Colors.white,
+                                      //               fontWeight: FontWeight.bold),
+                                      //         ),
+                                      //       ),
+                                      //     ),
+                                      //   ),
+                                      // ),
+                                      // SizedBox(height: 10,),
+                                      // Card(
+                                      //   elevation: 12,
+                                      //   child: InkWell(
+                                      //     onTap: () {
+                                      //       showDialog(context: context, builder:(BuildContext context){
+                                      //         return Dialog(
+                                      //           //backgroundColor: Colors.transparent,
+                                      //             child: Container(
+                                      //                 height:MediaQuery.of(context).size.height -70,
+                                      //                 width: MediaQuery.of(context).size.width / 3,
+                                      //                 child:
+                                      //                 //finalizingOrderPopUpHorizontal()
+                                      //                 finalizingOrderPopUp()
+                                      //             )
+                                      //         );
+                                      //       });
+                                      //     },
+                                      //     child: Container(
+                                      //       width: MediaQuery.of(context)
+                                      //           .size
+                                      //           .width -
+                                      //           200,
+                                      //       height: 60,
+                                      //       decoration: BoxDecoration(
+                                      //           color: yellowColor,
+                                      //           borderRadius:
+                                      //           BorderRadius.circular(8)),
+                                      //       child: Center(
+                                      //         child: Text(
+                                      //           "Make Payment",
+                                      //           style: TextStyle(
+                                      //               fontSize: 25,
+                                      //               color: Colors.white,
+                                      //               fontWeight: FontWeight.bold),
+                                      //         ),
+                                      //       ),
+                                      //     ),
+                                      //   ),
+                                      // ),
                                       Container(
-                                        width:
-                                            MediaQuery.of(context).size.width,
-                                        height: 40,
+                                        width: MediaQuery.of(context).size.width,
+                                        height: 60,
                                         color: yellowColor,
                                         child: Center(
                                           child: Text(
-                                            "Order Summary",
+                                            "Create Order",
                                             style: TextStyle(
-                                                fontSize: 22,
+                                                fontSize: 25,
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.bold),
                                           ),
                                         ),
                                       ),
-                                      Container(
-                                          width:
-                                              MediaQuery.of(context).size.width,
-                                          height: 210,
-                                          color: blueColor,
-                                          child: Column(
-                                            children: [
-                                              Container(
-                                                width: MediaQuery.of(context)
-                                                    .size
-                                                    .width,
-                                                height: 140,
-                                                color: Colors.white,
-                                                child: ListView(
-                                                  children: [
-                                                    Card(
-                                                      elevation: 8,
-                                                      child: Container(
-                                                        width: MediaQuery.of(
-                                                                context)
-                                                            .size
-                                                            .width,
-                                                        height: 60,
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(8.0),
-                                                          child: Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: [
-                                                              Text(
-                                                                "SubTotal: ",
-                                                                style: TextStyle(
-                                                                    fontSize:
-                                                                        25,
-                                                                    color:
-                                                                        yellowColor,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold),
-                                                              ),
-                                                              Row(
-                                                                children: [
-                                                                  Text(
-                                                                    "Rs: ",
-                                                                    style: TextStyle(
-                                                                        fontSize:
-                                                                            25,
-                                                                        color:
-                                                                            yellowColor,
-                                                                        fontWeight:
-                                                                            FontWeight.bold),
-                                                                  ),
-                                                                  SizedBox(
-                                                                    width: 2,
-                                                                  ),
-                                                                  Text(
-                                                                    overallTotalPricewitOoutTax!=null?overallTotalPricewitOoutTax.toString()+"/-":"0.0/-",
-                                                                    style: TextStyle(
-                                                                        fontSize:
-                                                                            25,
-                                                                        color:
-                                                                            blueColor,
-                                                                        fontWeight:
-                                                                            FontWeight.bold),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    Card(
-                                                      elevation: 6,
-                                                      child: Container(
-                                                        width: MediaQuery.of(
-                                                                context)
-                                                            .size
-                                                            .width,
-                                                        height: 60,
-                                                        child: Padding(
-                                                          padding:
-                                                              const EdgeInsets
-                                                                  .all(8.0),
-                                                          child: Row(
-                                                            mainAxisAlignment:
-                                                                MainAxisAlignment
-                                                                    .spaceBetween,
-                                                            children: [
-                                                              Text(
-                                                                "Tax: ",
-                                                                style: TextStyle(
-                                                                    fontSize:
-                                                                        25,
-                                                                    color:
-                                                                        yellowColor,
-                                                                    fontWeight:
-                                                                        FontWeight
-                                                                            .bold),
-                                                              ),
-                                                              Row(
-                                                                children: [
-                                                                  Text(
-                                                                    "Rs: ",
-                                                                    style: TextStyle(
-                                                                        fontSize:
-                                                                            25,
-                                                                        color:
-                                                                            yellowColor,
-                                                                        fontWeight:
-                                                                            FontWeight.bold),
-                                                                  ),
-                                                                  SizedBox(
-                                                                    width: 2,
-                                                                  ),
-                                                                  Text(
-                                                                    "120/- ",
-                                                                    style: TextStyle(
-                                                                        fontSize:
-                                                                            25,
-                                                                        color:
-                                                                            blueColor,
-                                                                        fontWeight:
-                                                                            FontWeight.bold),
-                                                                  ),
-                                                                ],
-                                                              ),
-                                                            ],
-                                                          ),
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                              Container(
-                                                color: blueColor,
-                                                width: MediaQuery.of(context)
-                                                    .size
-                                                    .width,
-                                                height: 70,
-                                                child: Padding(
-                                                  padding:
-                                                      const EdgeInsets.all(8.0),
-                                                  child: Row(
-                                                    mainAxisAlignment:
-                                                        MainAxisAlignment
-                                                            .spaceBetween,
-                                                    children: [
-                                                      Text(
-                                                        "TOTAL: ",
-                                                        style: TextStyle(
-                                                            fontSize: 25,
-                                                            color: Colors.white,
-                                                            fontWeight:
-                                                                FontWeight
-                                                                    .bold),
-                                                      ),
-                                                      Row(
-                                                        children: [
-                                                          Text(
-                                                            "Rs: ",
-                                                            style: TextStyle(
-                                                                fontSize: 25,
-                                                                color: Colors
-                                                                    .white,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold),
-                                                          ),
-                                                          SizedBox(
-                                                            width: 2,
-                                                          ),
-                                                          Text(
-                                                            overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
-                                                            style: TextStyle(
-                                                                fontSize: 25,
-                                                                color: Colors
-                                                                    .white,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .bold),
-                                                          ),
-                                                        ],
-                                                      ),
-                                                    ],
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          )),
-                                      Card(
-                                        elevation: 12,
-                                        child: InkWell(
-                                          onTap: () {
-                                            showDialog(context: context, builder:(BuildContext context){
-                                              return Dialog(
-                                                //backgroundColor: Colors.transparent,
-                                                  child: Container(
-                                                      height:MediaQuery.of(context).size.height -200,
-                                                      width: MediaQuery.of(context).size.width / 3,
-                                                      child: finalizingOrderPopUp()
-                                                  )
-                                              );
-                                            });
-                                          },
-                                          child: Container(
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width -
-                                                200,
-                                            height: 60,
-                                            decoration: BoxDecoration(
+                                      SizedBox(height: 8,),
+                                      Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                        children: [
+                                          InkWell(
+                                                onTap: () {
+
+                                                },
+                                            child: Container(
+                                              width: 160,
+                                              height: 70,
+                                              decoration: BoxDecoration(
                                                 color: yellowColor,
-                                                borderRadius:
-                                                    BorderRadius.circular(8)),
-                                            child: Center(
-                                              child: Text(
-                                                "Create An Order ",
-                                                style: TextStyle(
-                                                    fontSize: 25,
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold),
+                                                borderRadius: BorderRadius.circular(8)
+                                              ),
+                                              child: Center(
+                                                child: Text(
+                                                  "Dine-In",
+                                                  style: TextStyle(
+                                                      fontSize: 25,
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.bold),
+                                                ),
                                               ),
                                             ),
                                           ),
-                                        ),
+                                          InkWell(
+                                                onTap: () {
+                                                  showDialog(context: context, builder:(BuildContext context){
+                                                    return Dialog(
+                                                        child: Container(
+                                                            height:MediaQuery.of(context).size.height/1.68,
+                                                            width: MediaQuery.of(context).size.width/2,
+                                                            child: orderPopupHorizontalTakeAway()
+                                                        )
+                                                    );
+                                                  });
+                                                },
+                                            child: Container(
+                                              width: 160,
+                                              height: 70,
+                                              decoration: BoxDecoration(
+                                                  color: yellowColor,
+                                                  borderRadius: BorderRadius.circular(8)
+                                              ),
+                                              child: Center(
+                                                child: Text(
+                                                  "Take-Away",
+                                                  style: TextStyle(
+                                                      fontSize: 25,
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.bold),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          InkWell(
+                                                onTap: () {
+                                                  showDialog(context: context, builder:(BuildContext context){
+                                                    return Dialog(
+                                                        child: Container(
+                                                            height:MediaQuery.of(context).size.height/1.68,
+                                                            width: MediaQuery.of(context).size.width/2,
+                                                            child: orderPopupHorizontalDelivery()
+                                                        )
+                                                    );
+                                                  });
+                                                },
+                                            child: Container(
+                                              width: 160,
+                                              height: 70,
+                                              decoration: BoxDecoration(
+                                                  color: yellowColor,
+                                                  borderRadius: BorderRadius.circular(8)
+                                              ),
+                                              child: Center(
+                                                child: Text(
+                                                  "Delivery",
+                                                  style: TextStyle(
+                                                      fontSize: 25,
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.bold),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
                                       ),
+
                                     ],
                                   ),
                                 )
@@ -1012,7 +992,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                     : "",
                                 style: TextStyle(
                                     color: yellowColor,
-                                    fontSize: 20,
+                                    fontSize: 25,
                                     fontWeight: FontWeight.bold),
                               ),
                             ),
@@ -1022,7 +1002,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             IconButton(
-                                icon: Icon(Icons.delete),
+                                icon: Icon(Icons.delete_forever, color: Colors.red, size: 35,),
                                 color: PrimaryColor,
                                 onPressed: () {
                                   print(cartList[index].id);
@@ -1038,25 +1018,11 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                   sqlite_helper().gettotal().then((value){
                                     setState(() {
                                       overallTotalPrice=value[0]["SUM(totalPrice)"];
-                                      overallTotalPricewitOoutTax=value[0]["SUM(totalPrice)"];
-                                      var taxes=orderTaxes.where((element) => element.takeAway);
-                                      if(taxes!=null&&taxes.length>0) {
-                                        for (var t in taxes.toList()) {
-                                          if(t.price!=null&&t.price!=0.0){
-                                            overallTotalPrice=overallTotalPrice+t.price;
-                                          }else if(t.percentage!=null&&t.percentage!=0.0){
-                                            var percentTax=t.percentage/100*overallTotalPrice;
-                                            print("Percent Tax "+percentTax.toString());
-                                            overallTotalPrice=overallTotalPrice+percentTax;
-                                          }
-                                        }
-                                      }
-
                                     });
                                   });
                                 }),
                             IconButton(
-                                icon: Icon(Icons.edit),
+                                icon: Icon(Icons.edit, size: 35,),
                                 color: PrimaryColor,
                                 onPressed: () {
                                   print(cartList[index].id.toString());
@@ -1192,7 +1158,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                               "Price",
                               style: TextStyle(
                                   color: yellowColor,
-                                  fontSize: 20,
+                                  fontSize: 25,
                                   fontWeight: FontWeight.bold),
                             ),
                           ),
@@ -1246,7 +1212,8 @@ class _POSMainScreenState extends State<POSMainScreen> {
     }
     return Scaffold(
       backgroundColor: Colors.white.withOpacity(0.1),
-      body: StatefulBuilder(builder: (thisLowerContext, innerSetState) {
+      body: StatefulBuilder(
+          builder: (thisLowerContext, innerSetState) {
         if (deal != null) {
           innerSetState(() {
             price = deal["price"];
@@ -1492,19 +1459,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                           sqlite_helper().gettotal().then((value){
                             setState(() {
                               overallTotalPrice=value[0]["SUM(totalPrice)"];
-                              overallTotalPricewitOoutTax=value[0]["SUM(totalPrice)"];
-                              var taxes=orderTaxes.where((element) => element.takeAway);
-                              if(taxes!=null&&taxes.length>0) {
-                                for (var t in taxes.toList()) {
-                                  if(t.price!=null&&t.price!=0.0){
-                                    overallTotalPrice=overallTotalPrice+t.price;
-                                  }else if(t.percentage!=null&&t.percentage!=0.0){
-                                    var percentTax=t.percentage/100*overallTotalPrice;
-                                    overallTotalPrice=overallTotalPrice+percentTax;
-                                  }
-                                }
-                              }
-
                             });
                           });
                         });
@@ -1540,19 +1494,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                               sqlite_helper().gettotal().then((value){
                                 setState(() {
                                   overallTotalPrice=value[0]["SUM(totalPrice)"];
-                                  overallTotalPricewitOoutTax=value[0]["SUM(totalPrice)"];
-                                  var taxes=orderTaxes.where((element) => element.takeAway);
-                                  if(taxes!=null&&taxes.length>0) {
-                                    for (var t in taxes.toList()) {
-                                      if(t.price!=null&&t.price!=0.0){
-                                        overallTotalPrice=overallTotalPrice+t.price;
-                                      }else if(t.percentage!=null&&t.percentage!=0.0){
-                                        var percentTax=t.percentage/100*overallTotalPrice;
-                                        overallTotalPrice=overallTotalPrice+percentTax;
-                                      }
-                                    }
-                                  }
-
                                 });
                               });
                             });
@@ -1596,285 +1537,1632 @@ class _POSMainScreenState extends State<POSMainScreen> {
     );
   }
 
-  Widget finalizingOrderPopUp(){
+  Widget orderPopupHorizontalDelivery(){
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-            image: DecorationImage(
-              fit: BoxFit.cover,
-              //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
-              image: AssetImage('assets/bb.jpg'),
-            )
-        ),
-        height:MediaQuery.of(context).size.height -200,
-        width: MediaQuery.of(context).size.width / 3,
-        child: Column(
-
-          children: [
-            Container(
-              width:
-              MediaQuery.of(context).size.width,
-              height: 50,
-              color: yellowColor,
-              child: Center(
-                child: Text(
-                  "Order Summary",
-                  style: TextStyle(
-                      fontSize: 22,
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold),
-                ),
-              ),
+      backgroundColor: Colors.white.withOpacity(0.1),
+      body: Center(
+        child: Container(
+            height:MediaQuery.of(context).size.height/1.68,
+            width: MediaQuery.of(context).size.width/2,
+            decoration: BoxDecoration(
+                image: DecorationImage(
+                  fit: BoxFit.cover,
+                  //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
+                  image: AssetImage('assets/bb.jpg'),
+                )
             ),
-            ///Order Type
-            Padding(
-              padding: const EdgeInsets.all(12.0),
-              child: DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  labelText: "Order Type",
+            child: ListView(
+              children: [
+                Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: DropdownButtonFormField<String>(
+                              decoration: InputDecoration(
+                                labelText: "Select Type",
+                                alignLabelWithHint: true,
+                                labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                enabledBorder: OutlineInputBorder(
+                                ),
+                                focusedBorder:  OutlineInputBorder(
+                                  borderSide: BorderSide(color:yellowColor),
+                                ),
+                              ),
 
-                  alignLabelWithHint: true,
-                  labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                  enabledBorder: OutlineInputBorder(
-                  ),
-                  focusedBorder:  OutlineInputBorder(
-                    borderSide: BorderSide(color:yellowColor),
-                  ),
-                ),
-
-                value: orderType,
-                onChanged: (Value) {
-                  setState(() {
-                    orderType = Value;
-                    orderTypeId = orderTypeList.indexOf(orderType)+1;
-                    print(orderTypeId);
-                  });
-                  //taxList.clear();
-                  // networksOperation.getTaxListByStoreIdWithOrderType(context, widget.storeId, orderType=="Dine In"?1:orderType=="Take Away"?2:orderType=="Delivery"?3:0).then((value) {
-                  //   setState(() {
-                  //     taxList = value;
-                  //     print(taxList.toString()+"mnbvcxz");
-                  //     totalPercentage=0.0;
-                  //     totalTaxPrice =0.0;
-                  //     orderTaxList.clear();
-                  //     for(int i=0;i<taxList.length;i++){
-                  //       totalTaxPrice += taxList[i].price;
-                  //       totalPercentage += taxList[i].percentage;
-                  //       orderTaxList.add({
-                  //         "TaxId": taxList[i].id
-                  //       });
-                  //     }
-                  //     print(orderTaxList.toString());
-                  //   });
-                  // });
-                },
-                items: orderTypeList.map((value) {
-                  return  DropdownMenuItem<String>(
-                    value: value,
-                    child: Row(
-                      children: <Widget>[
-                        Text(
-                          value,
-                          style:  TextStyle(color: yellowColor,fontSize: 13),
-                        ),
-                        //user.icon,
-                        //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                      ],
-                    ),
-                  );
-                }).toList(),
-              ),
-            ),
-            ///Set Tables & Chairs
-            // Visibility(
-            //   visible: orderType=="Dine In",
-            //   child: Card(
-            //     elevation: 5,
-            //     //color: Colors.white24,
-            //     child: Container(
-            //       decoration: BoxDecoration(
-            //           color:BackgroundColor,
-            //           borderRadius: BorderRadius.circular(9),
-            //           border: Border.all(color: yellowColor, width: 2)
-            //       ),
-            //       width: MediaQuery.of(context).size.width*0.98,
-            //       padding: EdgeInsets.all(14),
-            //       child: DropdownButtonFormField<String>(
-            //         decoration: InputDecoration(
-            //           labelText: " Tables ",
-            //
-            //           alignLabelWithHint: true,
-            //           labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color: yellowColor),
-            //           enabledBorder: OutlineInputBorder(
-            //             // borderSide: BorderSide(color:
-            //             // Colors.white),
-            //           ),
-            //           focusedBorder:  OutlineInputBorder(
-            //             borderSide: BorderSide(color:
-            //             yellowColor),
-            //           ),
-            //         ),
-            //
-            //         // hint:  Text(translate('add_to_cart_screen.sauce')),
-            //         value: tableName,
-            //         // onSaved:(Value){
-            //         //     orderType = Value;
-            //         //     orderTypeId = orderTypeList.indexOf(orderTypeId);
-            //         // },
-            //         onChanged: (Value) {
-            //           setState(() {
-            //             tableName = Value;
-            //             tableId = tableDDList.indexOf(tableName);
-            //           });
-            //           networksOperation.getChairsListByTable(context, allTableList[tableId]['id']).then((value) {
-            //
-            //             if(value!=null){
-            //               countList.clear();
-            //               allChairList.clear();
-            //               for(int i=0;i<value.length;i++){
-            //                 countList.add(value[i]['name']);
-            //                 allChairList.add(value[i]);
-            //
-            //               }
-            //             }else{
-            //
-            //             }
-            //
-            //           });
-            //         },
-            //         items: tableDDList.map((value) {
-            //           return  DropdownMenuItem<String>(
-            //             value: value,
-            //             child: Row(
-            //               children: <Widget>[
-            //                 Text(
-            //                   value,
-            //                   style:  TextStyle(color: yellowColor,fontSize: 15, fontWeight: FontWeight.bold),
-            //                 ),
-            //                 //user.icon,
-            //                 //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-            //               ],
-            //             ),
-            //           );
-            //         }).toList(),
-            //       ),
-            //     ),
-            //   ),
-            // ),
-            // Visibility(
-            //   visible:   countList.length>0 && orderType =="Dine In",
-            //   child: Card(
-            //     elevation: 5,
-            //     color: BackgroundColor,
-            //     child: InkWell(
-            //       onTap: () async{
-            //         _openFilterDialog();
-            //       },
-            //       child: InputDecorator(
-            //         decoration: InputDecoration(
-            //           contentPadding: EdgeInsets.all(25),
-            //           filled: true,
-            //           errorMaxLines: 4,
-            //         ),
-            //         child: Column(
-            //           crossAxisAlignment: CrossAxisAlignment.start,
-            //           children: <Widget>[
-            //             Row(
-            //               crossAxisAlignment: CrossAxisAlignment.start,
-            //               children: <Widget>[
-            //                 Expanded(
-            //                     child: Text(
-            //                       'Select Chairs For Order',
-            //                       style: TextStyle(fontSize: 15.0, color:yellowColor,fontWeight: FontWeight.bold),
-            //                     )),
-            //                 Icon(
-            //                   Icons.arrow_drop_down,
-            //                   color: Colors.black87,
-            //                   size: 25.0,
-            //                 ),
-            //               ],
-            //             ),
-            //             orderSelectedChairsList != null && orderSelectedChairsList.length > 0
-            //                 ? Wrap(
-            //               spacing: 8.0,
-            //               runSpacing: 0.0,
-            //               children: chairChips,
-            //             )
-            //                 : new Container(
-            //               padding: EdgeInsets.only(top: 4),
-            //               child: Text(
-            //                 'No Chairs selected',
-            //                 style: TextStyle(
-            //                   fontSize: 16,
-            //                   color: PrimaryColor,
-            //                 ),
-            //               ),
-            //             )
-            //           ],
-            //         ),
-            //       ),
-            //     ),
-            //   ),
-            // ),
-            ///Adding Voucher
-            Padding(
-              padding: const EdgeInsets.all(8.0),
-              child: Card(
-                child: Container(
-                  width: MediaQuery.of(context).size.width,
-                  height: 70,
-                  child: Padding(
-                    padding: const EdgeInsets.all(2.0),
-                    child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: <Widget>[
-                        SizedBox(
-                          height: 30,
-                          width: 170,
-                          child: TextField(
-                            controller: applyVoucher,
-                            style: TextStyle(color: yellowColor),
-                            decoration: InputDecoration(
-                              hintText: "Voucher Code",hintStyle: TextStyle(color: yellowColor),
+                              value: orderType,
+                              onChanged: (Value) {
+                                setState(() {
+                                  this.selectedOrderType = Value;
+                                  orderTypeId = orderTypeList.indexOf(orderType)+1;
+                                  print(orderTypeId);
+                                });
+                                //taxList.clear();
+                                // networksOperation.getTaxListByStoreIdWithOrderType(context, widget.storeId, orderType=="Dine In"?1:orderType=="Take Away"?2:orderType=="Delivery"?3:0).then((value) {
+                                //   setState(() {
+                                //     taxList = value;
+                                //     print(taxList.toString()+"mnbvcxz");
+                                //     totalPercentage=0.0;
+                                //     totalTaxPrice =0.0;
+                                //     orderTaxList.clear();
+                                //     for(int i=0;i<taxList.length;i++){
+                                //       totalTaxPrice += taxList[i].price;
+                                //       totalPercentage += taxList[i].percentage;
+                                //       orderTaxList.add({
+                                //         "TaxId": taxList[i].id
+                                //       });
+                                //     }
+                                //     print(orderTaxList.toString());
+                                //   });
+                                // });
+                              },
+                              items: orderTypeList.map((value) {
+                                return  DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Row(
+                                    children: <Widget>[
+                                      Text(
+                                        value,
+                                        style:  TextStyle(color: yellowColor,fontSize: 13),
+                                      ),
+                                      //user.icon,
+                                      //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
                             ),
                           ),
                         ),
-                        Row(
-                          children: <Widget>[
-                            //FaIcon(FontAwesomeIcons.dollarSign, color: Colors.amberAccent, size: 30,),
-                            InkWell(
-                              // onTap: () {
-                              //   print(applyVoucher.text);
-                              //
-                              //   voucherValidity =null;
-                              //   networksOperation.checkVoucherValidity(context, applyVoucher.text, totalprice).then((value){
-                              //     setState(() {
-                              //       applyVoucher.text="";
-                              //       voucherValidity = value;
-                              //       voucherVisiblity =true;
-                              //
-                              //     });
-                              //   });
-                              //   print(voucherVisiblity);
-                              // },
-                              child: Container(
-                                // width: 70,
-                                height: 50,
-                                decoration: BoxDecoration(
-                                  color: yellowColor,
-                                  borderRadius: BorderRadius.circular(8)
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: DropdownButtonFormField<dynamic>(
+                              decoration: InputDecoration(
+                                labelText: "Order Priority",
+                                labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                enabledBorder: OutlineInputBorder(
                                 ),
-                                child: Center(
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(3.0),
-                                    child: Text("Apply Voucher", style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.bold
+                                focusedBorder:  OutlineInputBorder(
+                                  borderSide: BorderSide(color:yellowColor),
+                                ),
+                              ),
+
+                              value: priorities[0]["name"],
+                              onChanged: (Value) {
+                                setState(() {
+                                  selectedPriority=Value["name"];
+                                  selectedPriorityId=Value["id"];
+
+                                });
+                              },
+                              items: priorities.map((value) {
+                                return  DropdownMenuItem<String>(
+                                  value: value["name"],
+                                  child: Row(
+                                    children: <Widget>[
+                                      Text(
+                                        value["name"],
+                                        style:  TextStyle(color: yellowColor,fontSize: 13),
+                                      ),
+                                      //user.icon,
+                                      //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Container(
+                              width: MediaQuery.of(context).size.width,
+                              height: 70,
+                              child: Padding(
+                                padding: const EdgeInsets.all(6.0),
+                                child: TextFormField(
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    hintText: "Name",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Container(
+                              width: MediaQuery.of(context).size.width,
+                              height: 70,
+                              child: Padding(
+                                padding: const EdgeInsets.all(6.0),
+                                child: TextFormField(
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    hintText: "Email",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: TextFormField(
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                                hintText: "Phone#",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Container(
+                              width: MediaQuery.of(context).size.width,
+                              height: 70,
+                              child: Padding(
+                                padding: const EdgeInsets.all(6.0),
+                                child: TextFormField(
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    hintText: "Address",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: DropdownButtonFormField<String>(
+                                  decoration: InputDecoration(
+                                    labelText: "Select Type",
+                                    alignLabelWithHint: true,
+                                    labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                    enabledBorder: OutlineInputBorder(
                                     ),
+                                    focusedBorder:  OutlineInputBorder(
+                                      borderSide: BorderSide(color:yellowColor),
+                                    ),
+                                  ),
+
+                                  value: orderType,
+                                  onChanged: (Value) {
+                                    setState(() {
+                                      this.selectedOrderType = Value;
+                                      orderTypeId = orderTypeList.indexOf(orderType)+1;
+                                      print(orderTypeId);
+                                    });
+                                    //taxList.clear();
+                                    // networksOperation.getTaxListByStoreIdWithOrderType(context, widget.storeId, orderType=="Dine In"?1:orderType=="Take Away"?2:orderType=="Delivery"?3:0).then((value) {
+                                    //   setState(() {
+                                    //     taxList = value;
+                                    //     print(taxList.toString()+"mnbvcxz");
+                                    //     totalPercentage=0.0;
+                                    //     totalTaxPrice =0.0;
+                                    //     orderTaxList.clear();
+                                    //     for(int i=0;i<taxList.length;i++){
+                                    //       totalTaxPrice += taxList[i].price;
+                                    //       totalPercentage += taxList[i].percentage;
+                                    //       orderTaxList.add({
+                                    //         "TaxId": taxList[i].id
+                                    //       });
+                                    //     }
+                                    //     print(orderTaxList.toString());
+                                    //   });
+                                    // });
+                                  },
+                                  items: orderTypeList.map((value) {
+                                    return  DropdownMenuItem<String>(
+                                      value: value,
+                                      child: Row(
+                                        children: <Widget>[
+                                          Text(
+                                            value,
+                                            style:  TextStyle(color: yellowColor,fontSize: 13),
+                                          ),
+                                          //user.icon,
+                                          //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                              Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Container(
+                                  width: MediaQuery.of(context).size.width,
+                                  height: 70,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(6.0),
+                                    child: TextFormField(
+                                      decoration: InputDecoration(
+                                        border: OutlineInputBorder(),
+                                        hintText: "Name",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                      ),
                                     ),
                                   ),
                                 ),
                               ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Container(
+                                width: MediaQuery.of(context).size.width,
+                                height: 40,
+                                color: yellowColor,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                    MainAxisAlignment
+                                        .spaceBetween,
+                                    children: [
+                                      Text(
+                                        "SubTotal: ",
+                                        style: TextStyle(
+                                            fontSize:
+                                            25,
+                                            color:
+                                            Colors.white,
+                                            fontWeight:
+                                            FontWeight
+                                                .bold),
+                                      ),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            "Rs: ",
+                                            style: TextStyle(
+                                                fontSize:
+                                                25,
+                                                color:
+                                                Colors.white,
+                                                fontWeight:
+                                                FontWeight.bold),
+                                          ),
+                                          SizedBox(
+                                            width: 2,
+                                          ),
+                                          Text(
+                                            overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
+                                            style: TextStyle(
+                                                fontSize:
+                                                25,
+                                                color:
+                                                blueColor,
+                                                fontWeight:
+                                                FontWeight.bold),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(2.0),
+                                child: Container(
+                                    width: MediaQuery.of(
+                                        context)
+                                        .size
+                                        .width,
+                                    height: 90,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: yellowColor),
+                                      //borderRadius: BorderRadius.circular(8)
+                                    ),
+
+                                    child: ListView.builder(itemCount: 2,itemBuilder: (context, index){
+                                      return  Padding(
+                                        padding:
+                                        const EdgeInsets
+                                            .all(8.0),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                          MainAxisAlignment
+                                              .spaceBetween,
+                                          children: [
+                                            Text(
+                                              "SubTotal: ",
+                                              style: TextStyle(
+                                                  fontSize:
+                                                  25,
+                                                  color:
+                                                  yellowColor,
+                                                  fontWeight:
+                                                  FontWeight
+                                                      .bold),
+                                            ),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  "Rs: ",
+                                                  style: TextStyle(
+                                                      fontSize:
+                                                      25,
+                                                      color:
+                                                      yellowColor,
+                                                      fontWeight:
+                                                      FontWeight.bold),
+                                                ),
+                                                SizedBox(
+                                                  width: 2,
+                                                ),
+                                                Text(
+                                                  overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
+                                                  style: TextStyle(
+                                                      fontSize:
+                                                      25,
+                                                      color:
+                                                      blueColor,
+                                                      fontWeight:
+                                                      FontWeight.bold),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    })
+                                ),
+                              ),
+                              Container(
+                                width: MediaQuery.of(context).size.width,
+                                height: 50,
+                                color: yellowColor,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                    MainAxisAlignment
+                                        .spaceBetween,
+                                    children: [
+                                      Text(
+                                        "Total: ",
+                                        style: TextStyle(
+                                            fontSize:
+                                            25,
+                                            color:
+                                            Colors.white,
+                                            fontWeight:
+                                            FontWeight
+                                                .bold),
+                                      ),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            "Rs: ",
+                                            style: TextStyle(
+                                                fontSize:
+                                                25,
+                                                color:
+                                                Colors.white,
+                                                fontWeight:
+                                                FontWeight.bold),
+                                          ),
+                                          SizedBox(
+                                            width: 2,
+                                          ),
+                                          Text(
+                                            overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
+                                            style: TextStyle(
+                                                fontSize:
+                                                25,
+                                                color:
+                                                blueColor,
+                                                fontWeight:
+                                                FontWeight.bold),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Card(
+                        elevation:8,
+                        child: Container(
+                          width: 400,
+                          height: 60,
+                          decoration: BoxDecoration(
+                              color: yellowColor,
+                              borderRadius: BorderRadius.circular(4)
+                          ),
+                          child: Center(
+                            child: Text(
+                              "Submit Order",
+                              style: TextStyle(
+                                  fontSize: 25,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            )
+        ),
+      ),
+    );
+  }
+  Widget orderPopupHorizontalTakeAway(){
+    return Scaffold(
+      backgroundColor: Colors.white.withOpacity(0.1),
+      body: Center(
+        child: Container(
+            height:MediaQuery.of(context).size.height/1.68,
+            width: MediaQuery.of(context).size.width/2,
+            decoration: BoxDecoration(
+                image: DecorationImage(
+                  fit: BoxFit.cover,
+                  //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
+                  image: AssetImage('assets/bb.jpg'),
+                )
+            ),
+            child: ListView(
+              children: [
+                Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: DropdownButtonFormField<String>(
+                              decoration: InputDecoration(
+                                labelText: "Select Type",
+                                alignLabelWithHint: true,
+                                labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                enabledBorder: OutlineInputBorder(
+                                ),
+                                focusedBorder:  OutlineInputBorder(
+                                  borderSide: BorderSide(color:yellowColor),
+                                ),
+                              ),
+
+                              value: orderType,
+                              onChanged: (Value) {
+                                setState(() {
+                                  this.selectedOrderType = Value;
+                                  orderTypeId = orderTypeList.indexOf(orderType)+1;
+                                  print(orderTypeId);
+                                });
+                                //taxList.clear();
+                                // networksOperation.getTaxListByStoreIdWithOrderType(context, widget.storeId, orderType=="Dine In"?1:orderType=="Take Away"?2:orderType=="Delivery"?3:0).then((value) {
+                                //   setState(() {
+                                //     taxList = value;
+                                //     print(taxList.toString()+"mnbvcxz");
+                                //     totalPercentage=0.0;
+                                //     totalTaxPrice =0.0;
+                                //     orderTaxList.clear();
+                                //     for(int i=0;i<taxList.length;i++){
+                                //       totalTaxPrice += taxList[i].price;
+                                //       totalPercentage += taxList[i].percentage;
+                                //       orderTaxList.add({
+                                //         "TaxId": taxList[i].id
+                                //       });
+                                //     }
+                                //     print(orderTaxList.toString());
+                                //   });
+                                // });
+                              },
+                              items: orderTypeList.map((value) {
+                                return  DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Row(
+                                    children: <Widget>[
+                                      Text(
+                                        value,
+                                        style:  TextStyle(color: yellowColor,fontSize: 13),
+                                      ),
+                                      //user.icon,
+                                      //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: DropdownButtonFormField<dynamic>(
+                              decoration: InputDecoration(
+                                labelText: "Order Priority",
+                                labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                enabledBorder: OutlineInputBorder(
+                                ),
+                                focusedBorder:  OutlineInputBorder(
+                                  borderSide: BorderSide(color:yellowColor),
+                                ),
+                              ),
+
+                              value: priorities[0]["name"],
+                              onChanged: (Value) {
+                                setState(() {
+                                  selectedPriority=Value["name"];
+                                  selectedPriorityId=Value["id"];
+
+                                });
+                              },
+                              items: priorities.map((value) {
+                                return  DropdownMenuItem<String>(
+                                  value: value["name"],
+                                  child: Row(
+                                    children: <Widget>[
+                                      Text(
+                                        value["name"],
+                                        style:  TextStyle(color: yellowColor,fontSize: 13),
+                                      ),
+                                      //user.icon,
+                                      //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Container(
+                              width: MediaQuery.of(context).size.width,
+                              height: 70,
+                              child: Padding(
+                                padding: const EdgeInsets.all(6.0),
+                                child: TextFormField(
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    hintText: "Name",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Container(
+                              width: MediaQuery.of(context).size.width,
+                              height: 70,
+                              child: Padding(
+                                padding: const EdgeInsets.all(6.0),
+                                child: TextFormField(
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    hintText: "Email",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: TextFormField(
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                                hintText: "Phone#",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                        ),
+
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: TextFormField(
+                                controller: timePickerField,
+                                decoration: InputDecoration(
+                                    labelText: "Select Picking Time",
+                                    border: OutlineInputBorder(),
+                                    hintText: "Select Picking Time"
+                                ),
+                                onTap: ()async{
+                                  FocusScope.of(context).requestFocus(new FocusNode());
+                                  var time = await showTimePicker(
+                                      context: context,
+                                      initialTime: TimeOfDay.now()
+                                  );
+
+                                },
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: DropdownButtonFormField<String>(
+                                  decoration: InputDecoration(
+                                    labelText: "Select Type",
+                                    alignLabelWithHint: true,
+                                    labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                    enabledBorder: OutlineInputBorder(
+                                    ),
+                                    focusedBorder:  OutlineInputBorder(
+                                      borderSide: BorderSide(color:yellowColor),
+                                    ),
+                                  ),
+
+                                  value: orderType,
+                                  onChanged: (Value) {
+                                    setState(() {
+                                      this.selectedOrderType = Value;
+                                      orderTypeId = orderTypeList.indexOf(orderType)+1;
+                                      print(orderTypeId);
+                                    });
+                                    //taxList.clear();
+                                    // networksOperation.getTaxListByStoreIdWithOrderType(context, widget.storeId, orderType=="Dine In"?1:orderType=="Take Away"?2:orderType=="Delivery"?3:0).then((value) {
+                                    //   setState(() {
+                                    //     taxList = value;
+                                    //     print(taxList.toString()+"mnbvcxz");
+                                    //     totalPercentage=0.0;
+                                    //     totalTaxPrice =0.0;
+                                    //     orderTaxList.clear();
+                                    //     for(int i=0;i<taxList.length;i++){
+                                    //       totalTaxPrice += taxList[i].price;
+                                    //       totalPercentage += taxList[i].percentage;
+                                    //       orderTaxList.add({
+                                    //         "TaxId": taxList[i].id
+                                    //       });
+                                    //     }
+                                    //     print(orderTaxList.toString());
+                                    //   });
+                                    // });
+                                  },
+                                  items: orderTypeList.map((value) {
+                                    return  DropdownMenuItem<String>(
+                                      value: value,
+                                      child: Row(
+                                        children: <Widget>[
+                                          Text(
+                                            value,
+                                            style:  TextStyle(color: yellowColor,fontSize: 13),
+                                          ),
+                                          //user.icon,
+                                          //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                        ],
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                              Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Container(
+                                  width: MediaQuery.of(context).size.width,
+                                  height: 70,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(6.0),
+                                    child: TextFormField(
+                                      decoration: InputDecoration(
+                                        border: OutlineInputBorder(),
+                                        hintText: "Name",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Expanded(
+                          child: Column(
+                            children: [
+                              Container(
+                                width: MediaQuery.of(context).size.width,
+                                height: 40,
+                                color: yellowColor,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                    MainAxisAlignment
+                                        .spaceBetween,
+                                    children: [
+                                      Text(
+                                        "SubTotal: ",
+                                        style: TextStyle(
+                                            fontSize:
+                                            25,
+                                            color:
+                                            Colors.white,
+                                            fontWeight:
+                                            FontWeight
+                                                .bold),
+                                      ),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            "Rs: ",
+                                            style: TextStyle(
+                                                fontSize:
+                                                25,
+                                                color:
+                                                Colors.white,
+                                                fontWeight:
+                                                FontWeight.bold),
+                                          ),
+                                          SizedBox(
+                                            width: 2,
+                                          ),
+                                          Text(
+                                            overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
+                                            style: TextStyle(
+                                                fontSize:
+                                                25,
+                                                color:
+                                                blueColor,
+                                                fontWeight:
+                                                FontWeight.bold),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(2.0),
+                                child: Container(
+                                    width: MediaQuery.of(
+                                        context)
+                                        .size
+                                        .width,
+                                    height: 90,
+                                    decoration: BoxDecoration(
+                                      border: Border.all(color: yellowColor),
+                                      //borderRadius: BorderRadius.circular(8)
+                                    ),
+
+                                    child: ListView.builder(itemCount: 2,itemBuilder: (context, index){
+                                      return  Padding(
+                                        padding:
+                                        const EdgeInsets
+                                            .all(8.0),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                          MainAxisAlignment
+                                              .spaceBetween,
+                                          children: [
+                                            Text(
+                                              "SubTotal: ",
+                                              style: TextStyle(
+                                                  fontSize:
+                                                  25,
+                                                  color:
+                                                  yellowColor,
+                                                  fontWeight:
+                                                  FontWeight
+                                                      .bold),
+                                            ),
+                                            Row(
+                                              children: [
+                                                Text(
+                                                  "Rs: ",
+                                                  style: TextStyle(
+                                                      fontSize:
+                                                      25,
+                                                      color:
+                                                      yellowColor,
+                                                      fontWeight:
+                                                      FontWeight.bold),
+                                                ),
+                                                SizedBox(
+                                                  width: 2,
+                                                ),
+                                                Text(
+                                                  overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
+                                                  style: TextStyle(
+                                                      fontSize:
+                                                      25,
+                                                      color:
+                                                      blueColor,
+                                                      fontWeight:
+                                                      FontWeight.bold),
+                                                ),
+                                              ],
+                                            ),
+                                          ],
+                                        ),
+                                      );
+                                    })
+                                ),
+                              ),
+                              Container(
+                                width: MediaQuery.of(context).size.width,
+                                height: 50,
+                                color: yellowColor,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: Row(
+                                    mainAxisAlignment:
+                                    MainAxisAlignment
+                                        .spaceBetween,
+                                    children: [
+                                      Text(
+                                        "Total: ",
+                                        style: TextStyle(
+                                            fontSize:
+                                            25,
+                                            color:
+                                            Colors.white,
+                                            fontWeight:
+                                            FontWeight
+                                                .bold),
+                                      ),
+                                      Row(
+                                        children: [
+                                          Text(
+                                            "Rs: ",
+                                            style: TextStyle(
+                                                fontSize:
+                                                25,
+                                                color:
+                                                Colors.white,
+                                                fontWeight:
+                                                FontWeight.bold),
+                                          ),
+                                          SizedBox(
+                                            width: 2,
+                                          ),
+                                          Text(
+                                            overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
+                                            style: TextStyle(
+                                                fontSize:
+                                                25,
+                                                color:
+                                                blueColor,
+                                                fontWeight:
+                                                FontWeight.bold),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Card(
+                        elevation:8,
+                        child: Container(
+                          width: 400,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: yellowColor,
+                            borderRadius: BorderRadius.circular(4)
+                          ),
+                          child: Center(
+                            child: Text(
+                              "Submit Order",
+                              style: TextStyle(
+                                  fontSize: 25,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            )
+        ),
+      ),
+    );
+  }
+
+  Widget finalizingOrderPopUp(){
+    String selectedOrderType=null;
+    int selectedOrderTypeId=0;
+    TextEditingController timePickerField=TextEditingController();
+    List<Tax> orderTaxes=[];
+    return Scaffold(
+      body: StatefulBuilder(
+        builder: (thisLowerContext, innerSetState){
+          return  Container(
+            decoration: BoxDecoration(
+                image: DecorationImage(
+                  fit: BoxFit.cover,
+                  //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
+                  image: AssetImage('assets/bb.jpg'),
+                )
+            ),
+            height:MediaQuery.of(context).size.height -70,
+            width: MediaQuery.of(context).size.width / 3,
+            child: Column(
+              children: [
+                Container(
+                  width: MediaQuery.of(context).size.width,
+                  height: 50,
+                  color: yellowColor,
+                  child: Center(
+                    child: Text(
+                      "Order Summary",
+                      style: TextStyle(
+                          fontSize: 22,
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ),
+                Container(
+                //  width: MediaQuery.of(context).size.width,
+                  height: 480,
+                  child: Scrollbar(
+                    thickness: 7,
+                    hoverThickness: 7,
+                    isAlwaysShown: true,
+                    child: Expanded(
+                      child: ListView(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: DropdownButtonFormField<String>(
+                              decoration: InputDecoration(
+                                labelText: "Order Type",
+                                alignLabelWithHint: true,
+                                //labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                enabledBorder: OutlineInputBorder(
+                                ),
+                                focusedBorder:  OutlineInputBorder(
+                                  borderSide: BorderSide(color:yellowColor),
+                                ),
+                              ),
+
+                              value: orderType,
+                              onChanged: (Value) {
+                                innerSetState(() {
+
+                                  selectedOrderType = Value;
+                                  orderTaxes.clear();
+                                  if(selectedOrderType=="Dine-In") {
+                                   var taxList=this.orderTaxes.where((element) => element.dineIn);
+                                   if(taxList!=null&&taxList.length>0){
+                                     for(Tax tax in taxList.toList()){
+                                       orderTaxes.add(tax);
+                                     }
+                                   }
+                                  }
+                                  if(selectedOrderType=="TakeAway") {
+                                   var taxList= this.orderTaxes.where((element) =>element.takeAway);
+                                   if(taxList!=null&&taxList.length>0){
+                                     for(Tax tax in taxList.toList()){
+                                       orderTaxes.add(tax);
+                                     }
+                                   }
+                                  }
+                                  if(selectedOrderType=="Home Delivery") {
+                                   var taxList= this.orderTaxes.where((element) =>element.delivery);
+                                   if(taxList!=null&&taxList.length>0){
+                                     for(Tax tax in taxList.toList()){
+                                       orderTaxes.add(tax);
+                                     }
+                                   }
+                                  }
+
+                                 // orderTypeId = orderTypeList.indexOf(orderType)+1;
+                                  //print(orderTypeId);
+                                });
+                              },
+                              items: orderTypeList.map((value) {
+                                return  DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Row(
+                                    children: <Widget>[
+                                      Text(
+                                        value,
+                                        style:  TextStyle(color: yellowColor,fontSize: 13),
+                                      ),
+                                      //user.icon,
+                                      //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Container(
+                              width: MediaQuery.of(context).size.width,
+                              height: 70,
+                              child: Padding(
+                                padding: const EdgeInsets.all(2.0),
+                                child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: <Widget>[
+                                    SizedBox(
+                                      height: 30,
+                                      width: 170,
+                                      child: TextField(
+                                        controller: applyVoucher,
+                                        style: TextStyle(color: yellowColor),
+                                        decoration: InputDecoration(
+                                          hintText: "Voucher Code",hintStyle: TextStyle(color: yellowColor),
+                                        ),
+                                      ),
+                                    ),
+                                    Row(
+                                      children: <Widget>[
+                                        //FaIcon(FontAwesomeIcons.dollarSign, color: Colors.amberAccent, size: 30,),
+                                        InkWell(
+                                          // onTap: () {
+                                          //   print(applyVoucher.text);
+                                          //
+                                          //   voucherValidity =null;
+                                          //   networksOperation.checkVoucherValidity(context, applyVoucher.text, totalprice).then((value){
+                                          //     setState(() {
+                                          //       applyVoucher.text="";
+                                          //       voucherValidity = value;
+                                          //       voucherVisiblity =true;
+                                          //
+                                          //     });
+                                          //   });
+                                          //   print(voucherVisiblity);
+                                          // },
+                                          child: Container(
+                                            // width: 70,
+                                            height: 50,
+                                            decoration: BoxDecoration(
+                                                color: yellowColor,
+                                                borderRadius: BorderRadius.circular(8)
+                                            ),
+                                            child: Center(
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(3.0),
+                                                child: Text("Apply Voucher", style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 18,
+                                                    fontWeight: FontWeight.bold
+                                                ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          Visibility(
+                            visible:selectedOrderType!=null&&selectedOrderType=="Home Delivery",
+                            child: Padding(
+                              padding: EdgeInsets.all(8.0),
+                              child: Container(
+                                width: MediaQuery.of(context).size.width,
+                                height: 70,
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8),
+                                    border: Border.all(color: blueColor, width: 1)
+                                ),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(6.0),
+                                  child: TextFormField(
+                                    decoration: InputDecoration(
+                                      contentPadding: EdgeInsets.only(top: 7),
+                                      border: InputBorder.none,
+                                      hintText: "Address",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Visibility(
+                            visible:selectedOrderType!=null&& selectedOrderType=="Dine-In",
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: DropdownButtonFormField<String>(
+                                decoration: InputDecoration(
+                                  labelText: "Select Waiter",
+                                  alignLabelWithHint: true,
+                                  labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                  enabledBorder: OutlineInputBorder(
+                                  ),
+                                  focusedBorder:  OutlineInputBorder(
+                                    borderSide: BorderSide(color:yellowColor),
+                                  ),
+                                ),
+
+                                value: orderType,
+                                onChanged: (Value) {
+                                  setState(() {
+                                    orderType = Value;
+                                    orderTypeId = orderTypeList.indexOf(orderType)+1;
+                                    print(orderTypeId);
+                                  });
+                                  //taxList.clear();
+                                  // networksOperation.getTaxListByStoreIdWithOrderType(context, widget.storeId, orderType=="Dine In"?1:orderType=="Take Away"?2:orderType=="Delivery"?3:0).then((value) {
+                                  //   setState(() {
+                                  //     taxList = value;
+                                  //     print(taxList.toString()+"mnbvcxz");
+                                  //     totalPercentage=0.0;
+                                  //     totalTaxPrice =0.0;
+                                  //     orderTaxList.clear();
+                                  //     for(int i=0;i<taxList.length;i++){
+                                  //       totalTaxPrice += taxList[i].price;
+                                  //       totalPercentage += taxList[i].percentage;
+                                  //       orderTaxList.add({
+                                  //         "TaxId": taxList[i].id
+                                  //       });
+                                  //     }
+                                  //     print(orderTaxList.toString());
+                                  //   });
+                                  // });
+                                },
+                                items: orderTypeList.map((value) {
+                                  return  DropdownMenuItem<String>(
+                                    value: value,
+                                    child: Row(
+                                      children: <Widget>[
+                                        Text(
+                                          value,
+                                          style:  TextStyle(color: yellowColor,fontSize: 13),
+                                        ),
+                                        //user.icon,
+                                        //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+                          Visibility(
+                            visible: selectedOrderType!=null&&selectedOrderType =="TakeAway",
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: TextFormField(
+                                  controller: timePickerField,
+                                  decoration: InputDecoration(
+                                    labelText: "Select Picking Time",
+                                    border: OutlineInputBorder(),
+                                    hintText: "Select Picking Time"
+                                  ),
+                                  onTap: ()async{
+                                    FocusScope.of(context).requestFocus(new FocusNode());
+                                    var time = await showTimePicker(
+                                        context: context,
+                                        initialTime: TimeOfDay.now()
+                                    );
+                                    innerSetState(() {
+                                      timePickerField.text=time.hour.toString()+":"+time.minute.toString();
+                                    });
+
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(12.0),
+                            child: DropdownButtonFormField<String>(
+                              decoration: InputDecoration(
+                                labelText: "Order Priority",
+                                alignLabelWithHint: true,
+                                labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                enabledBorder: OutlineInputBorder(
+                                ),
+                                focusedBorder:  OutlineInputBorder(
+                                  borderSide: BorderSide(color:yellowColor),
+                                ),
+                              ),
+
+                              value: orderType,
+                              onChanged: (Value) {
+                                setState(() {
+                                  orderType = Value;
+                                  orderTypeId = orderTypeList.indexOf(orderType)+1;
+                                  print(orderTypeId);
+                                });
+                              },
+                              items: orderTypeList.map((value) {
+                                return  DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Row(
+                                    children: <Widget>[
+                                      Text(
+                                        value,
+                                        style:  TextStyle(color: yellowColor,fontSize: 13),
+                                      ),
+                                      //user.icon,
+                                      //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Container(
+                              width: MediaQuery.of(context).size.width,
+                              height: 70,
+                              child: Padding(
+                                padding: const EdgeInsets.all(6.0),
+                                child: TextFormField(
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    hintText: "Name",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Container(
+                              width: MediaQuery.of(context).size.width,
+                              height: 70,
+                              child: Padding(
+                                padding: const EdgeInsets.all(6.0),
+                                child: TextFormField(
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    hintText: "Email",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+
+                          Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Container(
+                              width: MediaQuery.of(context).size.width,
+                              height: 70,
+                              child: Padding(
+                                padding: const EdgeInsets.all(6.0),
+                                child: TextFormField(
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    hintText: "Phone #",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          ///Picking Time
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                ///Order Type
+
+                ///Set Tables & Chairs
+                // Visibility(
+                //   visible: orderType=="Dine In",
+                //   child: Card(
+                //     elevation: 5,
+                //     //color: Colors.white24,
+                //     child: Container(
+                //       decoration: BoxDecoration(
+                //           color:BackgroundColor,
+                //           borderRadius: BorderRadius.circular(9),
+                //           border: Border.all(color: yellowColor, width: 2)
+                //       ),
+                //       width: MediaQuery.of(context).size.width*0.98,
+                //       padding: EdgeInsets.all(14),
+                //       child: DropdownButtonFormField<String>(
+                //         decoration: InputDecoration(
+                //           labelText: " Tables ",
+                //
+                //           alignLabelWithHint: true,
+                //           labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color: yellowColor),
+                //           enabledBorder: OutlineInputBorder(
+                //             // borderSide: BorderSide(color:
+                //             // Colors.white),
+                //           ),
+                //           focusedBorder:  OutlineInputBorder(
+                //             borderSide: BorderSide(color:
+                //             yellowColor),
+                //           ),
+                //         ),
+                //
+                //         // hint:  Text(translate('add_to_cart_screen.sauce')),
+                //         value: tableName,
+                //         // onSaved:(Value){
+                //         //     orderType = Value;
+                //         //     orderTypeId = orderTypeList.indexOf(orderTypeId);
+                //         // },
+                //         onChanged: (Value) {
+                //           setState(() {
+                //             tableName = Value;
+                //             tableId = tableDDList.indexOf(tableName);
+                //           });
+                //           networksOperation.getChairsListByTable(context, allTableList[tableId]['id']).then((value) {
+                //
+                //             if(value!=null){
+                //               countList.clear();
+                //               allChairList.clear();
+                //               for(int i=0;i<value.length;i++){
+                //                 countList.add(value[i]['name']);
+                //                 allChairList.add(value[i]);
+                //
+                //               }
+                //             }else{
+                //
+                //             }
+                //
+                //           });
+                //         },
+                //         items: tableDDList.map((value) {
+                //           return  DropdownMenuItem<String>(
+                //             value: value,
+                //             child: Row(
+                //               children: <Widget>[
+                //                 Text(
+                //                   value,
+                //                   style:  TextStyle(color: yellowColor,fontSize: 15, fontWeight: FontWeight.bold),
+                //                 ),
+                //                 //user.icon,
+                //                 //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                //               ],
+                //             ),
+                //           );
+                //         }).toList(),
+                //       ),
+                //     ),
+                //   ),
+                // ),
+                // Visibility(
+                //   visible:   countList.length>0 && orderType =="Dine In",
+                //   child: Card(
+                //     elevation: 5,
+                //     color: BackgroundColor,
+                //     child: InkWell(
+                //       onTap: () async{
+                //         _openFilterDialog();
+                //       },
+                //       child: InputDecorator(
+                //         decoration: InputDecoration(
+                //           contentPadding: EdgeInsets.all(25),
+                //           filled: true,
+                //           errorMaxLines: 4,
+                //         ),
+                //         child: Column(
+                //           crossAxisAlignment: CrossAxisAlignment.start,
+                //           children: <Widget>[
+                //             Row(
+                //               crossAxisAlignment: CrossAxisAlignment.start,
+                //               children: <Widget>[
+                //                 Expanded(
+                //                     child: Text(
+                //                       'Select Chairs For Order',
+                //                       style: TextStyle(fontSize: 15.0, color:yellowColor,fontWeight: FontWeight.bold),
+                //                     )),
+                //                 Icon(
+                //                   Icons.arrow_drop_down,
+                //                   color: Colors.black87,
+                //                   size: 25.0,
+                //                 ),
+                //               ],
+                //             ),
+                //             orderSelectedChairsList != null && orderSelectedChairsList.length > 0
+                //                 ? Wrap(
+                //               spacing: 8.0,
+                //               runSpacing: 0.0,
+                //               children: chairChips,
+                //             )
+                //                 : new Container(
+                //               padding: EdgeInsets.only(top: 4),
+                //               child: Text(
+                //                 'No Chairs selected',
+                //                 style: TextStyle(
+                //                   fontSize: 16,
+                //                   color: PrimaryColor,
+                //                 ),
+                //               ),
+                //             )
+                //           ],
+                //         ),
+                //       ),
+                //     ),
+                //   ),
+                // ),
+                ///Adding Voucher
+
+                ///Picking Time
+                // Visibility(
+                //   visible: orderType =="Take Away",
+                //   child: Padding(
+                //     padding: const EdgeInsets.all(8.0),
+                //     child: Padding(
+                //       padding: const EdgeInsets.all(8.0),
+                //       child: FormBuilderDateTimePicker(
+                //         name: "Estimate Picking time",
+                //         style: Theme.of(context).textTheme.bodyText1,
+                //         inputType: InputType.time,
+                //         validator: FormBuilderValidators.compose( [FormBuilderValidators.required(context)]),
+                //         format: DateFormat("hh:mm:ss"),
+                //         decoration: InputDecoration(labelText: "Estimate Picking time",labelStyle: TextStyle(color: yellowColor, fontWeight: FontWeight.bold),
+                //           border: OutlineInputBorder(
+                //               borderRadius: BorderRadius.circular(9.0),
+                //               borderSide: BorderSide(color: yellowColor, width: 2.0)
+                //           ),),
+                //         onChanged: (value){
+                //           setState(() {
+                //             this.pickingTime=value;
+                //           });
+                //         },
+                //       ),
+                //     ),
+                //   ),
+                // ),
+
+                ///Payment Method
+                // Padding(
+                //   padding: const EdgeInsets.all(8.0),
+                //   child: Container(
+                //       decoration: BoxDecoration(
+                //           color:BackgroundColor,
+                //           borderRadius: BorderRadius.circular(9),
+                //           border: Border.all(color: yellowColor, width: 2)
+                //       ),
+                //       child: Column(
+                //         children: [
+                //           Padding(
+                //             padding: const EdgeInsets.all(8.0),
+                //             child: Text('Payment Method',style: TextStyle(color: yellowColor,fontSize: 20,fontWeight: FontWeight.bold),),
+                //           ),
+                //           Container(
+                //             width: MediaQuery.of(context).size.width,
+                //             height: 1,
+                //             color: yellowColor,
+                //           ),
+                //
+                //           _myRadioButton(
+                //             title: orderType=="Dine In"?"Cash ":orderType=="Take Away"?"Cash on Picking ":"Cash On Delivery",
+                //             value: 1,
+                //             onChanged: (newValue) => setState(() => _groupValue = newValue,
+                //             ),
+                //           ),
+                //           _myRadioButton(
+                //               title: "Credit Card",
+                //               value: 2,
+                //               //  onChanged: (newValue) => setState(() => _groupValue = newValue,
+                //               // ),
+                //               onChanged: (value)async{
+                //                 setState(() async{
+                //                   _groupValue = value;
+                //
+                //                   cardData = await Navigator.push(context, MaterialPageRoute(builder: (context) =>  CardPayment() ));
+                //                 });
+                //               }
+                //           ),
+                //         ],
+                //       )
+                //   ),
+                // ),
+                SizedBox(height: 10,),
+
+                Container(
+                  width: MediaQuery.of(context).size.width,
+                  height: 40,
+                  color: yellowColor,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment:
+                      MainAxisAlignment
+                          .spaceBetween,
+                      children: [
+                        Text(
+                          "SubTotal: ",
+                          style: TextStyle(
+                              fontSize:
+                              25,
+                              color:
+                              Colors.white,
+                              fontWeight:
+                              FontWeight
+                                  .bold),
+                        ),
+                        Row(
+                          children: [
+                            Text(
+                              "Rs: ",
+                              style: TextStyle(
+                                  fontSize:
+                                  25,
+                                  color:
+                                  Colors.white,
+                                  fontWeight:
+                                  FontWeight.bold),
+                            ),
+                            SizedBox(
+                              width: 2,
+                            ),
+                            Text(
+                              overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
+                              style: TextStyle(
+                                  fontSize:
+                                  25,
+                                  color:
+                                  blueColor,
+                                  fontWeight:
+                                  FontWeight.bold),
                             ),
                           ],
                         ),
@@ -1882,273 +3170,153 @@ class _POSMainScreenState extends State<POSMainScreen> {
                     ),
                   ),
                 ),
-              ),
+                Padding(
+                  padding: const EdgeInsets.all(2.0),
+                  child: Container(
+                      width: MediaQuery.of(
+                          context)
+                          .size
+                          .width,
+                      height: 90,
+                      decoration: BoxDecoration(
+                        border: Border.all(color: yellowColor),
+                        //borderRadius: BorderRadius.circular(8)
+                      ),
+
+                      child: ListView.builder(itemCount: 2,itemBuilder: (context, index){
+                        return  Padding(
+                          padding:
+                          const EdgeInsets
+                              .all(8.0),
+                          child: Row(
+                            mainAxisAlignment:
+                            MainAxisAlignment
+                                .spaceBetween,
+                            children: [
+                              Text(
+                                "SubTotal: ",
+                                style: TextStyle(
+                                    fontSize:
+                                    25,
+                                    color:
+                                    yellowColor,
+                                    fontWeight:
+                                    FontWeight
+                                        .bold),
+                              ),
+                              Row(
+                                children: [
+                                  Text(
+                                    "Rs: ",
+                                    style: TextStyle(
+                                        fontSize:
+                                        25,
+                                        color:
+                                        yellowColor,
+                                        fontWeight:
+                                        FontWeight.bold),
+                                  ),
+                                  SizedBox(
+                                    width: 2,
+                                  ),
+                                  Text(
+                                    overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
+                                    style: TextStyle(
+                                        fontSize:
+                                        25,
+                                        color:
+                                        blueColor,
+                                        fontWeight:
+                                        FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      })
+                  ),
+                ),
+                Container(
+                  width: MediaQuery.of(context).size.width,
+                  height: 50,
+                  color: yellowColor,
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment:
+                      MainAxisAlignment
+                          .spaceBetween,
+                      children: [
+                        Text(
+                          "Total: ",
+                          style: TextStyle(
+                              fontSize:
+                              25,
+                              color:
+                              Colors.white,
+                              fontWeight:
+                              FontWeight
+                                  .bold),
+                        ),
+                        Row(
+                          children: [
+                            Text(
+                              "Rs: ",
+                              style: TextStyle(
+                                  fontSize:
+                                  25,
+                                  color:
+                                  Colors.white,
+                                  fontWeight:
+                                  FontWeight.bold),
+                            ),
+                            SizedBox(
+                              width: 2,
+                            ),
+                            Text(
+                              overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
+                              style: TextStyle(
+                                  fontSize:
+                                  25,
+                                  color:
+                                  blueColor,
+                                  fontWeight:
+                                  FontWeight.bold),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                ///Submit Button
+
+                SizedBox(height: 10,),
+                InkWell(
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.all(Radius.circular(8)) ,
+                        color: yellowColor,
+                      ),
+                      width: MediaQuery.of(context).size.width,
+                      height: 70,
+
+                      child: Center(
+                        child: Text('Submit Order',style: TextStyle(color: BackgroundColor,fontSize: 30,fontWeight: FontWeight.bold),),
+                      ),
+                    ),
+                  ),
+                )
+              ],
             ),
-
-            ///Picking Time
-            // Visibility(
-            //   visible: orderType =="Take Away",
-            //   child: Padding(
-            //     padding: const EdgeInsets.all(8.0),
-            //     child: Padding(
-            //       padding: const EdgeInsets.all(8.0),
-            //       child: FormBuilderDateTimePicker(
-            //         name: "Estimate Picking time",
-            //         style: Theme.of(context).textTheme.bodyText1,
-            //         inputType: InputType.time,
-            //         validator: FormBuilderValidators.compose( [FormBuilderValidators.required(context)]),
-            //         format: DateFormat("hh:mm:ss"),
-            //         decoration: InputDecoration(labelText: "Estimate Picking time",labelStyle: TextStyle(color: yellowColor, fontWeight: FontWeight.bold),
-            //           border: OutlineInputBorder(
-            //               borderRadius: BorderRadius.circular(9.0),
-            //               borderSide: BorderSide(color: yellowColor, width: 2.0)
-            //           ),),
-            //         onChanged: (value){
-            //           setState(() {
-            //             this.pickingTime=value;
-            //           });
-            //         },
-            //       ),
-            //     ),
-            //   ),
-            // ),
-
-            ///Payment Method
-            // Padding(
-            //   padding: const EdgeInsets.all(8.0),
-            //   child: Container(
-            //       decoration: BoxDecoration(
-            //           color:BackgroundColor,
-            //           borderRadius: BorderRadius.circular(9),
-            //           border: Border.all(color: yellowColor, width: 2)
-            //       ),
-            //       child: Column(
-            //         children: [
-            //           Padding(
-            //             padding: const EdgeInsets.all(8.0),
-            //             child: Text('Payment Method',style: TextStyle(color: yellowColor,fontSize: 20,fontWeight: FontWeight.bold),),
-            //           ),
-            //           Container(
-            //             width: MediaQuery.of(context).size.width,
-            //             height: 1,
-            //             color: yellowColor,
-            //           ),
-            //
-            //           _myRadioButton(
-            //             title: orderType=="Dine In"?"Cash ":orderType=="Take Away"?"Cash on Picking ":"Cash On Delivery",
-            //             value: 1,
-            //             onChanged: (newValue) => setState(() => _groupValue = newValue,
-            //             ),
-            //           ),
-            //           _myRadioButton(
-            //               title: "Credit Card",
-            //               value: 2,
-            //               //  onChanged: (newValue) => setState(() => _groupValue = newValue,
-            //               // ),
-            //               onChanged: (value)async{
-            //                 setState(() async{
-            //                   _groupValue = value;
-            //
-            //                   cardData = await Navigator.push(context, MaterialPageRoute(builder: (context) =>  CardPayment() ));
-            //                 });
-            //               }
-            //           ),
-            //         ],
-            //       )
-            //   ),
-            // ),
-            SizedBox(height: 10,)
-            ///Submit Button
-            // InkWell(
-            //   onTap: (){
-            //     if(orderType == "Dine In" ){
-            //       if(tableId==null || tableId.isNaN){
-            //         Utils.showError(context, "Please Select Table");
-            //       }
-            //       else if(_groupValue==2 && cardData==null){
-            //         Utils.showError(context, "Please Add Debit / Credit Card");
-            //       }
-            //       else if(dailySession==null){
-            //         Utils.showError(context, "Restaurant can't Accept Order This Time");
-            //       }
-            //       else{
-            //         print("print 1");
-            //         var body= Order.OrderToJson(Order(
-            //             dailySessionNo: 1,
-            //             storeId: widget.storeId,
-            //             grosstotal: widget.netTotal,
-            //             comment: widget.notes,
-            //             netTotal: widget.netTotal,
-            //             DeviceToken: deviceId,
-            //             deliveryAddress: null,
-            //             deliveryLatitude: null,
-            //             deliveryLongitude: null,
-            //             paymentType: _groupValue,
-            //             paymentOptions: 1,
-            //             ordertype: 1,
-            //             TableId: tableId!=null?allTableList[tableId]['id']:null,
-            //             //orderitems: orderitem,//orderItems1!=null?orderItems1:orderitem,
-            //             orderChairs: orderSelectedChairsListIds,
-            //             orderPayments: selectedChairListForPayment//selectedChairListForPayment
-            //         ));
-            //         dynamic order = {
-            //
-            //           // "date":DateFormat("dd:mm:yyyy").format(DateTime.now()),
-            //           // "StartTime":DateFormat("HH:mm:ss").format(DateTime.now()),
-            //           "DineInEndTime":DateFormat("HH:mm:ss").format(DateTime.now().add(Duration(hours: 1))),
-            //           "DailySessionNo": dailySession,
-            //           "storeId":widget.storeId,
-            //           "DeviceToken":deviceId,
-            //           "ordertype": 1,
-            //           "NetTotal":widget.netTotal,
-            //           //"grosstotal":widget.netTotal,
-            //           "comment":widget.notes,
-            //           "TableId":tableId!=null?allTableList[tableId]['id']:null,
-            //           "DeliveryAddress" : null,
-            //           "DeliveryLongitude" : null,
-            //           "DeliveryLatitude" : null,
-            //           "PaymentType" : _groupValue,
-            //           "PaymentOptions": 1,
-            //           "orderitems":widget.orderItems,
-            //           "OrderChairs": orderSelectedChairsListIds,
-            //           //  "OrderPayments": selectedChairListForPayment,
-            //           "CardNumber": cardData!=null?cardData['CardNumber']:null,
-            //           "CVV": cardData!=null?cardData['CVV']:null,
-            //           "ExpiryDate": cardData!=null?cardData['ExpiryDate']:null,
-            //           "OrderTaxes":orderTaxList,
-            //           "VoucherCode": widget.voucher,
-            //           // "MobileNo": "03123456789",
-            //           // "CnicLast6Digits": "345678"
-            //
-            //         };
-            //         print(jsonEncode(order));
-            //         networksOperation.placeOrder(context, widget.token, order).then((value) {
-            //           if(value){
-            //             // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ClientNavBar()));
-            //             Navigator.pushAndRemoveUntil(context,
-            //                 MaterialPageRoute(builder: (context) =>ClientNavBar()), (
-            //                     Route<dynamic> route) => false);
-            //           }
-            //         });
-            //       }
-            //
-            //     }
-            //     else if( orderType =="Delivery"){
-            //       if(userDetail['latitude']==null && userDetail['longitude']==null && address ==null){
-            //         Utils.showError(context, "please select Secondary address");
-            //       } else if(dailySession==null){
-            //         Utils.showError(context, "Restaurant can't Accept Order This Time");
-            //       }
-            //       // else if(_groupValue==2){
-            //       //   cardData==null??Utils.showError(context, "Please Add Debit / Credit Card");
-            //       // }
-            //       else {
-            //         print("print 3");
-            //         dynamic order = {
-            //           "DailySessionNo": dailySession,
-            //           "StoreId":widget.storeId,
-            //           "DeviceToken":deviceId,
-            //           "ordertype":3,
-            //           "NetTotal":widget.netTotal,
-            //           //  "grosstotal":widget.netTotal,
-            //           "comment":widget.notes!=null?widget.notes:null,
-            //           "TableId":null,
-            //           "DeliveryAddress" : secondryAddress.text!=null?secondryAddress.text:address.toString()!=null?address.address:null,
-            //           "DeliveryLongitude" : address.longitude==null?userDetail['longitude']!=null?userDetail['longitude']:address.toString()!=null?address.longitude:0.0:0.0,
-            //           "DeliveryLatitude" : address.latitude==null?userDetail['latitude']!=null?userDetail['latitude']:address.toString()!=null?address.latitude:0.0:0.0,
-            //           "PaymentType" : _groupValue,
-            //           "orderitems":widget.orderItems,
-            //           "CardNumber": cardData!=null?cardData['CardNumber']:null,
-            //           "CVV": cardData!=null?cardData['CVV']:null,
-            //           "ExpiryDate": cardData!=null?cardData['ExpiryDate']:null,
-            //           "OrderTaxes":orderTaxList,
-            //           "VoucherCode": widget.voucher,
-            //           // "MobileNo": "03123456789",
-            //           // "CnicLast6Digits": "345678"
-            //         };
-            //         print(jsonEncode(order));
-            //         networksOperation.placeOrder(context, widget.token, order).then((value) {
-            //           if(value){
-            //             Navigator.pushAndRemoveUntil(context,
-            //                 MaterialPageRoute(builder: (context) => ClientNavBar()), (
-            //                     Route<dynamic> route) => false);
-            //             //Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ClientNavBar()));
-            //
-            //           }
-            //         });
-            //       }
-            //     }else if( orderType =="Take Away"){
-            //       if(_groupValue==2 && cardData==null){
-            //         Utils.showError(context, "Please Add Debit / Credit Card");
-            //       }else if(dailySession==null){
-            //         Utils.showError(context, "Restaurant can't Accept Order This Time");
-            //       }else if(pickingTime==null){
-            //         Utils.showError(context, "Please Enter Picking Time");
-            //       }
-            //       else{
-            //         print("print 2");
-            //         dynamic order = {
-            //           "DailySessionNo": dailySession,
-            //           "storeId":widget.storeId,
-            //           "DeviceToken":deviceId,
-            //           "ordertype":2,
-            //           "NetTotal":widget.netTotal,
-            //           //  "grosstotal":widget.netTotal,
-            //           "comment":widget.notes,
-            //           "TableId":null,
-            //           "DeliveryAddress" : null,
-            //           "DeliveryLongitude" : null,
-            //           "DeliveryLatitude" : null,
-            //           "PaymentType" : _groupValue,
-            //           "orderitems":widget.orderItems,
-            //           "CardNumber": cardData!=null?cardData['CardNumber']:null,
-            //           "CVV": cardData!=null?cardData['CVV']:null,
-            //           "ExpiryDate": cardData!=null?cardData['ExpiryDate']:null,
-            //           "EstimatedTakeAwayTime": pickingTime.toString().substring(10,16),
-            //           "OrderTaxes":orderTaxList,
-            //           "VoucherCode": widget.voucher,
-            //           // "MobileNo": "03123456789",
-            //           // "CnicLast6Digits": "345678"
-            //         };
-            //         print(jsonEncode(order));
-            //         networksOperation.placeOrder(context, widget.token, order).then((value) {
-            //           if(value){
-            //             // Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => ClientNavBar()));
-            //             Navigator.pushAndRemoveUntil(context,
-            //                 MaterialPageRoute(builder: (context) => ClientNavBar()), (
-            //                     Route<dynamic> route) => false);
-            //           }
-            //         });
-            //       }
-            //
-            //     }
-            //     else{
-            //       Utils.showError(context, "Please select Order Type");
-            //     }
-            //
-            //   },
-            //   child: Padding(
-            //     padding: const EdgeInsets.all(8.0),
-            //     child: Container(
-            //       decoration: BoxDecoration(
-            //         borderRadius: BorderRadius.all(Radius.circular(10)) ,
-            //         color: yellowColor,
-            //       ),
-            //       width: MediaQuery.of(context).size.width,
-            //       height: MediaQuery.of(context).size.height  * 0.08,
-            //
-            //       child: Center(
-            //         child: Text('Submit Order',style: TextStyle(color: BackgroundColor,fontSize: 20,fontWeight: FontWeight.bold),),
-            //       ),
-            //     ),
-            //   ),
-            // )
-          ],
-        ),
+          );
+        }
       )
     );
   }
-
 
   var productPopupHeight=3.5;
   Widget productsPopupLayout(Products product) {
@@ -2553,19 +3721,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                   sqlite_helper().gettotal().then((value){
                                     setState(() {
                                       overallTotalPrice=value[0]["SUM(totalPrice)"];
-                                      overallTotalPricewitOoutTax=value[0]["SUM(totalPrice)"];
-                                      var taxes=orderTaxes.where((element) => element.takeAway);
-                                      if(taxes!=null&&taxes.length>0) {
-                                        for (var t in taxes.toList()) {
-                                          if(t.price!=null&&t.price!=0.0){
-                                            overallTotalPrice=overallTotalPrice+t.price;
-                                          }else if(t.percentage!=null&&t.percentage!=0.0){
-                                            var percentTax=t.percentage/100*overallTotalPrice;
-                                            overallTotalPrice=overallTotalPrice+percentTax;
-                                          }
-                                        }
-                                      }
-
                                     });
                                   });
                                 });
@@ -2597,20 +3752,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                       sqlite_helper().gettotal().then((value){
                                         setState(() {
                                           overallTotalPrice=value[0]["SUM(totalPrice)"];
-                                          overallTotalPricewitOoutTax=value[0]["SUM(totalPrice)"];
-                                          var taxes=orderTaxes.where((element) => element.takeAway);
-                                          if(taxes!=null&&taxes.length>0) {
-                                            for (var t in taxes.toList()) {
-                                              if(t.price!=null&&t.price!=0.0){
-                                                overallTotalPrice=overallTotalPrice+t.price;
-                                              }else if(t.percentage!=null&&t.percentage!=0.0){
-                                                var percentTax=t.percentage/100*overallTotalPrice;
-                                                print("Percent Tax "+percentTax.toString());
-                                                overallTotalPrice=overallTotalPrice+percentTax;
-                                              }
-                                            }
-                                          }
-
                                         });
                                       });
                                     });

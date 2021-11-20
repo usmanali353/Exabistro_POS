@@ -5,7 +5,6 @@ import 'package:exabistro_pos/model/Categories.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -137,12 +136,10 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                   decoration: BoxDecoration(
                       image: DecorationImage(
                         fit: BoxFit.cover,
-                        //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
                         image: AssetImage('assets/bb.jpg'),
                       )
                   ),
                   child: new Container(
-                    //decoration: new BoxDecoration(color: Colors.black.withOpacity(0.3)),
                       child: Column(
                         children: [
                           // Padding(
@@ -310,7 +307,7 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                                         visible: orderList[index]['orderType']==1,
                                                         child: Row(
                                                           children: [
-                                                            Text('Table No#: ',
+                                                            Text('Table #: ',
                                                               style: TextStyle(
                                                                   fontSize: 20,
                                                                   fontWeight: FontWeight.bold,

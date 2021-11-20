@@ -126,7 +126,7 @@ class Network_Operations{
     }
     return null;
   }
-  static Future<List<Products>> getProduct(BuildContext context,int categoryId,subCategoryId,int storeId,String search)async{
+  static Future<List<Products>> getProduct(BuildContext context,int categoryId,int storeId,String search)async{
     //ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
     try{
       var isCacheExist = await APICacheManager().isAPICacheKeyExist("productList");
@@ -141,7 +141,8 @@ class Network_Operations{
       }
       if(connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi){
         //pd.show();
-        var response=await http.get(Utils.baseUrl()+"Products/GetByCategoryId?StoreId=$storeId&categoryId="+categoryId.toString()+"&subCategoryId="+subCategoryId.toString()+"&searchstring=$search",);
+        var response=await http.get(Utils.baseUrl()+"Products/GetByCategoryId?StoreId=$storeId&categoryId="+categoryId.toString()+"&searchstring=$search",);
+        print(Utils.baseUrl()+"Products/GetByCategoryId?StoreId=$storeId&categoryId="+categoryId.toString()+"&searchstring=$search");
         APICacheDBModel cacheDBModel = new APICacheDBModel(
             key: "productList", syncData: response.body);
         await APICacheManager().addCacheData(cacheDBModel);
@@ -162,7 +163,7 @@ class Network_Operations{
           }
         }
         else{
-          //pd.hide();
+          print(response.body);
           Utils.showError(context, response.body);
         }
       }
@@ -172,6 +173,7 @@ class Network_Operations{
       }
     }catch(e){
     //  pd.hide();
+      print(e.toString());
       Utils.showError(context, e.toString());
     }
     return null;
@@ -473,6 +475,24 @@ class Network_Operations{
     }catch(e){
       print(e);
       Utils.showError(context, "Error Found:");
+    }
+    return null;
+  }
+  static Future<List<dynamic>> getOrderPriorityDropDown(BuildContext context,int storeId)async{
+
+    try{
+      // Map<String,String> headers = {'Authorization':'Bearer '+token};
+      var response=await http.get(Utils.baseUrl()+"OrderPriority/GetOrderPrioritiesDropdown/"+storeId.toString());
+      var data= jsonDecode(response.body);
+      print(data);
+      if(response.statusCode==200){
+        return data;
+      }
+      else{
+        Utils.showError(context, response.body.toString());
+      }
+    }catch(e){
+      Utils.showError(context, "Error Found: $e");
     }
     return null;
   }
