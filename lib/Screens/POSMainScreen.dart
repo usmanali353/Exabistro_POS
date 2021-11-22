@@ -18,34 +18,36 @@ import 'package:exabistro_pos/networks/sqlite_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_counter/flutter_counter.dart';
+import 'package:intl/intl.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class POSMainScreen extends StatefulWidget {
-  int storeId;
+  dynamic store;
   @override
   _POSMainScreenState createState() => _POSMainScreenState();
 
-  POSMainScreen({this.storeId});
+  POSMainScreen({this.store});
 }
 
 class _POSMainScreenState extends State<POSMainScreen> {
   List<Categories> subCategories = [];
-  List<dynamic> dealsList = [];
+  List<dynamic> dealsList = [],taxesList=[];
   List<Products> products = [];
   String categoryName = "";
   bool isLoading = true;
   List<String> menuTypeDropdownItems = ["Products", "Deals"];
   List<String> discountTypeDropdownItems = ["Percentage", "Cash"];
+
   String selectedMenuType;
-  var overallTotalPrice=0.0;
+  var overallTotalPrice=0.0,overallTotalPriceWithTax=0.0;
   List<CartItems> cartList = [];
 
   Order finalOrder;
   List<Orderitem> orderitem = [];
   List<Orderitemstopping> itemToppingList = [];
   List<Map> orderitem1 = [];
-  List<Tax> orderTaxes=[];
+  List<Tax> orderTaxes=[],typeBasedTaxes=[];
   dynamic ordersList;
   List<dynamic> toppingList = [], orderItems = [],priorities=[];
   List<String> topping = [];
@@ -55,19 +57,24 @@ class _POSMainScreenState extends State<POSMainScreen> {
   int orderTypeId;
   var voucherValidity;
   var selectedOrderType,selectedOrderTypeId,selectedPriority,selectedPriorityId,selectedWaiter,selectedWaiterId;
-  TextEditingController timePickerField;
+  TextEditingController timePickerField,customerName,customerPhone,customerEmail,customerAddress,discountValue;
   List orderTypeList = ["Dine-In", "TakeAway","Home Delivery"];
 
   @override
   void initState() {
     timePickerField=TextEditingController();
+    customerName=TextEditingController();
+    customerAddress=TextEditingController();
+    customerEmail=TextEditingController();
+    customerPhone=TextEditingController();
+    discountValue=TextEditingController();
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeRight,
       DeviceOrientation.landscapeLeft,
     ]);
     Utils.check_connectivity().then((isConnected) {
       if (isConnected) {
-        Network_Operations.getCategories(context, widget.storeId)
+        Network_Operations.getCategories(context, widget.store["id"])
             .then((sub) {
           setState(() {
             if (sub != null && sub.length > 0) {
@@ -76,7 +83,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
               Network_Operations.getProduct(
                       context,
                       subCategories[0].id,
-                      widget.storeId,
+                      widget.store["id"],
                       "")
                   .then((p) {
                 setState(() {
@@ -87,7 +94,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                     isLoading = false;
                   SharedPreferences.getInstance().then((prefs) {
                     Network_Operations.getAllDeals(
-                            context, prefs.getString("token"), widget.storeId)
+                            context, prefs.getString("token"), widget.store["id"])
                         .then((dealsList) {
                       setState(() {
                         if (dealsList.length > 0) {
@@ -106,13 +113,13 @@ class _POSMainScreenState extends State<POSMainScreen> {
                       }
                     });
                   });
-                  Network_Operations.getOrderPriorityDropDown(context, widget.storeId).then((orderPriorities){
+                  Network_Operations.getOrderPriorityDropDown(context, widget.store["id"]).then((orderPriorities){
                     setState(() {
                       if(orderPriorities!=null&&orderPriorities.length>0)
                       this.priorities=orderPriorities;
                     });
                   });
-                  Network_Operations.getTaxListByStoreId(context,widget.storeId).then((taxes){
+                  Network_Operations.getTaxListByStoreId(context,widget.store["id"]).then((taxes){
                     setState(() {
                       this.orderTaxes=taxes;
                       sqlite_helper().gettotal().then((value){
@@ -204,7 +211,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                       context,
                                                       subCategories[index]
                                                           .id,
-                                                      widget.storeId,
+                                                      widget.store["id"],
                                                       "")
                                                   .then((p) {
                                                 setState(() {
@@ -385,148 +392,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                   height: 480,
                                   child: cartListLayout(),
                                 ),
-                             //    Container(
-                             //      //color: Colors.teal,
-                             //      width: MediaQuery.of(context).size.width,
-                             //      height: 175,
-                             //      child: Column(
-                             //        children: [
-                             //          Container(
-                             //            width: MediaQuery.of(context).size.width,
-                             //            height: 40,
-                             //            color: yellowColor,
-                             //            child: Center(
-                             //              child: Text(
-                             //                "Add Discount",
-                             //                style: TextStyle(
-                             //                    fontSize: 22,
-                             //                    color: Colors.white,
-                             //                    fontWeight: FontWeight.bold),
-                             //              ),
-                             //            ),
-                             //          ),
-                             //          SizedBox(
-                             //            height: 8,
-                             //          ),
-                             //          Container(
-                             //            width: MediaQuery.of(context).size.width,
-                             //            height: 120,
-                             //            child: ListView(
-                             //              children: [
-                             //                Padding(
-                             //                  padding: const EdgeInsets.all(4.0),
-                             //                  child: DropdownButtonFormField<String>(
-                             //                    decoration: InputDecoration(
-                             //                      labelText: "Select Discount Type",
-                             //                      alignLabelWithHint: true,
-                             //                      labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                             //                      enabledBorder: OutlineInputBorder(
-                             //                      ),
-                             //                      focusedBorder:  OutlineInputBorder(
-                             //                        borderSide: BorderSide(color:yellowColor),
-                             //                      ),
-                             //                    ),
-                             //
-                             //                    value: discountTypeDropdownItems[0],
-                             //                    onChanged: (value) {
-                             //                      setState(() {
-                             //
-                             //                      });
-                             //                    },
-                             //                    items: discountTypeDropdownItems.map((value) {
-                             //                      return  DropdownMenuItem<String>(
-                             //                        value: value,
-                             //                        child: Row(
-                             //                          children: <Widget>[
-                             //                            Text(
-                             //                              value,
-                             //                              style:  TextStyle(color: yellowColor,fontSize: 13),
-                             //                            ),
-                             //                            //user.icon,
-                             //                            //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                             //                          ],
-                             //                        ),
-                             //                      );
-                             //                    }).toList(),
-                             //                  ),
-                             //                ),
-                             //                Padding(
-                             //                  padding: const EdgeInsets.all(4.0),
-                             //                  child: TextFormField(
-                             //                    decoration: const InputDecoration(
-                             //                        suffixIcon: Icon(Icons.add_task_outlined,color: yellowColor,size: 35,),
-                             //                        border: OutlineInputBorder(),
-                             //                        hintText: 'Enter Value'
-                             //
-                             //                    ),
-                             //                  ),
-                             //                )
-                             //              ],
-                             //            ),
-                             //          )
-                             //
-                             //        ],
-                             //      )
-                             // //      ListView(
-                             // //        children: [
-                             // //          Container(
-                             // //            width: MediaQuery.of(context).size.width,
-                             // //            height: 40,
-                             // //            color: yellowColor,
-                             // //            child: Center(
-                             // //              child: Text(
-                             // //                "Add Discount",
-                             // //                style: TextStyle(
-                             // //                    fontSize: 22,
-                             // //                    color: Colors.white,
-                             // //                    fontWeight: FontWeight.bold),
-                             // //              ),
-                             // //            ),
-                             // //          ),
-                             // //          DropdownButtonFormField<String>(
-                             // //            decoration: InputDecoration(
-                             // //              labelText: "Select Discount Type",
-                             // //              alignLabelWithHint: true,
-                             // //              labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                             // //              enabledBorder: OutlineInputBorder(
-                             // //              ),
-                             // //              focusedBorder:  OutlineInputBorder(
-                             // //                borderSide: BorderSide(color:yellowColor),
-                             // //              ),
-                             // //            ),
-                             // //
-                             // //            value: discountTypeDropdownItems[0],
-                             // //            onChanged: (value) {
-                             // //              setState(() {
-                             // //
-                             // //              });
-                             // //            },
-                             // //            items: discountTypeDropdownItems.map((value) {
-                             // //              return  DropdownMenuItem<String>(
-                             // //                value: value,
-                             // //                child: Row(
-                             // //                  children: <Widget>[
-                             // //                    Text(
-                             // //                      value,
-                             // //                      style:  TextStyle(color: yellowColor,fontSize: 13),
-                             // //                    ),
-                             // //                    //user.icon,
-                             // //                    //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                             // //                  ],
-                             // //                ),
-                             // //              );
-                             // //            }).toList(),
-                             // //          ),
-                             // //
-                             // //  TextField(
-                             // //  decoration: const InputDecoration(
-                             // //  border: OutlineInputBorder(),
-                             // //  hintText: 'Enter Value'
-                             // //  ),
-                             // // )
-                             // //        ],
-                             // //      ),
-                             //    ),
                                 Container(
                                   color: Colors.white,
                                   width: MediaQuery.of(context).size.width,
@@ -562,7 +427,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                   Row(
                                                     children: [
                                                       Text(
-                                                        "Rs: ",
+                                                        widget.store["currencyCode"]!=null?widget.store["currencyCode"]:"",
                                                         style: TextStyle(
                                                             fontSize: 25,
                                                             color: Colors
@@ -575,7 +440,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                         width: 2,
                                                       ),
                                                       Text(
-                                                        overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
+                                                        overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
                                                         style: TextStyle(
                                                             fontSize: 25,
                                                             color: Colors
@@ -592,76 +457,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                           ),
                                         ],
                                       ),
-                                      // Card(
-                                      //   elevation: 12,
-                                      //   child: InkWell(
-                                      //     onTap: () {
-                                      //       showDialog(context: context, builder:(BuildContext context){
-                                      //         return orderPopupHorizontal();
-                                      //       });
-                                      //     },
-                                      //     child: Container(
-                                      //       width: MediaQuery.of(context)
-                                      //               .size
-                                      //               .width -
-                                      //           200,
-                                      //       height: 60,
-                                      //       decoration: BoxDecoration(
-                                      //           color: yellowColor,
-                                      //           borderRadius:
-                                      //               BorderRadius.circular(8)),
-                                      //       child: Center(
-                                      //         child: Text(
-                                      //           "Create An Order ",
-                                      //           style: TextStyle(
-                                      //               fontSize: 25,
-                                      //               color: Colors.white,
-                                      //               fontWeight: FontWeight.bold),
-                                      //         ),
-                                      //       ),
-                                      //     ),
-                                      //   ),
-                                      // ),
-                                      // SizedBox(height: 10,),
-                                      // Card(
-                                      //   elevation: 12,
-                                      //   child: InkWell(
-                                      //     onTap: () {
-                                      //       showDialog(context: context, builder:(BuildContext context){
-                                      //         return Dialog(
-                                      //           //backgroundColor: Colors.transparent,
-                                      //             child: Container(
-                                      //                 height:MediaQuery.of(context).size.height -70,
-                                      //                 width: MediaQuery.of(context).size.width / 3,
-                                      //                 child:
-                                      //                 //finalizingOrderPopUpHorizontal()
-                                      //                 finalizingOrderPopUp()
-                                      //             )
-                                      //         );
-                                      //       });
-                                      //     },
-                                      //     child: Container(
-                                      //       width: MediaQuery.of(context)
-                                      //           .size
-                                      //           .width -
-                                      //           200,
-                                      //       height: 60,
-                                      //       decoration: BoxDecoration(
-                                      //           color: yellowColor,
-                                      //           borderRadius:
-                                      //           BorderRadius.circular(8)),
-                                      //       child: Center(
-                                      //         child: Text(
-                                      //           "Make Payment",
-                                      //           style: TextStyle(
-                                      //               fontSize: 25,
-                                      //               color: Colors.white,
-                                      //               fontWeight: FontWeight.bold),
-                                      //         ),
-                                      //       ),
-                                      //     ),
-                                      //   ),
-                                      // ),
+
                                       Container(
                                         width: MediaQuery.of(context).size.width,
                                         height: 60,
@@ -682,7 +478,29 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         children: [
                                           InkWell(
                                                 onTap: () {
-
+                                                  setState(() {
+                                                    overallTotalPriceWithTax=0.0;
+                                                    typeBasedTaxes.clear();
+                                                    taxesList.clear();
+                                                  });
+                                                  var tempTaxList = orderTaxes.where((element) => element.dineIn);
+                                                  if(tempTaxList!=null&&tempTaxList.length>0){
+                                                    for(Tax t in tempTaxList.toList()){
+                                                      setState(() {
+                                                        if(t.percentage!=null&&t.percentage!=0.0){
+                                                          var percentTax= overallTotalPrice/100*t.percentage;
+                                                          overallTotalPriceWithTax=overallTotalPrice+percentTax;
+                                                        }
+                                                        if(t.price!=null&&t.price!=0.0){
+                                                          overallTotalPriceWithTax=overallTotalPrice+t.price;
+                                                        }
+                                                        typeBasedTaxes.add(t);
+                                                        taxesList.add({
+                                                          "TaxId": t.id
+                                                        });
+                                                      });
+                                                    }
+                                                  }
                                                 },
                                             child: Container(
                                               width: 160,
@@ -704,6 +522,29 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                           ),
                                           InkWell(
                                                 onTap: () {
+                                                  setState(() {
+                                                    overallTotalPriceWithTax=0.0;
+                                                    typeBasedTaxes.clear();
+                                                    taxesList.clear();
+                                                  });
+                                                  var tempTaxList = orderTaxes.where((element) => element.takeAway);
+                                                  if(tempTaxList!=null&&tempTaxList.length>0){
+                                                    for(Tax t in tempTaxList.toList()){
+                                                      setState(() {
+                                                        if(t.percentage!=null&&t.percentage!=0.0){
+                                                          var percentTax= overallTotalPrice/100*t.percentage;
+                                                          overallTotalPriceWithTax=overallTotalPrice+percentTax;
+                                                        }
+                                                        if(t.price!=null&&t.price!=0.0){
+                                                          overallTotalPriceWithTax=overallTotalPrice+t.price;
+                                                        }
+                                                        typeBasedTaxes.add(t);
+                                                        taxesList.add({
+                                                          "TaxId": t.id
+                                                        });
+                                                      });
+                                                    }
+                                                  }
                                                   showDialog(context: context, builder:(BuildContext context){
                                                     return Dialog(
                                                         child: Container(
@@ -734,6 +575,30 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                           ),
                                           InkWell(
                                                 onTap: () {
+                                                  setState(() {
+                                                    overallTotalPriceWithTax=0.0;
+                                                    typeBasedTaxes.clear();
+                                                    taxesList.clear();
+                                                    var tempTaxList = orderTaxes.where((element) => element.delivery);
+                                                    if(tempTaxList!=null&&tempTaxList.length>0){
+                                                      for(Tax t in tempTaxList.toList()){
+                                                        setState(() {
+                                                          if(t.percentage!=null&&t.percentage!=0.0){
+                                                            var percentTax= overallTotalPrice/100*t.percentage;
+                                                            overallTotalPriceWithTax=overallTotalPrice+percentTax;
+                                                          }
+                                                          if(t.price!=null&&t.price!=0.0){
+                                                            overallTotalPriceWithTax=overallTotalPrice+t.price;
+                                                          }
+                                                          typeBasedTaxes.add(t);
+                                                          taxesList.add({
+                                                            "TaxId": t.id
+                                                          });
+                                                        });
+                                                      }
+                                                    }
+                                                  });
+
                                                   showDialog(context: context, builder:(BuildContext context){
                                                     return Dialog(
                                                         child: Container(
@@ -1171,9 +1036,9 @@ class _POSMainScreenState extends State<POSMainScreen> {
                               ),
                               Text(
                                 cartList[index].totalPrice != null
-                                    ? cartList[index]
+                                    ?widget.store["currencyCode"]+" "+cartList[index]
                                         .totalPrice
-                                        .toStringAsFixed(2)
+                                        .toStringAsFixed(1)
                                     : "",
                                 style: TextStyle(
                                     color: PrimaryColor,
@@ -1538,6 +1403,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
   }
 
   Widget orderPopupHorizontalDelivery(){
+
     return Scaffold(
       backgroundColor: Colors.white.withOpacity(0.1),
       body: Center(
@@ -1761,24 +1627,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                       orderTypeId = orderTypeList.indexOf(orderType)+1;
                                       print(orderTypeId);
                                     });
-                                    //taxList.clear();
-                                    // networksOperation.getTaxListByStoreIdWithOrderType(context, widget.storeId, orderType=="Dine In"?1:orderType=="Take Away"?2:orderType=="Delivery"?3:0).then((value) {
-                                    //   setState(() {
-                                    //     taxList = value;
-                                    //     print(taxList.toString()+"mnbvcxz");
-                                    //     totalPercentage=0.0;
-                                    //     totalTaxPrice =0.0;
-                                    //     orderTaxList.clear();
-                                    //     for(int i=0;i<taxList.length;i++){
-                                    //       totalTaxPrice += taxList[i].price;
-                                    //       totalPercentage += taxList[i].percentage;
-                                    //       orderTaxList.add({
-                                    //         "TaxId": taxList[i].id
-                                    //       });
-                                    //     }
-                                    //     print(orderTaxList.toString());
-                                    //   });
-                                    // });
                                   },
                                   items: orderTypeList.map((value) {
                                     return  DropdownMenuItem<String>(
@@ -1844,7 +1692,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                       Row(
                                         children: [
                                           Text(
-                                            "Rs: ",
+                                            widget.store["currencyCode"]!=null?widget.store["currencyCode"]+" ":"",
                                             style: TextStyle(
                                                 fontSize:
                                                 25,
@@ -1857,7 +1705,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             width: 2,
                                           ),
                                           Text(
-                                            overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
+                                            overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
                                             style: TextStyle(
                                                 fontSize:
                                                 25,
@@ -1885,7 +1733,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                       //borderRadius: BorderRadius.circular(8)
                                     ),
 
-                                    child: ListView.builder(itemCount: 2,itemBuilder: (context, index){
+                                    child: ListView.builder(itemCount: typeBasedTaxes.length,itemBuilder: (context, index){
                                       return  Padding(
                                         padding:
                                         const EdgeInsets
@@ -1896,7 +1744,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                               .spaceBetween,
                                           children: [
                                             Text(
-                                              "SubTotal: ",
+                                              typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?typeBasedTaxes[index].name+" (${typeBasedTaxes[index].percentage.toStringAsFixed(1)})":typeBasedTaxes[index].name,
                                               style: TextStyle(
                                                   fontSize:
                                                   25,
@@ -1908,21 +1756,9 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             ),
                                             Row(
                                               children: [
+
                                                 Text(
-                                                  "Rs: ",
-                                                  style: TextStyle(
-                                                      fontSize:
-                                                      25,
-                                                      color:
-                                                      yellowColor,
-                                                      fontWeight:
-                                                      FontWeight.bold),
-                                                ),
-                                                SizedBox(
-                                                  width: 2,
-                                                ),
-                                                Text(
-                                                  overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
+                                                  typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?widget.store["currencyCode"]+" "+(overallTotalPriceWithTax-overallTotalPrice).toStringAsFixed(1):"",
                                                   style: TextStyle(
                                                       fontSize:
                                                       25,
@@ -1964,7 +1800,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                       Row(
                                         children: [
                                           Text(
-                                            "Rs: ",
+                                            widget.store["currencyCode"]!=null?widget.store["currencyCode"]+" ":" ",
                                             style: TextStyle(
                                                 fontSize:
                                                 25,
@@ -1977,7 +1813,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             width: 2,
                                           ),
                                           Text(
-                                            overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
+                                            overallTotalPriceWithTax!=null&&overallTotalPriceWithTax!=0.0?overallTotalPriceWithTax.toStringAsFixed(1):overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
                                             style: TextStyle(
                                                 fontSize:
                                                 25,
@@ -2028,216 +1864,33 @@ class _POSMainScreenState extends State<POSMainScreen> {
       ),
     );
   }
+  var types=["Create Order","Payment"];
+  String selectedType;
   Widget orderPopupHorizontalTakeAway(){
     return Scaffold(
       backgroundColor: Colors.white.withOpacity(0.1),
-      body: Center(
-        child: Container(
-            height:MediaQuery.of(context).size.height/1.68,
-            width: MediaQuery.of(context).size.width/2,
-            decoration: BoxDecoration(
-                image: DecorationImage(
-                  fit: BoxFit.cover,
-                  //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
-                  image: AssetImage('assets/bb.jpg'),
-                )
-            ),
-            child: ListView(
-              children: [
-                Column(
+      body: StatefulBuilder(
+        builder: (context,innersetState){
+          return Center(
+            child: Container(
+                height:MediaQuery.of(context).size.height/1.68,
+                width: MediaQuery.of(context).size.width/2,
+                decoration: BoxDecoration(
+                    image: DecorationImage(
+                      fit: BoxFit.cover,
+                      //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
+                      image: AssetImage('assets/bb.jpg'),
+                    )
+                ),
+                child: ListView(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    Column(
                       children: [
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: DropdownButtonFormField<String>(
-                              decoration: InputDecoration(
-                                labelText: "Select Type",
-                                alignLabelWithHint: true,
-                                labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                enabledBorder: OutlineInputBorder(
-                                ),
-                                focusedBorder:  OutlineInputBorder(
-                                  borderSide: BorderSide(color:yellowColor),
-                                ),
-                              ),
-
-                              value: orderType,
-                              onChanged: (Value) {
-                                setState(() {
-                                  this.selectedOrderType = Value;
-                                  orderTypeId = orderTypeList.indexOf(orderType)+1;
-                                  print(orderTypeId);
-                                });
-                                //taxList.clear();
-                                // networksOperation.getTaxListByStoreIdWithOrderType(context, widget.storeId, orderType=="Dine In"?1:orderType=="Take Away"?2:orderType=="Delivery"?3:0).then((value) {
-                                //   setState(() {
-                                //     taxList = value;
-                                //     print(taxList.toString()+"mnbvcxz");
-                                //     totalPercentage=0.0;
-                                //     totalTaxPrice =0.0;
-                                //     orderTaxList.clear();
-                                //     for(int i=0;i<taxList.length;i++){
-                                //       totalTaxPrice += taxList[i].price;
-                                //       totalPercentage += taxList[i].percentage;
-                                //       orderTaxList.add({
-                                //         "TaxId": taxList[i].id
-                                //       });
-                                //     }
-                                //     print(orderTaxList.toString());
-                                //   });
-                                // });
-                              },
-                              items: orderTypeList.map((value) {
-                                return  DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Row(
-                                    children: <Widget>[
-                                      Text(
-                                        value,
-                                        style:  TextStyle(color: yellowColor,fontSize: 13),
-                                      ),
-                                      //user.icon,
-                                      //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: DropdownButtonFormField<dynamic>(
-                              decoration: InputDecoration(
-                                labelText: "Order Priority",
-                                labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                enabledBorder: OutlineInputBorder(
-                                ),
-                                focusedBorder:  OutlineInputBorder(
-                                  borderSide: BorderSide(color:yellowColor),
-                                ),
-                              ),
-
-                              value: priorities[0]["name"],
-                              onChanged: (Value) {
-                                setState(() {
-                                  selectedPriority=Value["name"];
-                                  selectedPriorityId=Value["id"];
-
-                                });
-                              },
-                              items: priorities.map((value) {
-                                return  DropdownMenuItem<String>(
-                                  value: value["name"],
-                                  child: Row(
-                                    children: <Widget>[
-                                      Text(
-                                        value["name"],
-                                        style:  TextStyle(color: yellowColor,fontSize: 13),
-                                      ),
-                                      //user.icon,
-                                      //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Expanded(
-                          child: Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Container(
-                              width: MediaQuery.of(context).size.width,
-                              height: 70,
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Expanded(
                               child: Padding(
-                                padding: const EdgeInsets.all(6.0),
-                                child: TextFormField(
-                                  decoration: InputDecoration(
-                                    border: OutlineInputBorder(),
-                                    hintText: "Name",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                        Expanded(
-                          child: Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Container(
-                              width: MediaQuery.of(context).size.width,
-                              height: 70,
-                              child: Padding(
-                                padding: const EdgeInsets.all(6.0),
-                                child: TextFormField(
-                                  decoration: InputDecoration(
-                                    border: OutlineInputBorder(),
-                                    hintText: "Email",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(16.0),
-                            child: TextFormField(
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(),
-                                hintText: "Phone#",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                              ),
-                            ),
-                          ),
-                        ),
-
-                        Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: TextFormField(
-                                controller: timePickerField,
-                                decoration: InputDecoration(
-                                    labelText: "Select Picking Time",
-                                    border: OutlineInputBorder(),
-                                    hintText: "Select Picking Time"
-                                ),
-                                onTap: ()async{
-                                  FocusScope.of(context).requestFocus(new FocusNode());
-                                  var time = await showTimePicker(
-                                      context: context,
-                                      initialTime: TimeOfDay.now()
-                                  );
-
-                                },
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            children: [
-                              Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: DropdownButtonFormField<String>(
                                   decoration: InputDecoration(
@@ -2251,33 +1904,13 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                     ),
                                   ),
 
-                                  value: orderType,
+                                  value: types[0],
                                   onChanged: (Value) {
-                                    setState(() {
-                                      this.selectedOrderType = Value;
-                                      orderTypeId = orderTypeList.indexOf(orderType)+1;
-                                      print(orderTypeId);
+                                    innersetState(() {
+                                      selectedType = Value;
                                     });
-                                    //taxList.clear();
-                                    // networksOperation.getTaxListByStoreIdWithOrderType(context, widget.storeId, orderType=="Dine In"?1:orderType=="Take Away"?2:orderType=="Delivery"?3:0).then((value) {
-                                    //   setState(() {
-                                    //     taxList = value;
-                                    //     print(taxList.toString()+"mnbvcxz");
-                                    //     totalPercentage=0.0;
-                                    //     totalTaxPrice =0.0;
-                                    //     orderTaxList.clear();
-                                    //     for(int i=0;i<taxList.length;i++){
-                                    //       totalTaxPrice += taxList[i].price;
-                                    //       totalPercentage += taxList[i].percentage;
-                                    //       orderTaxList.add({
-                                    //         "TaxId": taxList[i].id
-                                    //       });
-                                    //     }
-                                    //     print(orderTaxList.toString());
-                                    //   });
-                                    // });
                                   },
-                                  items: orderTypeList.map((value) {
+                                  items: types.map((value) {
                                     return  DropdownMenuItem<String>(
                                       value: value,
                                       child: Row(
@@ -2294,234 +1927,450 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                   }).toList(),
                                 ),
                               ),
-                              Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: Container(
-                                  width: MediaQuery.of(context).size.width,
-                                  height: 70,
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(6.0),
-                                    child: TextFormField(
-                                      decoration: InputDecoration(
-                                        border: OutlineInputBorder(),
-                                        hintText: "Name",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.all(12.0),
+                                child: DropdownButtonFormField<String>(
+                                  decoration: InputDecoration(
+                                    labelText: "Order Priority",
+                                    labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                    enabledBorder: OutlineInputBorder(
+                                    ),
+                                    focusedBorder:  OutlineInputBorder(
+                                      borderSide: BorderSide(color:yellowColor),
+                                    ),
+                                  ),
+
+                                  value: priorities[0]["name"],
+                                  onChanged: (Value) {
+                                    innersetState(() {
+                                      selectedPriority=Value;
+                                      selectedPriorityId=priorities[priorities.indexOf(priorities.where((element) =>element["name"]==selectedPriority).toList()[0])]["id"];
+                                      print(selectedPriorityId);
+                                    });
+                                  },
+                                  items: priorities.map((value) {
+                                    return  DropdownMenuItem<String>(
+                                      value: value["name"],
+                                      child: Row(
+                                        children: <Widget>[
+                                          Text(
+                                            value["name"],
+                                            style:  TextStyle(color: yellowColor,fontSize: 13),
+                                          ),
+                                          //user.icon,
+                                          //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                        ],
                                       ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Expanded(
+                              child: Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(6.0),
+                                  child: TextFormField(
+                                    controller: customerName,
+                                    decoration: InputDecoration(
+                                      border: OutlineInputBorder(),
+                                      hintText: "Customer Name",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                     ),
                                   ),
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                            Expanded(
+                              child: Padding(
+                                padding: EdgeInsets.all(8.0),
+                                child: Padding(
+                                  padding: const EdgeInsets.all(6.0),
+                                  child: TextFormField(
+                                    controller: customerEmail,
+                                    decoration: InputDecoration(
+                                      border: OutlineInputBorder(),
+                                      hintText: "Customer Email",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                        Expanded(
-                          child: Column(
-                            children: [
-                              Container(
-                                width: MediaQuery.of(context).size.width,
-                                height: 40,
-                                color: yellowColor,
+                        Row(
+                          children: [
+
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.all(16.0),
+                                child: TextFormField(
+                                  controller: customerPhone,
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(),
+                                    hintText: "Customer Phone#",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            Expanded(
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
                                 child: Padding(
                                   padding: const EdgeInsets.all(8.0),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                    MainAxisAlignment
-                                        .spaceBetween,
-                                    children: [
-                                      Text(
-                                        "SubTotal: ",
-                                        style: TextStyle(
-                                            fontSize:
-                                            25,
-                                            color:
-                                            Colors.white,
-                                            fontWeight:
-                                            FontWeight
-                                                .bold),
+                                  child: TextFormField(
+                                    controller: timePickerField,
+                                    decoration: InputDecoration(
+                                        labelText: "Select Picking Time",
+                                        border: OutlineInputBorder(),
+                                        hintText: "Select Picking Time"
+                                    ),
+                                    onTap: ()async{
+                                      FocusScope.of(context).requestFocus(new FocusNode());
+                                      var time = await showTimePicker(
+                                          context: context,
+                                          initialTime: TimeOfDay.now()
+                                      );
+
+                                    },
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: DropdownButtonFormField<String>(
+                                      decoration: InputDecoration(
+                                        labelText: "Select Type",
+                                        alignLabelWithHint: true,
+                                        labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                        enabledBorder: OutlineInputBorder(
+                                        ),
+                                        focusedBorder:  OutlineInputBorder(
+                                          borderSide: BorderSide(color:yellowColor),
+                                        ),
                                       ),
-                                      Row(
+
+                                      value: orderType,
+                                      onChanged: (Value) {
+                                        setState(() {
+                                          this.selectedOrderType = Value;
+                                          orderTypeId = orderTypeList.indexOf(orderType)+1;
+                                          print(orderTypeId);
+                                        });
+                                      },
+                                      items: orderTypeList.map((value) {
+                                        return  DropdownMenuItem<String>(
+                                          value: value,
+                                          child: Row(
+                                            children: <Widget>[
+                                              Text(
+                                                value,
+                                                style:  TextStyle(color: yellowColor,fontSize: 13),
+                                              ),
+                                              //user.icon,
+                                              //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                            ],
+                                          ),
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: EdgeInsets.all(8.0),
+                                    child: Container(
+                                      width: MediaQuery.of(context).size.width,
+                                      height: 70,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(6.0),
+                                        child: TextFormField(
+                                          decoration: InputDecoration(
+                                            border: OutlineInputBorder(),
+                                            hintText: "Name",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Expanded(
+                              child: Column(
+                                children: [
+                                  Container(
+                                    width: MediaQuery.of(context).size.width,
+                                    height: 40,
+                                    color: yellowColor,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                        MainAxisAlignment
+                                            .spaceBetween,
                                         children: [
                                           Text(
-                                            "Rs: ",
+                                            "SubTotal: ",
                                             style: TextStyle(
                                                 fontSize:
                                                 25,
                                                 color:
                                                 Colors.white,
                                                 fontWeight:
-                                                FontWeight.bold),
+                                                FontWeight
+                                                    .bold),
                                           ),
-                                          SizedBox(
-                                            width: 2,
-                                          ),
-                                          Text(
-                                            overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
-                                            style: TextStyle(
-                                                fontSize:
-                                                25,
-                                                color:
-                                                blueColor,
-                                                fontWeight:
-                                                FontWeight.bold),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                widget.store["currencyCode"]!=null?widget.store["currencyCode"]:" ",
+                                                style: TextStyle(
+                                                    fontSize:
+                                                    25,
+                                                    color:
+                                                    Colors.white,
+                                                    fontWeight:
+                                                    FontWeight.bold),
+                                              ),
+                                              SizedBox(
+                                                width: 2,
+                                              ),
+                                              Text(
+                                                overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
+                                                style: TextStyle(
+                                                    fontSize:
+                                                    25,
+                                                    color:
+                                                    blueColor,
+                                                    fontWeight:
+                                                    FontWeight.bold),
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                              Padding(
-                                padding: const EdgeInsets.all(2.0),
-                                child: Container(
-                                    width: MediaQuery.of(
-                                        context)
-                                        .size
-                                        .width,
-                                    height: 90,
-                                    decoration: BoxDecoration(
-                                      border: Border.all(color: yellowColor),
-                                      //borderRadius: BorderRadius.circular(8)
                                     ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.all(2.0),
+                                    child: Container(
+                                        width: MediaQuery.of(
+                                            context)
+                                            .size
+                                            .width,
+                                        height: 90,
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: yellowColor),
+                                          //borderRadius: BorderRadius.circular(8)
+                                        ),
 
-                                    child: ListView.builder(itemCount: 2,itemBuilder: (context, index){
-                                      return  Padding(
-                                        padding:
-                                        const EdgeInsets
-                                            .all(8.0),
-                                        child: Row(
-                                          mainAxisAlignment:
-                                          MainAxisAlignment
-                                              .spaceBetween,
-                                          children: [
-                                            Text(
-                                              "SubTotal: ",
-                                              style: TextStyle(
-                                                  fontSize:
-                                                  25,
-                                                  color:
-                                                  yellowColor,
-                                                  fontWeight:
-                                                  FontWeight
-                                                      .bold),
-                                            ),
-                                            Row(
+                                        child: ListView.builder(itemCount: typeBasedTaxes.length,itemBuilder: (context, index){
+                                          return  Padding(
+                                            padding:
+                                            const EdgeInsets
+                                                .all(8.0),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                  .spaceBetween,
                                               children: [
                                                 Text(
-                                                  "Rs: ",
+                                                  typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?typeBasedTaxes[index].name+" (${typeBasedTaxes[index].percentage.toStringAsFixed(1)})":typeBasedTaxes[index].name,
                                                   style: TextStyle(
                                                       fontSize:
                                                       25,
                                                       color:
                                                       yellowColor,
                                                       fontWeight:
-                                                      FontWeight.bold),
+                                                      FontWeight
+                                                          .bold),
                                                 ),
-                                                SizedBox(
-                                                  width: 2,
-                                                ),
-                                                Text(
-                                                  overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
-                                                  style: TextStyle(
-                                                      fontSize:
-                                                      25,
-                                                      color:
-                                                      blueColor,
-                                                      fontWeight:
-                                                      FontWeight.bold),
+                                                Row(
+                                                  children: [
+
+                                                    Text(
+                                                      typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?widget.store["currencyCode"]+" "+(overallTotalPriceWithTax-overallTotalPrice).toStringAsFixed(1):"",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          25,
+                                                          color:
+                                                          blueColor,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                  ],
                                                 ),
                                               ],
                                             ),
-                                          ],
-                                        ),
-                                      );
-                                    })
-                                ),
-                              ),
-                              Container(
-                                width: MediaQuery.of(context).size.width,
-                                height: 50,
-                                color: yellowColor,
-                                child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Row(
-                                    mainAxisAlignment:
-                                    MainAxisAlignment
-                                        .spaceBetween,
-                                    children: [
-                                      Text(
-                                        "Total: ",
-                                        style: TextStyle(
-                                            fontSize:
-                                            25,
-                                            color:
-                                            Colors.white,
-                                            fontWeight:
-                                            FontWeight
-                                                .bold),
-                                      ),
-                                      Row(
+                                          );
+                                        })
+                                    ),
+                                  ),
+                                  Container(
+                                    width: MediaQuery.of(context).size.width,
+                                    height: 50,
+                                    color: yellowColor,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Row(
+                                        mainAxisAlignment:
+                                        MainAxisAlignment
+                                            .spaceBetween,
                                         children: [
                                           Text(
-                                            "Rs: ",
+                                            "Total: ",
                                             style: TextStyle(
                                                 fontSize:
                                                 25,
                                                 color:
                                                 Colors.white,
                                                 fontWeight:
-                                                FontWeight.bold),
+                                                FontWeight
+                                                    .bold),
                                           ),
-                                          SizedBox(
-                                            width: 2,
-                                          ),
-                                          Text(
-                                            overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
-                                            style: TextStyle(
-                                                fontSize:
-                                                25,
-                                                color:
-                                                blueColor,
-                                                fontWeight:
-                                                FontWeight.bold),
+                                          Row(
+                                            children: [
+                                              Text(
+                                                widget.store["currencyCode"]!=null?widget.store["currencyCode"]+" ":"",
+                                                style: TextStyle(
+                                                    fontSize:
+                                                    25,
+                                                    color:
+                                                    Colors.white,
+                                                    fontWeight:
+                                                    FontWeight.bold),
+                                              ),
+                                              SizedBox(
+                                                width: 2,
+                                              ),
+                                              Text(
+                                                overallTotalPriceWithTax!=null&&overallTotalPriceWithTax!=0.0?overallTotalPriceWithTax.toStringAsFixed(1)+"/-":overallTotalPrice.toStringAsFixed(1)+"/-",
+                                                style: TextStyle(
+                                                    fontSize:
+                                                    25,
+                                                    color:
+                                                    blueColor,
+                                                    fontWeight:
+                                                    FontWeight.bold),
+                                              ),
+                                            ],
                                           ),
                                         ],
                                       ),
-                                    ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: InkWell(
+                            onTap: (){
+                              orderItems.clear();
+                              for(int i=0;i<cartList.length;i++){
+                                orderItems.add({
+                                  "dealid":cartList[i].dealId,
+                                  "name":cartList[i].productName,
+                                  "price":cartList[i].price,
+                                  "quantity":cartList[i].quantity,
+                                  "totalprice":cartList[i].totalPrice,
+                                  "havetopping":cartList[i].topping=="null"||cartList[i].topping==null || cartList[i].topping== "[]" ?false:jsonDecode(cartList[i].topping).length>0?true:false,
+                                  "sizeid":cartList[i].sizeId,
+                                  "IsDeal": cartList[i].isDeal==0?false:true,
+                                  "productid":cartList[i].productId,
+                                  "orderitemstoppings":cartList[i].topping==null||cartList[i].topping == "[]"?[]:jsonDecode(cartList[i].topping),
+                                });
+                              }
+                              print(taxesList);
+                              dynamic order = {
+                                "DailySessionNo": 7,
+                                "OrderPriorityId":selectedPriorityId!=null?selectedPriorityId:null,
+                                "storeId":widget.store["id"],
+                                "DeviceToken":null,
+                                "ordertype":2,
+                                "NetTotal":overallTotalPrice,
+                                //  "grosstotal":widget.netTotal,
+                                "comment":null,
+                                "TableId":null,
+                                "DeliveryAddress" : null,
+                                "DeliveryLongitude" : null,
+                                "DeliveryLatitude" : null,
+                                "PaymentType" : 1,
+                                "orderitems":orderItems,
+                                "CardNumber": null,
+                                "CVV": null,
+                                "ExpiryDate": null,
+                                "EstimatedTakeAwayTime": "12:00:00",
+                                "OrderTaxes":taxesList,
+                                "VoucherCode": "",
+                                "OrderStatus":7,
+                                "CustomerEmail":customerEmail.text,
+                                "CustomerContactNo":customerPhone.text,
+                                "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false
+                                // "MobileNo": "03123456789",
+                                // "CnicLast6Digits": "345678"
+                              };
+
+                              SharedPreferences.getInstance().then((prefs){
+                                setState(() {
+                                  isLoading=false;
+                                });
+                                Network_Operations.placeOrder(context, prefs.getString("token"), order).then((value){
+
+                                  Navigator.pop(context);
+                                  setState(() {
+                                    isLoading=false;
+                                  });
+                                });
+                              });
+                              Navigator.pop(context);
+                            },
+                            child: Card(
+                              elevation:8,
+                              child: Container(
+                                width: 400,
+                                height: 60,
+                                decoration: BoxDecoration(
+                                    color: yellowColor,
+                                    borderRadius: BorderRadius.circular(4)
+                                ),
+                                child: Center(
+                                  child: Text(
+                                    "Submit Order",
+                                    style: TextStyle(
+                                        fontSize: 25,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold),
                                   ),
                                 ),
                               ),
-                            ],
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: Card(
-                        elevation:8,
-                        child: Container(
-                          width: 400,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: yellowColor,
-                            borderRadius: BorderRadius.circular(4)
-                          ),
-                          child: Center(
-                            child: Text(
-                              "Submit Order",
-                              style: TextStyle(
-                                  fontSize: 25,
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
-                ),
-              ],
-            )
-        ),
+                )
+            ),
+          );
+        },
       ),
     );
   }
@@ -3703,7 +3552,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 id: foundProducts[0]["id"],
                                 productId: product.id,
                                 productName: product.name,
-                                isDeal: 1,
+                                isDeal: 0,
                                 dealId: null,
                                 sizeId: selectedSizeId,
                                 sizeName: selectedSizeName,
@@ -3733,7 +3582,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 .create_cart(CartItems(
                                 productId: product.id,
                                 productName: product.name,
-                                isDeal: 1,
+                                isDeal: 0,
                                 dealId: null,
                                 sizeId: selectedSizeId,
                                 sizeName: selectedSizeName,

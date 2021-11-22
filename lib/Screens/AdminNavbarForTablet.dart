@@ -11,9 +11,9 @@ import 'POSMainScreen.dart';
 
 
 class AdminNavBarForTablet extends StatefulWidget {
-  var storeId,roleId,resturantId;
+  var store,roleId,resturantId;
 
-  AdminNavBarForTablet({this.resturantId,this.storeId,this.roleId});
+  AdminNavBarForTablet({this.resturantId,this.store,this.roleId});
 
   @override
   _AdminNavBarState createState() => _AdminNavBarState();
@@ -26,7 +26,6 @@ class _AdminNavBarState extends State<AdminNavBarForTablet> {
 
   @override
   void initState() {
-    print(widget.storeId);
     SharedPreferences.getInstance().then((prefs) {
       var claims = Utils.parseJwt(prefs.getString('token'));
       print(claims['nameid'].toString());
@@ -87,15 +86,15 @@ class _AdminNavBarState extends State<AdminNavBarForTablet> {
   _getPage(int page) {
     switch (page) {
       case 0:
-        return POSMainScreen(storeId:widget.storeId);
+        return POSMainScreen(store:widget.store);
     //return AdminProfile(widget.storeId,widget.roleId);
       case 1:
-        return OrderListsTabsScreen(storeId:widget.storeId);
+        return OrderListsTabsScreen(storeId:widget.store["id"]);
       case 2:
-        return OrderRecordTabsScreen(storeId:widget.storeId);
+        return OrderRecordTabsScreen(storeId:widget.store["id"]);
         //return OrderListsTabsScreen(storeId:widget.storeId);
       default:
-        return POSMainScreen(storeId: widget.storeId);
+        return POSMainScreen(store: widget.store);
     }
   }
 }

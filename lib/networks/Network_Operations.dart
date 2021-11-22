@@ -6,6 +6,7 @@ import 'package:exabistro_pos/model/Additionals.dart';
 import 'package:exabistro_pos/model/Products.dart';
 import 'package:exabistro_pos/model/Stores.dart';
 import 'package:exabistro_pos/model/Tax.dart';
+import 'package:exabistro_pos/networks/sqlite_helper.dart';
 import 'package:http/http.dart' as http;
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/model/Categories.dart';
@@ -477,6 +478,38 @@ class Network_Operations{
       Utils.showError(context, "Error Found:");
     }
     return null;
+  }
+
+  static Future<bool> placeOrder(BuildContext context,String token,dynamic orderData)async {
+    //ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
+
+    try{
+      //pd.show();
+      Map<String,String> headers = {'Content-Type':'application/json','Authorization':'Bearer '+token};
+
+      var body=jsonEncode(
+          orderData
+      );
+      var response=await http.post(Utils.baseUrl()+"orders/Add",headers: headers,body: body);
+      print(response.statusCode);
+      if(response.statusCode==200){
+        //pd.hide();
+        Utils.showSuccess(context, "Your Order is Placed");
+        sqlite_helper().deletecart();
+        // sqlite_helper().deletecartStaff();
+        return true;
+      }
+      else{
+        print(response.body);
+        //pd.hide();
+        Utils.showError(context, response.body.toString());
+        return false;
+      }
+    }catch(e){
+      //pd.hide();
+      //Utils.showError(context, "Error Found: $e");
+      return false;
+    }
   }
   static Future<List<dynamic>> getOrderPriorityDropDown(BuildContext context,int storeId)async{
 

@@ -121,7 +121,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
                 elevation: 8,
                 child: InkWell(
                   onTap: () {
-                    Navigator.push(context,MaterialPageRoute(builder:(context)=>AdminNavBarForTablet(storeId: widget.roles[index]['store']['id'],)));
+                    Navigator.push(context,MaterialPageRoute(builder:(context)=>AdminNavBarForTablet(store: widget.roles[index]['store'],)));
                   },
                   child: Container(
                     child: Row(
@@ -253,112 +253,6 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
                       ],
                     )
                   )
-                  // Container(
-                  //   //alignment: Alignment.center,
-                  //   decoration: BoxDecoration(
-                  //    // border: Border.all(color: yellowColor, width: 2),
-                  //       borderRadius: BorderRadius.circular(4)),
-                  //   child: Column(
-                  //     children: [
-                  //       Container(
-                  //         decoration: BoxDecoration(
-                  //             border: Border.all(color: yellowColor, width: 2),
-                  //             image: DecorationImage(
-                  //               fit: BoxFit.fill,
-                  //               image: NetworkImage(widget.roles[index]['restaurant']["image"]!=null?widget.roles[index]['restaurant']["image"]:'http://www.4motiondarlington.org/wp-content/uploads/2013/06/No-image-found.jpg',),
-                  //             ),
-                  //             //color: Colors.lightGreen,
-                  //             borderRadius: BorderRadius.only(topRight: Radius.circular(15), topLeft:  Radius.circular(15) )),
-                  //         width: MediaQuery.of(context).size.width,
-                  //         height: 210,
-                  //         //child: Image.network(widget.roles[index]['image']!=null?widget.roles[index].image:'http://www.4motiondarlington.org/wp-content/uploads/2013/06/No-image-found.jpg',fit: BoxFit.fill),
-                  //       ),
-                  //       Padding(padding: EdgeInsets.all(2),),
-                  //       Padding(
-                  //         padding: const EdgeInsets.only(left: 8, bottom: 5),
-                  //         child: Row(
-                  //           children: [
-                  //             Padding(
-                  //               padding: const EdgeInsets.only(right: 11),
-                  //               child: FaIcon(FontAwesomeIcons.utensils, color: PrimaryColor, size: 15,),
-                  //             ),
-                  //             Text("Restaurant: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20,color: yellowColor),),
-                  //             Text("${widget.roles[index]['restaurant']!=null?widget.roles[index]['restaurant']['name']:" - "}",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20,color: PrimaryColor),),
-                  //           ],
-                  //         ),
-                  //       ),
-                  //       Padding(
-                  //         padding: const EdgeInsets.only(left: 8, bottom: 2),
-                  //         child: Row(
-                  //           children: [
-                  //             Padding(
-                  //               padding: const EdgeInsets.only(right: 5),
-                  //               child: FaIcon(FontAwesomeIcons.storeAlt, color: PrimaryColor, size: 15,),
-                  //             ),
-                  //             Text("Store: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20,color: yellowColor),),
-                  //             Text(widget.roles[index]['store']!=null?widget.roles[index]['store']['name']:" - ",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 17,color: PrimaryColor),),
-                  //           ],
-                  //         ),
-                  //       ),
-                  //       Padding(
-                  //         padding: const EdgeInsets.all(8.0),
-                  //         child: Row(
-                  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  //           children: [
-                  //             Row(
-                  //               children: [
-                  //                 Padding(
-                  //                   padding: const EdgeInsets.only(right: 7),
-                  //                   child: FaIcon(FontAwesomeIcons.city, color: PrimaryColor, size: 15,),
-                  //                 ),
-                  //                 Text("City: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20,color: yellowColor),),
-                  //                 Text("${widget.roles[index]['store']['city']}",style: TextStyle(color: PrimaryColor,fontWeight: FontWeight.bold, fontSize: 17),),
-                  //               ],
-                  //             ),
-                  //             Row(
-                  //                 children: [
-                  //                   Padding(
-                  //                       padding: const EdgeInsets.only(right: 5),
-                  //                       child: FaIcon(FontAwesomeIcons.userTie, color: PrimaryColor, size: 20,),
-                  //                   ),
-                  //                   Text("Role: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20,color: yellowColor),),
-                  //                   Text("${getRoleName(widget.roles[index]['roleId'])}",style: TextStyle(color: PrimaryColor,fontWeight: FontWeight.bold, fontSize: 17),),
-                  //                 ],
-                  //               ),
-                  //           ],
-                  //         ),
-                  //       ),
-                  //       Padding(
-                  //         padding: const EdgeInsets.only(left: 4, right: 4),
-                  //         child: Row(
-                  //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  //           children: [
-                  //             Row(
-                  //               children: [
-                  //                 Padding(
-                  //                   padding: const EdgeInsets.all(2.0),
-                  //                   child: FaIcon(FontAwesomeIcons.clock, color: PrimaryColor),
-                  //                 ),
-                  //                 Text("Open: ",style: TextStyle(color: yellowColor,fontWeight: FontWeight.bold),),
-                  //                 Text("${widget.roles[index]['store']!=null?widget.roles[index]['store']['openTime']:""}",style: TextStyle(color: PrimaryColor,fontWeight: FontWeight.bold),),
-                  //               ],
-                  //             ),
-                  //             Row(
-                  //               children: [
-                  //                 Padding(
-                  //                   padding: const EdgeInsets.all(2.0),
-                  //                   child: FaIcon(FontAwesomeIcons.clock, color: PrimaryColor),
-                  //                 ),
-                  //                 Text("Close: ",style: TextStyle(color: yellowColor,fontWeight: FontWeight.bold),),
-                  //                 Text("${widget.roles[index]['store']!=null?widget.roles[index]['store']['closeTime']:""}",style: TextStyle(color: PrimaryColor,fontWeight: FontWeight.bold),),
-                  //               ],
-                  //             ),
-                  //           ],
-                  //         ),
-                  //       )
-                  //     ],
-                  //   ),
-                  // ),
                 ),
               );
             }),

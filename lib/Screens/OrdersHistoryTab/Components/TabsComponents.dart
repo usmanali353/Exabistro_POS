@@ -1,4 +1,5 @@
 import 'package:exabistro_pos/Screens/LoginScreen.dart';
+import 'package:exabistro_pos/Screens/Orders/InQueueOrdersForTab.dart';
 import 'package:exabistro_pos/Screens/Orders/PreparingOrdersForKitchen(Tab).dart';
 import 'package:exabistro_pos/Screens/Orders/ReadyOrdersForTablet.dart';
 import 'package:exabistro_pos/Screens/Orders/ReceivedOrdersForKitchen(Tab).dart';
@@ -49,7 +50,7 @@ class OrderListsTabsWidgetState extends State<OrderListsTabsScreen> with SingleT
 
     return DefaultTabController(
 
-        length: 3,
+        length: 4,
         child: Scaffold(
           appBar: AppBar(
             iconTheme: IconThemeData(
@@ -84,6 +85,18 @@ class OrderListsTabsWidgetState extends State<OrderListsTabsScreen> with SingleT
                     )
                 ),
                 tabs: [
+                  Tab(
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Text("In Queue",
+                        style: TextStyle(
+                            fontSize: 17,
+                            fontWeight: FontWeight.bold
+                          //color: Color(0xff172a3a)
+                        ),
+                      ),
+                    ),
+                  ),
                   Tab(
                     child: Align(
                       alignment: Alignment.center,
@@ -123,6 +136,7 @@ class OrderListsTabsWidgetState extends State<OrderListsTabsScreen> with SingleT
                 ]),
           ),
           body: TabBarView(children: [
+            InQueueOrdersScreenForTab(widget.storeId),
             ReceivedOrdersScreenForTab(widget.storeId),
             PreparingOrdersScreenForTab(widget.storeId),
             ReadyOrdersScreenForTab(widget.storeId),
