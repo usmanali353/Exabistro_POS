@@ -4,7 +4,6 @@ import 'package:api_cache_manager/utils/cache_manager.dart';
 import 'package:connectivity/connectivity.dart';
 import 'package:exabistro_pos/model/Additionals.dart';
 import 'package:exabistro_pos/model/Products.dart';
-import 'package:exabistro_pos/model/Stores.dart';
 import 'package:exabistro_pos/model/Tax.dart';
 import 'package:exabistro_pos/networks/sqlite_helper.dart';
 import 'package:http/http.dart' as http;
@@ -21,7 +20,7 @@ class Network_Operations{
     var body=jsonEncode({"email":email,"password":password});
     try{
       List rolesAndStores =[],restaurantList=[];
-      var response=await http.post(Utils.baseUrl()+"account/login",body:body,headers: {"Content-type":"application/json"});
+      var response=await http.post(Uri.parse(Utils.baseUrl()+"account/login"),body:body,headers: {"Content-type":"application/json"});
       if(response!=null&&response.statusCode==200){
         List decoded = jsonDecode(response.body)['roles'];
         rolesAndStores.clear();
@@ -77,9 +76,8 @@ class Network_Operations{
     }
   }
   static Future<dynamic> getRoles(BuildContext context)async{
-
     try{
-      var response=await http.get(Utils.baseUrl()+"Account/GetAllRolesExceptSuperAdmin",);
+      var response=await http.get(Uri.parse(Utils.baseUrl()+"Account/GetAllRolesExceptSuperAdmin"),);
       var data= jsonDecode(response.body);
       if(response.statusCode==200){
         return data;
@@ -90,40 +88,6 @@ class Network_Operations{
       }
     }catch(e){
       Utils.showError(context, "Error Found: ");
-    }
-    return null;
-  }
-  static Future<List<Categories>> getSubcategories(BuildContext context,int storeId)async{
-    //ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
-    try{
-    //  pd.show();
-      var response=await http.get(Utils.baseUrl()+"subcategories/getbycategoryid?StoreId="+storeId.toString(),);
-      var data= jsonDecode(response.body);
-      if(response.statusCode==200){
-        //pd.hide();
-        print(response.body);
-        List<Categories> list=List();
-        list.clear();
-        for(int i=0;i<data.length;i++){
-          if(data[i]['isVisible'] == true) {
-            list.add(Categories(name: data[i]['name'],
-                id: data[i]['id'],
-                image: data[i]['image'],
-                isVisible: data[i]['isVisible'],
-                categoryId: data[i]["categoryId"]
-            )
-            );
-          }
-        }
-        return list;
-      }
-      else{
-       // pd.hide();
-        Utils.showError(context, "Error Occur");
-      }
-    }catch(e){
-      //pd.hide();
-      Utils.showError(context, e.toString());
     }
     return null;
   }
@@ -142,7 +106,7 @@ class Network_Operations{
       }
       if(connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi){
         //pd.show();
-        var response=await http.get(Utils.baseUrl()+"Products/GetByCategoryId?StoreId=$storeId&categoryId="+categoryId.toString()+"&searchstring=$search",);
+        var response=await http.get(Uri.parse(Utils.baseUrl()+"Products/GetByCategoryId?StoreId=$storeId&categoryId="+categoryId.toString()+"&searchstring=$search"),);
         print(Utils.baseUrl()+"Products/GetByCategoryId?StoreId=$storeId&categoryId="+categoryId.toString()+"&searchstring=$search");
         APICacheDBModel cacheDBModel = new APICacheDBModel(
             key: "productList", syncData: response.body);
@@ -186,7 +150,7 @@ class Network_Operations{
       pd.show();
       List list=[];
       Map<String,String> headers = {'Authorization':'Bearer '+token};
-      var response=await http.get(Utils.baseUrl()+"orders/getallbasicorderswithitems/"+orderStatusId.toString()+"?StoreId="+storeId.toString(),headers: headers);
+      var response=await http.get(Uri.parse(Utils.baseUrl()+"orders/getallbasicorderswithitems/"+orderStatusId.toString()+"?StoreId="+storeId.toString()),headers: headers);
       var data= jsonDecode(response.body);
       if(response.statusCode==200){
         pd.hide();
@@ -215,7 +179,7 @@ class Network_Operations{
       pd.show();
       List list=[];
       Map<String,String> headers = {'Authorization':'Bearer '+token};
-      var response=await http.get(Utils.baseUrl()+"orders/getallbasicorderswithitems/"+orderStatusId.toString()+"?CategoryId="+categoryId.toString()+"&StoreId="+storeId.toString(),headers: headers);
+      var response=await http.get(Uri.parse(Utils.baseUrl()+"orders/getallbasicorderswithitems/"+orderStatusId.toString()+"?CategoryId="+categoryId.toString()+"&StoreId="+storeId.toString()),headers: headers);
       var data= jsonDecode(response.body);
       if(response.statusCode==200){
         pd.hide();
@@ -239,7 +203,7 @@ class Network_Operations{
     try{
       // pd.show();
       Map<String,String> headers = {'Authorization':'Bearer '+token};
-      var response=await http.get(Utils.baseUrl()+"tables/GetAll/?storeId=$storeId",headers: headers);
+      var response=await http.get(Uri.parse(Utils.baseUrl()+"tables/GetAll/?storeId=$storeId"),headers: headers);
       var data= jsonDecode(response.body);
       if(response.statusCode==200){
         List list =[];
@@ -262,44 +226,6 @@ class Network_Operations{
     }
     return null;
   }
-  static Future<List<Store>> getAllStoresByRestaurantId(BuildContext context,dynamic storeData)async{
-    ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
-    try{
-      // pd.show();
-      var body=jsonEncode(
-          storeData
-      );
-      Map<String,String> headers = {'Content-Type':'application/json','Authorization':'Bearer '};
-      var response=await http.post(Utils.baseUrl()+"Store/GetAll",headers:headers,body: body );
-      var data= jsonDecode(response.body);
-      print(data);
-      if(response.statusCode==200){
-        pd.hide();
-        //return data;
-        // List<Store> list=List();
-        // list.clear();
-        // for(int i=0;i<data.length;i++){
-        //   list.add(Store(name: data[i]['name'],id: data[i]['id'],image: data[i]['image'],
-        //       address:  data[i]['address'],isVisible: data[i]['isVisible'],
-        //       city:  data[i]['city'],restaurantId: data[i]['restaurantId'],));
-        // }
-        // print(data.toString());
-        // return list;
-        return Store.listStoreFromJson(response.body);
-
-      }
-      else{
-       // pd.hide();
-        Utils.showError(context, "Please Try Again");
-        return null;
-      }
-    }catch(e){
-      //pd.hide();
-      print(e);
-      Utils.showError(context, "Error Found:");
-    }
-    return null;
-  }
   static Future<bool> changeOrderStatus(BuildContext context,String token,dynamic OrderStatusData)async{
 
     try{
@@ -308,7 +234,7 @@ class Network_Operations{
           OrderStatusData
       );
       print(body);
-      var response=await http.post(Utils.baseUrl()+"orders/UpdateStatus",headers: headers,body: body);
+      var response=await http.post(Uri.parse(Utils.baseUrl()+"orders/UpdateStatus"),headers: headers,body: body);
       print(response.body);
 
       var data= jsonDecode(response.body);
@@ -325,29 +251,12 @@ class Network_Operations{
     }
     return null;
   }
-  static Future<dynamic> changeOrderItemStatus(BuildContext context,String token,int orderItemId,int statusId,var chefId)async{
-
-    try{
-      Map<String,String> header = {'Authorization':'Bearer '+token};
-      var response=await http.get(Utils.baseUrl()+"orders/UpdateOrderItemStatus/"+orderItemId.toString()+"/"+statusId.toString()+"/$chefId",headers: header);
-      var data= jsonDecode(response.body);
-      if(response.statusCode==200){
-        return data;
-      }
-      else{
-        Utils.showError(context, "Please Try Again");
-      }
-    }catch(e){
-      Utils.showError(context, "Error Found");
-    }
-    return null;
-  }
   static Future<List<Categories>> getCategories(BuildContext context,int storeId)async{
    // ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
 
     try{
       // pd.show();
-      var response=await http.get(Utils.baseUrl()+"Categories/GetAll?StoreId=$storeId&ShowByTime=0",);//0 is for time limitation
+      var response=await http.get(Uri.parse(Utils.baseUrl()+"Categories/GetAll?StoreId=$storeId&ShowByTime=0"),);//0 is for time limitation
       var data= jsonDecode(response.body);
       if(response.statusCode==200){
         //pd.hide();
@@ -368,41 +277,22 @@ class Network_Operations{
     //pd.hide();
     return null;
   }
-  static Future<Store> getStoreById(BuildContext context,String token,storeId)async{
-
-    try{
-      //Map<String,String> headers = {'Authorization':'Bearer '+token};
-      var response=await http.get(Utils.baseUrl()+"Store/"+storeId.toString());
-      var data= jsonDecode(response.body);
-      if(response.statusCode==200){
-        return Store.StoreFromJson(response.body);
-      }
-      else{
-        Utils.showError(context, "Please Try Again");
-        return null;
-      }
-    }catch(e){
-      print(e);
-      Utils.showError(context, "Error Found:");
-    }
-    return null;
-  }
   static Future<List<dynamic>> getAllDeals(BuildContext context,String token,int storeId,{String startingPrice,String endingPrice,String search,DateTime startDate,DateTime endDate})async{
     try{
       var response;
       Map<String,String> headers = {'Authorization':'Bearer '+token};
       if(startDate ==null && endDate==null && startingPrice==null && endingPrice==null && search==null)
-        response=await http.get(Utils.baseUrl()+"deals/GetAll?storeId=$storeId",headers: headers);
+        response=await http.get(Uri.parse(Utils.baseUrl()+"deals/GetAll?storeId=$storeId"),headers: headers);
       else if(startDate ==null && endDate==null && startingPrice==null && endingPrice==null)
-        response=await http.get(Utils.baseUrl()+"deals/GetAll?storeId=$storeId&searchstring=$search",headers: headers);
+        response=await http.get(Uri.parse(Utils.baseUrl()+"deals/GetAll?storeId=$storeId&searchstring=$search"),headers: headers);
       else if(startDate !=null && endDate!=null)
-        response=await http.get(Utils.baseUrl()+"deals/GetAll?storeId=$storeId&startingDate=$startDate&EndingDate=$endDate",headers: headers);
+        response=await http.get(Uri.parse(Utils.baseUrl()+"deals/GetAll?storeId=$storeId&startingDate=$startDate&EndingDate=$endDate"),headers: headers);
       else if(startingPrice !=null && endingPrice!=null)
-        response=await http.get(Utils.baseUrl()+"deals/GetAll?storeId=$storeId&startingPrice=$startingPrice&endingPrice=$endingPrice",headers: headers);
+        response=await http.get(Uri.parse(Utils.baseUrl()+"deals/GetAll?storeId=$storeId&startingPrice=$startingPrice&endingPrice=$endingPrice"),headers: headers);
       else if(startDate !=null && endDate!=null && startingPrice!=null && endingPrice!=null)
-        response=await http.get(Utils.baseUrl()+"deals/GetAll?storeId=$storeId&startingPrice=$startingPrice&endingPrice=$endingPrice&startingDate=$startDate&EndingDate=$endDate",headers: headers);
+        response=await http.get(Uri.parse(Utils.baseUrl()+"deals/GetAll?storeId=$storeId&startingPrice=$startingPrice&endingPrice=$endingPrice&startingDate=$startDate&EndingDate=$endDate"),headers: headers);
       else
-        response=await http.get(Utils.baseUrl()+"deals/GetAll?storeId=$storeId",headers: headers);
+        response=await http.get(Uri.parse(Utils.baseUrl()+"deals/GetAll?storeId=$storeId"),headers: headers);
       var data= jsonDecode(response.body);
       if(response.statusCode==200){
        // pd.hide();
@@ -425,7 +315,7 @@ class Network_Operations{
     //pd.show();
     try{
       Map<String,String> headers = {'Authorization':'Bearer '+token};
-      var response=await http.get(Utils.baseUrl()+"additionalitems/GetAdditionalItemsByCategorySizeProductId/0/"+"$sizeId/"+productId.toString(),headers: headers);
+      var response=await http.get(Uri.parse(Utils.baseUrl()+"additionalitems/GetAdditionalItemsByCategorySizeProductId/0/"+"$sizeId/"+productId.toString()),headers: headers);
       var data= jsonDecode(response.body);
       if(response.statusCode==200){
        // pd.hide();
@@ -442,7 +332,7 @@ class Network_Operations{
   }
   static Future<List<Tax>> getTaxListByStoreId(BuildContext context,int storeId )async{
     try{
-      var response=await http.get(Utils.baseUrl()+"Taxes/GetAll/"+storeId.toString());
+      var response=await http.get(Uri.parse(Utils.baseUrl()+"Taxes/GetAll/"+storeId.toString()));
       var data= jsonDecode(response.body);
       print(data);
       if(response.statusCode==200){
@@ -469,7 +359,7 @@ class Network_Operations{
       var body=jsonEncode(
           orderData
       );
-      var response=await http.post(Utils.baseUrl()+"orders/Add",headers: headers,body: body);
+      var response=await http.post(Uri.parse(Utils.baseUrl()+"orders/Add"),headers: headers,body: body);
       print(response.statusCode);
       if(response.statusCode==200){
         //pd.hide();
@@ -494,7 +384,7 @@ class Network_Operations{
       //pd.show();
       // List list=[];
       Map<String,String> headers = {'Authorization':'Bearer '+token};
-      var response=await http.get(Utils.baseUrl()+"OrderPriority/GetAll/"+storeId.toString(),headers: headers);
+      var response=await http.get(Uri.parse(Utils.baseUrl()+"OrderPriority/GetAll/"+storeId.toString()),headers: headers);
       var data= jsonDecode(response.body);
       if(response.statusCode==200){
       //  pd.hide();

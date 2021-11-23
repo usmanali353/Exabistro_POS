@@ -57,7 +57,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
   String orderType;
   int orderTypeId;
   var voucherValidity;
-  var selectedOrderType,selectedOrderTypeId,selectedPriority,selectedPriorityId,selectedWaiter,selectedWaiterId;
+  var selectedOrderType,selectedOrderTypeId,selectedPriority,selectedPriorityId,selectedWaiter,selectedWaiterId,selectedTable,selectedTableId;
   TextEditingController timePickerField,customerName,customerPhone,customerEmail,customerAddress,discountValue;
   List orderTypeList = ["Dine-In", "TakeAway","Home Delivery"];
 
@@ -129,6 +129,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                       setState(() {
                         if(orderPriorities!=null&&orderPriorities.length>0) {
                           this.priorities = orderPriorities;
+                          print(priorities);
                         }
                           //priorities.add({"name":"Normal","percentage":0.0});
                       });
@@ -499,8 +500,11 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                 priceWithPriority=0.0;
                                                 typeBasedTaxes.clear();
                                                 taxesList.clear();
+                                                orderItems.clear();
                                                 selectedPriority=null;
                                                 selectedPriorityId=null;
+                                                selectedTable=null;
+                                                selectedTableId=null;
                                                 overallTotalPriceWithTax=overallTotalPrice;
                                                 var tempTaxList = orderTaxes.where((element) => element.dineIn);
                                                 if(tempTaxList!=null&&tempTaxList.length>0){
@@ -525,6 +529,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                               });
                                               showDialog(context: context, builder:(BuildContext context){
                                                 return Dialog(
+                                                  insetPadding: EdgeInsets.all(16),
                                                     child: Container(
                                                         height:MediaQuery.of(context).size.height/1.68,
                                                         width: MediaQuery.of(context).size.width/2,
@@ -558,6 +563,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                     priceWithPriority=0.0;
                                                     typeBasedTaxes.clear();
                                                     taxesList.clear();
+                                                    orderItems.clear();
                                                     selectedPriority=null;
                                                     selectedPriorityId=null;
                                                     overallTotalPriceWithTax=overallTotalPrice;
@@ -618,6 +624,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                     priceWithPriority=0.0;
                                                     typeBasedTaxes.clear();
                                                     taxesList.clear();
+                                                    orderItems.clear();
                                                     selectedPriority=null;
                                                     selectedPriorityId=null;
                                                     overallTotalPriceWithTax=overallTotalPrice;
@@ -1445,7 +1452,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
   Widget orderPopupHorizontalDelivery(){
 
     return Scaffold(
-
+      resizeToAvoidBottomInset: false,
       backgroundColor: Colors.white.withOpacity(0.1),
       body: StatefulBuilder(
         builder: (context,innersetState){
@@ -1482,7 +1489,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                     ),
                                   ),
 
-                                  value: types[0],
+                                  value: selectedType,
                                   onChanged: (Value) {
                                     innersetState(() {
                                       selectedType = Value;
@@ -1520,7 +1527,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                     ),
                                   ),
 
-                                  value: priorities[0]["name"],
+                                  value: selectedPriority,
                                   onChanged: (Value) {
                                     innersetState(() {
                                       if(selectedPriority!=null){
@@ -1635,7 +1642,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         ),
                                       ),
 
-                                      value: discountType[0],
+                                      value: selectedDiscountType,
                                       onChanged: (Value) {
                                         innersetState(() {
                                           selectedDiscountType = Value;
@@ -2009,7 +2016,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                     ),
                                   ),
 
-                                  value: types[0],
+                                  value: selectedType,
                                   onChanged: (Value) {
                                     innersetState(() {
                                       selectedType = Value;
@@ -2048,7 +2055,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                     ),
                                   ),
 
-                                  value: priorities[0]["name"],
+                                  value: selectedPriority,
                                   onChanged: (Value) {
                                     innersetState(() {
                                       if(selectedPriority!=null){
@@ -2175,7 +2182,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         ),
                                       ),
 
-                                      value: discountType[0],
+                                      value: selectedDiscountType,
                                       onChanged: (Value) {
                                         innersetState(() {
                                           selectedDiscountType = Value;
@@ -2510,7 +2517,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
   }
 
   Widget orderPopUpHorizontalDineIn(){
-    var selectedTable,selectedTableId;
+
     return Scaffold(
         resizeToAvoidBottomInset:false,
       backgroundColor: Colors.white.withOpacity(0.1),
@@ -2549,7 +2556,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                     ),
                                   ),
 
-                                  value: types[0],
+                                  value: selectedType,
                                   onChanged: (Value) {
                                     innersetState(() {
                                       selectedType = Value;
@@ -2588,7 +2595,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                     ),
                                   ),
 
-                                  value: priorities.length>0?priorities[0]["name"]:"",
+                                  value: selectedPriority,
                                   onChanged: (Value) {
                                     innersetState(() {
                                       if(selectedPriority!=null){
@@ -2685,7 +2692,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                     ),
                                   ),
 
-                                  value: tables[0]["name"],
+                                  value: selectedTable,
                                   onChanged: (Value) {
                                     innersetState(() {
                                          selectedTable=Value;
@@ -2732,7 +2739,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         ),
                                       ),
 
-                                      value: discountType[0],
+                                      value: selectedDiscountType,
                                       onChanged: (Value) {
                                         innersetState(() {
                                           selectedDiscountType = Value;
@@ -2962,7 +2969,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                           padding: const EdgeInsets.all(8.0),
                           child: InkWell(
                             onTap: (){
-                              if(customerName.text!=null&&customerName.text!=""){
+                              if(customerName.text!=null&&customerName.text.isNotEmpty&&selectedTableId!=null){
                                 for(int i=0;i<cartList.length;i++){
                                   orderItems.add({
                                     "dealid":cartList[i].dealId,

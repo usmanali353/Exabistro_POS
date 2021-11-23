@@ -90,7 +90,7 @@ class _KitchenTabViewState extends State<ReadyOrdersScreenForTab> {
                     print(allTables);
                   });
                 });
-                Network_Operations.getSubcategories(context,widget.storeId).then((value) {
+                Network_Operations.getCategories(context,widget.storeId).then((value) {
                   setState(() {
                     this.categoryList = value;
                     print(categoryList);

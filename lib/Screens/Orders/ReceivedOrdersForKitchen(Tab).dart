@@ -35,11 +35,8 @@ class _KitchenTabViewState extends State<ReceivedOrdersScreenForTab>{
   bool isListVisible = false;
   List allTables=[];
   bool selectedCategory = false;
-  List<String> _options = ['Flutter', 'Dart', 'Woolha'];
   List<bool> _selected = [];
   int quantity=5;
-
-  Store _store;
   @override
   void initState() {
 
@@ -94,16 +91,10 @@ class _KitchenTabViewState extends State<ReceivedOrdersScreenForTab>{
                     print(allTables);
                   });
                 });
-                Network_Operations.getSubcategories(context,widget.storeId).then((value) {
+                Network_Operations.getCategories(context,widget.storeId).then((value) {
                   setState(() {
                     this.categoryList = value;
                     print(categoryList);
-                  });
-                });
-                Network_Operations.getStoreById(context, token, widget.storeId).then((store){
-                  setState(() {
-                    _store=store;
-                    print(store.image);
                   });
                 });
               }else{

@@ -45,17 +45,17 @@ dependencies:
   buttons_tabbar: ^1.0.0+1
   cached_network_image:
   data_connection_checker: ^0.3.4
-  bordered_text:
-  rating_dialog: 1.0.0
+ # bordered_text:
+  #rating_dialog: 1.0.0
   overlay_support: ^1.0.5
   flutter_gifimage:
-  time_range: ^0.5.0
+  #time_range: ^0.5.0
   filter_list: ^0.0.5
   flutter_spinkit: ^4.1.2
   intl:
   api_cache_manager: ^1.0.2
   connectivity: ^3.0.6
-
+  printing: ^5.6.3
 dev_dependencies:
   flutter_test:
     sdk: flutter
