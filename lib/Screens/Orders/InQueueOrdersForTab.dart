@@ -149,7 +149,7 @@ class _KitchenTabViewState extends State<InQueueOrdersScreenForTab>{
                                   Card(
                                     elevation:8,
                                     child: Container(
-                                      width: 200,
+                                      width: 230,
                                       height: 50,
                                       decoration: BoxDecoration(
                                         border: Border.all(color: yellowColor, width: 2),
