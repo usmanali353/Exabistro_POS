@@ -234,8 +234,8 @@ class Network_Operations{
     pd.hide();
     return null;
   }
-  static Future<dynamic> getTableList(BuildContext context,String token,int storeId)async{
-    ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
+  static Future<List<dynamic>> getTableList(BuildContext context,String token,int storeId)async{
+   // ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
     try{
       // pd.show();
       Map<String,String> headers = {'Authorization':'Bearer '+token};
@@ -243,7 +243,7 @@ class Network_Operations{
       var data= jsonDecode(response.body);
       if(response.statusCode==200){
         List list =[];
-        pd.hide();
+        //pd.hide();
         for(int i=0;i<data.length;i++){
           if(data[i]['isVisible'] == true){
             list.add(data[i]);
@@ -252,34 +252,12 @@ class Network_Operations{
         return list;
       }
       else{
-        pd.hide();
+       // pd.hide();
         Utils.showError(context, "Please Try Again");
         return null;
       }
     }catch(e){
-      pd.hide();
-      Utils.showError(context, "Data Not Found Or Error Found");
-    }
-    return null;
-  }
-  static Future<dynamic> getAllTables(BuildContext context,String token,int storeId,String search)async{
-    ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
-    try{
-      pd.show();
-      Map<String,String> headers = {'Authorization':'Bearer '+token};
-      var response=await http.get(Utils.baseUrl()+"tables/GetAll?StoreId=$storeId&searchstring=$search",headers: headers);
-      var data= jsonDecode(response.body);
-      if(response.statusCode==200){
-        pd.hide();
-        return data;
-      }
-      else{
-        pd.hide();
-        Utils.showError(context, "Please Try Again");
-        return null;
-      }
-    }catch(e){
-      pd.hide();
+     // pd.hide();
       Utils.showError(context, "Data Not Found Or Error Found");
     }
     return null;
@@ -294,6 +272,7 @@ class Network_Operations{
       Map<String,String> headers = {'Content-Type':'application/json','Authorization':'Bearer '};
       var response=await http.post(Utils.baseUrl()+"Store/GetAll",headers:headers,body: body );
       var data= jsonDecode(response.body);
+      print(data);
       if(response.statusCode==200){
         pd.hide();
         //return data;
@@ -310,12 +289,12 @@ class Network_Operations{
 
       }
       else{
-        pd.hide();
+       // pd.hide();
         Utils.showError(context, "Please Try Again");
         return null;
       }
     }catch(e){
-      pd.hide();
+      //pd.hide();
       print(e);
       Utils.showError(context, "Error Found:");
     }
@@ -364,14 +343,14 @@ class Network_Operations{
     return null;
   }
   static Future<List<Categories>> getCategories(BuildContext context,int storeId)async{
-    ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
+   // ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
 
     try{
       // pd.show();
-      var response=await http.get(Utils.baseUrl()+"Categories/GetAll?StoreId=$storeId&ShowByTime=1",);//0 is for time limitation
+      var response=await http.get(Utils.baseUrl()+"Categories/GetAll?StoreId=$storeId&ShowByTime=0",);//0 is for time limitation
       var data= jsonDecode(response.body);
       if(response.statusCode==200){
-        pd.hide();
+        //pd.hide();
         List<Categories> list=List();
         list.clear();
         for(int i=0;i<data.length;i++){
@@ -379,11 +358,11 @@ class Network_Operations{
         }
         return list;
       }else{
-        pd.hide();
+       // pd.hide();
         Utils.showError(context, response.body);
       }
     }catch(e){
-      pd.hide();
+      //pd.hide();
       Utils.showError(context, e.toString());
     }
     //pd.hide();
@@ -494,13 +473,11 @@ class Network_Operations{
       print(response.statusCode);
       if(response.statusCode==200){
         //pd.hide();
-        Utils.showSuccess(context, "Your Order is Placed");
         sqlite_helper().deletecart();
         // sqlite_helper().deletecartStaff();
         return true;
       }
       else{
-        print(response.body);
         //pd.hide();
         Utils.showError(context, response.body.toString());
         return false;
@@ -511,22 +488,31 @@ class Network_Operations{
       return false;
     }
   }
-  static Future<List<dynamic>> getOrderPriorityDropDown(BuildContext context,int storeId)async{
-
+  static Future<List<dynamic>> getAllOrdersPriority(BuildContext context,String token,int storeId)async{
+   // ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
     try{
-      // Map<String,String> headers = {'Authorization':'Bearer '+token};
-      var response=await http.get(Utils.baseUrl()+"OrderPriority/GetOrderPrioritiesDropdown/"+storeId.toString());
+      //pd.show();
+      // List list=[];
+      Map<String,String> headers = {'Authorization':'Bearer '+token};
+      var response=await http.get(Utils.baseUrl()+"OrderPriority/GetAll/"+storeId.toString(),headers: headers);
       var data= jsonDecode(response.body);
-      print(data);
       if(response.statusCode==200){
+      //  pd.hide();
         return data;
+
       }
       else{
-        Utils.showError(context, response.body.toString());
+     //   pd.hide();
+        Utils.showError(context, "Please Try Again");
+        return null;
       }
     }catch(e){
+      //pd.hide();
       Utils.showError(context, "Error Found: $e");
+      return null;
+    }finally{
+     // pd.hide();
     }
-    return null;
+
   }
 }

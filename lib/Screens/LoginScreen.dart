@@ -3,6 +3,7 @@ import 'package:exabistro_pos/Screens/LoadingScreen.dart';
 import 'package:exabistro_pos/components/constants.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../Utils/Utils.dart';
 
@@ -20,7 +21,10 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isLoading=false;
   @override
   void initState(){
-
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeRight,
+      DeviceOrientation.landscapeLeft,
+    ]);
     this.email=TextEditingController();
     this.password=TextEditingController();
     this.admin=TextEditingController();

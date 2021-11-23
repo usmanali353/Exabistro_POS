@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:exabistro_pos/Screens/AdminNavbarForTablet.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import '../components/constants.dart';
 import '../model/Stores.dart';
@@ -31,6 +32,10 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
  bool isVisible =false;
   @override
   void initState() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeRight,
+      DeviceOrientation.landscapeLeft,
+    ]);
     print(widget.roles[0]['restaurant']);
     // WidgetsBinding.instance
     //     .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
