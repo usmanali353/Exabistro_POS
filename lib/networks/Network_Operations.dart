@@ -172,32 +172,7 @@ class Network_Operations{
     pd.hide();
     return null;
   }
-  static Future<dynamic> getAllOrdersWithItemsByOrderStatusIdCategorized(BuildContext context,String token,int orderStatusId,int categoryId,int storeId)async{
-    ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
 
-    try{
-      pd.show();
-      List list=[];
-      Map<String,String> headers = {'Authorization':'Bearer '+token};
-      var response=await http.get(Uri.parse(Utils.baseUrl()+"orders/getallbasicorderswithitems/"+orderStatusId.toString()+"?CategoryId="+categoryId.toString()+"&StoreId="+storeId.toString()),headers: headers);
-      var data= jsonDecode(response.body);
-      if(response.statusCode==200){
-        pd.hide();
-        if(data!=[])
-          list=List.from(data.reversed);
-        return list;
-      }
-      else{
-        pd.hide();
-        Utils.showError(context, "Please Try Again");
-      }
-    }catch(e){
-      pd.hide();
-      Utils.showError(context, "Error Found: $e");
-    }
-    pd.hide();
-    return null;
-  }
   static Future<List<dynamic>> getTableList(BuildContext context,String token,int storeId)async{
    // ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
     try{
@@ -252,26 +227,52 @@ class Network_Operations{
     return null;
   }
   static Future<List<Categories>> getCategories(BuildContext context,int storeId)async{
-   // ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
+    ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
 
     try{
-      // pd.show();
-      var response=await http.get(Uri.parse(Utils.baseUrl()+"Categories/GetAll?StoreId=$storeId&ShowByTime=0"),);//0 is for time limitation
-      var data= jsonDecode(response.body);
-      if(response.statusCode==200){
-        //pd.hide();
-        List<Categories> list=List();
-        list.clear();
-        for(int i=0;i<data.length;i++){
-          list.add(Categories(name: data[i]['name'],id: data[i]['id'],image: data[i]['image'],isSubCategoriesExist: data[i]['isSubCategoriesExist'],storeId: data[i]['storeId']));
+      var isCacheExist = await APICacheManager().isAPICacheKeyExist("getCategory"+storeId.toString());
+      var connectivityResult = await (Connectivity().checkConnectivity());
+      if (connectivityResult == ConnectivityResult.none){
+        if (isCacheExist) {
+          var cacheData = await APICacheManager().getCacheData("getCategory"+storeId.toString());
+          var data= jsonDecode(cacheData.syncData);
+          List<Categories> list=List();
+          list.clear();
+          for(int i=0;i<data.length;i++){
+            list.add(Categories(name: data[i]['name'],id: data[i]['id'],image: data[i]['image'],isSubCategoriesExist: data[i]['isSubCategoriesExist'],storeId: data[i]['storeId']));
+          }
+          return list;
+
+        }else{
+          Utils.showError(context, "No Offline Data");
         }
-        return list;
+      }
+      if(connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi){
+
+        // pd.show();
+        var response=await http.get(Uri.parse(Utils.baseUrl()+"Categories/GetAll?StoreId=$storeId&ShowByTime=1",));//0 is for time limitation
+        var data= jsonDecode(response.body);
+        if(response.statusCode==200){
+          pd.hide();
+          APICacheDBModel cacheDBModel = new APICacheDBModel(
+              key: "getCategory"+storeId.toString(), syncData: response.body);
+          await APICacheManager().addCacheData(cacheDBModel);
+          List<Categories> list=List();
+          list.clear();
+          for(int i=0;i<data.length;i++){
+            list.add(Categories(name: data[i]['name'],id: data[i]['id'],image: data[i]['image'],isSubCategoriesExist: data[i]['isSubCategoriesExist'],storeId: data[i]['storeId']));
+          }
+          return list;
+        }else{
+          pd.hide();
+          Utils.showError(context, response.body);
+        }
       }else{
-       // pd.hide();
-        Utils.showError(context, response.body);
+        pd.hide();
+        Utils.showError(context, "You are in Offline mode");
       }
     }catch(e){
-      //pd.hide();
+      pd.hide();
       Utils.showError(context, e.toString());
     }
     //pd.hide();
@@ -349,7 +350,7 @@ class Network_Operations{
     return null;
   }
 
-  static Future<bool> placeOrder(BuildContext context,String token,dynamic orderData)async {
+  static Future<dynamic> placeOrder(BuildContext context,String token,dynamic orderData)async {
     //ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
 
     try{
@@ -365,35 +366,88 @@ class Network_Operations{
         //pd.hide();
         sqlite_helper().deletecart();
         // sqlite_helper().deletecartStaff();
-        return true;
+        return response.body;
       }
       else{
         //pd.hide();
-        Utils.showError(context, response.body.toString());
-        return false;
+        print("Order Error "+response.body.toString());
+
+        return null;
       }
     }catch(e){
       //pd.hide();
       //Utils.showError(context, "Error Found: $e");
-      return false;
+      return null;
     }
   }
-  static Future<List<dynamic>> getAllOrdersPriority(BuildContext context,String token,int storeId)async{
-   // ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
+  static Future<bool> payCashOrder(BuildContext context,String token,dynamic payCash)async {
+    try{
+      Map<String,String> headers = {'Content-Type':'application/json','Authorization':'Bearer '+token};
+
+      var body=jsonEncode(
+          payCash
+      );
+      var response=await http.post(Uri.parse(Utils.baseUrl()+"orders/paycash"),headers: headers,body: body);
+      if(response.statusCode==200){
+        Utils.showSuccess(context, "Order Delivered & Cash Paid");
+        return true;
+      }
+      else{
+        Utils.showError(context, "${jsonDecode(response.body)['message']}");
+        return false;
+      }
+    }catch(e){
+      Utils.showError(context, "Error Found: ");
+      return false;
+    }
+    //return null;
+  }
+
+  static Future<List<dynamic>> getAvailableTable(BuildContext context,String token,dynamic reservationData)async {
+    //ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
+
     try{
       //pd.show();
-      // List list=[];
-      Map<String,String> headers = {'Authorization':'Bearer '+token};
-      var response=await http.get(Uri.parse(Utils.baseUrl()+"OrderPriority/GetAll/"+storeId.toString()),headers: headers);
+      Map<String,String> headers = {'Content-Type':'application/json','Authorization':'Bearer '+token};
+
+      var body=jsonEncode(
+          reservationData
+      );
+      var response=await http.post(Uri.parse(Utils.baseUrl()+"reservation/GetAvailableTables"),headers: headers,body: body);
       var data= jsonDecode(response.body);
       if(response.statusCode==200){
-      //  pd.hide();
+        //pd.hide();
+        Utils.showSuccess(context, "Getting Table");
         return data;
+      }
+      else{
+        //pd.hide();
+        Utils.showError(context, "Please Try Again");
+        return null;
+      }
+    }catch(e){
+      //pd.hide();
+      Utils.showError(context, "Data Not Found Or Error Found");
+
+      return null;
+    }
+    return null;
+  }
+  static Future<List<dynamic>> getAllOrders(BuildContext context,String token,int storeId)async{
+    //ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
+    try{
+      //pd.show();
+      Map<String,String> headers = {'Authorization':'Bearer '+token};
+      var response=await http.get(Uri.parse(Utils.baseUrl()+"orders/GetAllBasicOrders/$storeId"),headers: headers);
+      var data= jsonDecode(response.body);
+      if(response.statusCode==200){
+
+        return data;
+        //return data;
 
       }
       else{
-     //   pd.hide();
-        Utils.showError(context, "Please Try Again");
+       print(response.body.toString());
         return null;
       }
     }catch(e){
@@ -401,8 +455,64 @@ class Network_Operations{
       Utils.showError(context, "Error Found: $e");
       return null;
     }finally{
-     // pd.hide();
+      //pd.hide();
     }
 
   }
+  static Future<List<dynamic>> getOrdersByTableId(BuildContext context,String token,int tableId,int storeId)async{
+    try{
+      List list=[];
+      Map<String,String> headers = {'Authorization':'Bearer '+token};
+      var response=await http.get(Uri.parse(Utils.baseUrl()+"orders/GetOrdersByTableId/$tableId"),headers: headers);
+      var data= jsonDecode(response.body);
+      if(response.statusCode==200){
+        if(data!=[])
+          list=List.from(data.reversed);
+        return list;
+      }
+      else{
+        Utils.showError(context, "Please Try Again");
+      }
+    }catch(e){
+      Utils.showError(context, "Error Found: $e");
+    }
+    return null;
+  }
+
+  static Future<dynamic> getCustomerById(BuildContext context,String token,int Id)async{
+
+    try{
+      var isCacheExist = await APICacheManager().isAPICacheKeyExist("customerById"+Id.toString());
+      var connectivityResult = await (Connectivity().checkConnectivity());
+      if (connectivityResult == ConnectivityResult.none){
+        if (isCacheExist) {
+          var cacheData = await APICacheManager().getCacheData("customerById"+Id.toString());
+          return jsonDecode(cacheData.syncData);
+        }else{
+          Utils.showError(context, "No Offline Data");
+        }
+      }
+      if(connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi) {
+        Map<String, String> headers = {'Authorization': 'Bearer ' + token};
+        var response = await http.get(Uri.parse(Utils.baseUrl() + "account/GetUserById/"+ Id.toString()),headers: headers);
+        var data = jsonDecode(response.body);
+        if (response.statusCode == 200) {
+          APICacheDBModel cacheDBModel = new APICacheDBModel(
+              key: "customerById"+Id.toString(), syncData: response.body);
+          await APICacheManager().addCacheData(cacheDBModel);
+          return data;
+        }
+        else {
+          Utils.showError(context, "Please Try Again");
+          return null;
+        }
+      }else{
+        Utils.showError(context, "You are in Offline mode");
+      }
+    }catch(e){
+      Utils.showError(context, "Error Found: $e");
+    }
+    return null;
+  }
+
 }

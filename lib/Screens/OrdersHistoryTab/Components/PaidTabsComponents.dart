@@ -1,5 +1,5 @@
-import 'package:exabistro_pos/Screens/Orders/ReceivedOrdersForKitchen(Tab).dart';
-import 'package:exabistro_pos/Screens/OrdersHistoryTab/DeliveredScreenForTablet.dart';
+import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/PaidOrdersList.dart';
+import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/UnPaidOrdersList.dart';
 import 'package:exabistro_pos/components/constants.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
@@ -7,18 +7,18 @@ import 'dart:ui';
 import 'package:flutter/services.dart';
 
 
-class OrderRecordTabsScreen extends StatefulWidget {
+class PaidTabsScreen extends StatefulWidget {
   var restaurantId,storeId,roleId;
-OrderRecordTabsScreen({this.restaurantId,this.storeId,this.roleId});
+  PaidTabsScreen({this.restaurantId,this.storeId,this.roleId});
 
 
   @override
   State<StatefulWidget> createState() {
-    return new OrderRecordTabsWidgetState();
+    return new PaidTabsWidgetState();
   }
 }
 
-class OrderRecordTabsWidgetState extends State<OrderRecordTabsScreen> with SingleTickerProviderStateMixin{
+class PaidTabsWidgetState extends State<PaidTabsScreen> with SingleTickerProviderStateMixin{
 
 
   @override
@@ -44,12 +44,12 @@ class OrderRecordTabsWidgetState extends State<OrderRecordTabsScreen> with Singl
             iconTheme: IconThemeData(
                 color: Colors.white
             ),
-            title: Text("Orders History", style: TextStyle(color: yellowColor, fontWeight: FontWeight.bold, fontSize: 30),),
+            title: Text("Orders", style: TextStyle(color: yellowColor, fontWeight: FontWeight.bold, fontSize: 30),),
             centerTitle: true,
             backgroundColor: BackgroundColor,
             elevation: 0,
             bottom: TabBar(
-               isScrollable: false,
+                isScrollable: false,
                 unselectedLabelColor: yellowColor,
                 indicatorSize: TabBarIndicatorSize.tab,
                 indicator: ShapeDecoration(
@@ -65,36 +65,38 @@ class OrderRecordTabsWidgetState extends State<OrderRecordTabsScreen> with Singl
                   Tab(
                     child: Align(
                       alignment: Alignment.center,
-                      child: Text("Active Orders",
+                      child: Text("UnPaid Orders",
                         style: TextStyle(
+                          //color: Colors.white,
                           fontSize: 20,
-                            //color: Colors.white,
-                            fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.bold,
 
-                        //color: Color(0xff172a3a)
-                      ),
+                        ),
                       ),
                     ),
                   ),
                   Tab(
                     child: Align(
                       alignment: Alignment.center,
-                      child: Text("Previous Orders",
+                      child: Text("Paid Orders",
                         style: TextStyle(
+                          fontSize: 20,
                           //color: Colors.white,
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
+                          fontWeight: FontWeight.bold,
 
+                          //color: Color(0xff172a3a)
                         ),
                       ),
                     ),
                   ),
+
                 ]),
           ),
           body: TabBarView(children: [
-            ReceivedOrdersScreenForTab(widget.storeId),
+
             // AllOrders(),
-            DeliveredScreenForTablet(widget.storeId),
+            UnPaidOrdersScreenForTab(widget.storeId),
+            PaidOrdersScreenForTab(widget.storeId),
           ]),
         )
     );

@@ -220,6 +220,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   });
                                 }else{
                                   setState(() {
+                                    Utils.showError(context,"Network Problem");
                                     isLoading=false;
                                   });
                                 }

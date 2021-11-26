@@ -1,41 +1,36 @@
 import 'dart:ui';
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/components/constants.dart';
-import 'package:exabistro_pos/model/Categories.dart';
-import 'package:exabistro_pos/model/Orders.dart';
-import 'package:exabistro_pos/model/Stores.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 
-class InQueueOrdersScreenForTab extends StatefulWidget {
+class PaidOrdersScreenForTab extends StatefulWidget {
   var storeId;
 
-  InQueueOrdersScreenForTab(this.storeId);
+  PaidOrdersScreenForTab(this.storeId);
 
   @override
   _KitchenTabViewState createState() => _KitchenTabViewState();
 }
 
-class _KitchenTabViewState extends State<InQueueOrdersScreenForTab>{
+class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
 
   String token;
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
   // bool isVisible=false;
-  List<Categories> categoryList=[];
   List orderList = [];
   List itemsList=[],toppingName =[];
   List topping = [];
   List<dynamic> foodList = [];
   List<Map<String,dynamic>> foodList1 = [];
-  bool isListVisible = false;
+  bool isListVisible = false,isLoad;
   List allTables=[];
   bool selectedCategory = false;
-  List<String> _options = ['Flutter', 'Dart', 'Woolha'];
   List<bool> _selected = [];
   int quantity=5;
   @override
@@ -62,12 +57,11 @@ class _KitchenTabViewState extends State<InQueueOrdersScreenForTab>{
       for(int i=0;i<allTables.length;i++){
         if(allTables[i]['id'] == id) {
           name = allTables[i]['name'];
-
         }
       }
       return name;
     }else
-      return "empty";
+      return "-";
   }
 
   @override
@@ -80,9 +74,22 @@ class _KitchenTabViewState extends State<InQueueOrdersScreenForTab>{
             return Utils.check_connectivity().then((result){
               if(result){
                 orderList.clear();
-                Network_Operations.getAllOrdersWithItemsByOrderStatusId(context, token, 1,widget.storeId).then((value) {
+                Network_Operations.getAllOrders(context, token,widget.storeId).then((value) {
                   setState(() {
-                    orderList = value;
+                    if(value!=null&&value.length>0){
+
+                      value=value.reversed.toList();
+                      print(value.toString());
+                      for(var order in value){
+                        String createdOn=DateFormat("yyyy-MM-dd").parse(order["createdOn"]).toString().split(" ")[0].trim();
+                        String todayDate=DateTime(DateTime.now().year,DateTime.now().month,DateTime.now().day).toIso8601String().replaceAll("T00:00:00.000","").trim();
+                        print(order["orderPriorityId"]);
+                        if(createdOn.contains(todayDate)&&order["cashPay"]!=null&&order["orderStatus"]!=2){
+                          orderList.add(order);
+                        }
+                      }
+                    }
+                    //orderList = value;
                   });
                 });
                 Network_Operations.getTableList(context,token,widget.storeId)
@@ -90,12 +97,6 @@ class _KitchenTabViewState extends State<InQueueOrdersScreenForTab>{
                   setState(() {
                     this.allTables = value;
                     print(allTables);
-                  });
-                });
-                Network_Operations.getCategories(context,widget.storeId).then((value) {
-                  setState(() {
-                    this.categoryList = value;
-                    print(categoryList);
                   });
                 });
               }else{
@@ -121,17 +122,17 @@ class _KitchenTabViewState extends State<InQueueOrdersScreenForTab>{
                     //decoration: new BoxDecoration(color: Colors.black.withOpacity(0.3)),
                       child: Column(
                         children: [
-                          // Padding(
-                          //   padding: const EdgeInsets.all(3.0),
-                          //   child: Container(
-                          //     width: MediaQuery.of(context).size.width,
-                          //     height: 50,
-                          //     //color: Colors.black38,
-                          //     child: Center(
-                          //       child: _buildChips(),
-                          //     ),
-                          //   ),
-                          // ),
+                          Padding(
+                            padding: const EdgeInsets.all(3.0),
+                            child: Container(
+                              width: MediaQuery.of(context).size.width,
+                              height: 50,
+                              //color: Colors.black38,
+                              child: Center(
+                                child: _buildChips(),
+                              ),
+                            ),
+                          ),
                           Padding(
                               padding: const EdgeInsets.all(3.0),
                               child: Row(
@@ -192,13 +193,13 @@ class _KitchenTabViewState extends State<InQueueOrdersScreenForTab>{
                                     return InkWell(
                                       onTap: () {
                                         showDialog(
-                                            barrierDismissible: false,
+
                                             context: context,
                                             builder:(BuildContext context){
                                               return Dialog(
-                                                //backgroundColor: Colors.transparent,
+                                                backgroundColor: Colors.transparent,
                                                   child: Container(
-                                                      height: MediaQuery.of(context).size.height / 1.2,
+                                                      height: MediaQuery.of(context).size.height / 1.35,
                                                       width: MediaQuery.of(context).size.width / 3.2,
                                                       child: ordersDetailPopupLayout(orderList[index])
                                                   )
@@ -335,21 +336,6 @@ class _KitchenTabViewState extends State<InQueueOrdersScreenForTab>{
 
     );
   }
-  String getOrderPriority(int id){
-    String orderPriority;
-    if(id!=null){
-      if(id ==1){
-        orderPriority = "High";
-      }else if(id ==2){
-        orderPriority = "Low";
-      }else if(id ==3){
-        orderPriority = "Medium";
-      }
-      return orderPriority;
-    }else{
-      return "-";
-    }
-  }
   String getOrderType(int id){
     String status;
     if(id!=null){
@@ -439,11 +425,11 @@ class _KitchenTabViewState extends State<InQueueOrdersScreenForTab>{
   Widget _buildChips() {
     List<Widget> chips = new List();
 
-    for (int i = 0; i < categoryList.length; i++) {
+    for (int i = 0; i < allTables.length; i++) {
       _selected.add(false);
       FilterChip filterChip = FilterChip(
         selected: _selected[i],
-        label: Text(categoryList[i].name, style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: Text(getTableName(allTables[i]["id"]), style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         // avatar: FlutterLogo(),
         elevation: 10,
         pressElevation: 5,
@@ -453,22 +439,23 @@ class _KitchenTabViewState extends State<InQueueOrdersScreenForTab>{
         onSelected: (bool selected) {
           setState(() {
             _selected[i] = selected;
-            print(categoryList[i].id.toString());
             if(_selected[i]){
               Utils.check_connectivity().then((result){
                 if(result){
                   orderList.clear();
-                  Network_Operations.getAllOrdersWithItemsByOrderStatusIdCategorized(context, token, 3,categoryList[i].id,widget.storeId).then((value) {
+                  Network_Operations.getOrdersByTableId(context, token,allTables[i]["id"],widget.storeId).then((value) {
                     setState(() {
-                      orderList = value;
-                      // for (int k=0;k<value.length;k++) {
-                      //   // print(i.toString());
-                      //   if (value[k]['orderStatus'] == 3){
-                      //     orderList.add(value[k]);
-                      //    // print(orderList.toString());
-                      //
-                      //   }
-                      // }
+                      if(value!=null&&value.length>0){
+                        for(var order in value){
+                          String createdOn=DateFormat("yyyy-MM-dd").parse(order["createdOn"]).toString().split(" ")[0].trim();
+                          String todayDate=DateTime(DateTime.now().year,DateTime.now().month,DateTime.now().day).toIso8601String().replaceAll("T00:00:00.000","").trim();
+                          print(order["cashPay"]!=null);
+                          if(createdOn.contains(todayDate)&&order["cashPay"]!=null&&order["orderStatus"]!=2){
+                            orderList.add(order);
+                          }
+                        }
+                      }
+
 
                     });
                   });
@@ -535,7 +522,7 @@ class _KitchenTabViewState extends State<InQueueOrdersScreenForTab>{
             child: Padding(
                 padding: const EdgeInsets.all(8.0),
                 child: Container(
-                  height:MediaQuery.of(context).size.height -300,
+                  height:MediaQuery.of(context).size.height -250,
                   width: MediaQuery.of(context).size.width / 3,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
@@ -545,214 +532,265 @@ class _KitchenTabViewState extends State<InQueueOrdersScreenForTab>{
                   //color: Colors.black38,
                   child: Column(
                     children: [
-                      Stack(
-                        overflow: Overflow.visible,
-                        children: <Widget>[
-                          Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Container(
-                              width: MediaQuery.of(context).size.width,
-                              height: MediaQuery.of(context).size.height / 5,
-                              //color: Colors.white12,
-                              child: Column(
-                                children: [
-                                  Card(
-                                    elevation:6,
-                                    color: yellowColor,
-                                    child: Container(
-                                      width: MediaQuery.of(context).size.width,
-                                      height: 40,
-                                      decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(4),
-                                          color: yellowColor
-                                      ),
-                                      child: Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: Container(
+                          width: MediaQuery.of(context).size.width,
+                          height: MediaQuery.of(context).size.height / 5,
+                          //color: Colors.white12,
+                          child: Column(
+                            children: [
+                              Card(
+                                elevation:6,
+                                color: yellowColor,
+                                child: Container(
+                                  width: MediaQuery.of(context).size.width,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(4),
+                                      color: yellowColor
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Row(
                                         children: [
-                                          Row(
-                                            children: [
-                                              Text('Order ID: ',
-                                                style: TextStyle(
-                                                    fontSize: 30,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: Colors.white
-                                                ),
-                                              ),
-                                              Text(orders['id']!=null?orders['id'].toString():"",
-                                                style: TextStyle(
-                                                    fontSize: 30,
-                                                    color: blueColor,
-                                                    fontWeight: FontWeight.bold
-                                                ),
-                                              ),
-                                            ],
+                                          Text('Order ID: ',
+                                            style: TextStyle(
+                                                fontSize: 30,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white
+                                            ),
                                           ),
+                                          Text(orders['id']!=null?orders['id'].toString():"",
+                                            style: TextStyle(
+                                                fontSize: 30,
+                                                color: blueColor,
+                                                fontWeight: FontWeight.bold
+                                            ),
+                                          ),
+                                        ],
+                                      ),
 
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                width: MediaQuery.of(context).size.width,
+                                height: 1,
+                                color: yellowColor,
+                              ),
+                              SizedBox(
+                                height: 8,
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.all(2),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text("Status: ", style: TextStyle(
+                                            fontSize: 20,
+                                            color: yellowColor,
+                                            fontWeight: FontWeight.bold
+                                        ),
+                                        ),
+                                        Text( getStatus(orders!=null?orders['orderStatus']:null),
+                                          style: TextStyle(
+                                              fontSize: 20,
+                                              color: PrimaryColor,
+                                              fontWeight: FontWeight.bold
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                    Row(
+                                      children: [
+                                        Text('Items: ',
+                                          style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                              color: yellowColor
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.only(left: 2.5),
+                                        ),
+                                        Text(orders['orderItems'].length.toString(),
+                                          style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                              color: PrimaryColor
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    // Row(
+                                    //   children: [
+                                    //     Text('Priority: ',
+                                    //       style: TextStyle(
+                                    //           fontSize: 20,
+                                    //           fontWeight: FontWeight.bold,
+                                    //           color: yellowColor
+                                    //       ),
+                                    //     ),
+                                    //     Text(getOrderPriority(orders['orderPriorityId']),
+                                    //       //orderList[index]['orderItems'].length.toString(),
+                                    //       style: TextStyle(
+                                    //           fontSize: 20,
+                                    //           fontWeight: FontWeight.bold,
+                                    //           color: PrimaryColor
+                                    //       ),
+                                    //     ),
+                                    //   ],
+                                    // ),
+                                  ],
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 5, bottom: 2, left: 5, right: 5),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text('Type: ',
+                                          style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                              color: yellowColor
+                                          ),
+                                        ),
+                                        Text(getOrderType(orders['orderType']),
+                                          style: TextStyle(
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.bold,
+                                              color: PrimaryColor
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    Visibility(
+                                      visible: orders['orderType']==1,
+                                      child: Row(
+                                        children: [
+                                          Text('Table#: ',
+                                            style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                                color: yellowColor
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: EdgeInsets.only(left: 2.5),
+                                          ),
+                                          Text(orders['tableId']!=null?getTableName(orders['tableId']).toString():" - ",
+                                            style: TextStyle(
+                                                fontSize: 20,
+                                                fontWeight: FontWeight.bold,
+                                                color: PrimaryColor
+                                            ),
+                                          ),
                                         ],
                                       ),
                                     ),
-                                  ),
-                                  Container(
-                                    width: MediaQuery.of(context).size.width,
-                                    height: 1,
-                                    color: yellowColor,
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(2),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    // Row(
+                                    //   children: [
+                                    //     Padding(
+                                    //       padding: const EdgeInsets.only(right: 5),
+                                    //       child: FaIcon(FontAwesomeIcons.calendarAlt, color: yellowColor, size: 20,),
+                                    //     ),
+                                    //     Text(orders['createdOn'].toString().replaceAll("T", " || ").substring(0,19), style: TextStyle(
+                                    //         fontSize: 20,
+                                    //         color: PrimaryColor,
+                                    //         fontWeight: FontWeight.bold
+                                    //     ),
+                                    //     ),
+                                    //   ],
+                                    // )
+                                  ],
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8, bottom: 2, left: 5, right: 5),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
                                       children: [
-                                        Visibility(
-                                          visible: orders['orderType']==1,
-                                          child: Row(
-                                            children: [
-                                              Text('Table No#: ',
-                                                style: TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: yellowColor
-                                                ),
-                                              ),
-                                              Padding(
-                                                padding: EdgeInsets.only(left: 2.5),
-                                              ),
-                                              Text(orders['tableId']!=null?getTableName(orders['tableId']).toString():" - ",
-                                                style: TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: PrimaryColor
-                                                ),
-                                              ),
-                                            ],
+                                        Text(
+                                          'Waiter: ',
+                                          style: TextStyle(
+                                            color: yellowColor,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                            //fontStyle: FontStyle.italic,
                                           ),
                                         ),
-                                        Row(
-                                          children: [
-                                            Text('Priority: ',
-                                              style: TextStyle(
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: yellowColor
-                                              ),
-                                            ),
-                                            Text(getOrderPriority(orders['orderPriorities']),
-                                              //orderList[index]['orderItems'].length.toString(),
-                                              style: TextStyle(
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: PrimaryColor
-                                              ),
-                                            ),
-                                          ],
+                                        Text(
+                                          "Rasheed Ahmed Tarar",
+                                          //userDetail!=null?userDetail['firstName'].toString():"",
+                                          style:TextStyle(
+                                            color: blueColor,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                            //fontStyle: FontStyle.italic,
+                                          ),
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 5, bottom: 2, left: 5, right: 5),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Text('Items: ',
-                                              style: TextStyle(
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: yellowColor
-                                              ),
-                                            ),
-                                            Padding(
-                                              padding: EdgeInsets.only(left: 2.5),
-                                            ),
-                                            Text(orders['orderItems'].length.toString(),
-                                              style: TextStyle(
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: PrimaryColor
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                        Row(
-                                          children: [
-                                            Padding(
-                                              padding: const EdgeInsets.only(right: 5),
-                                              child: FaIcon(FontAwesomeIcons.calendarAlt, color: yellowColor, size: 20,),
-                                            ),
-                                            Text(orders['createdOn'].toString().replaceAll("T", " || ").substring(0,19), style: TextStyle(
-                                                fontSize: 20,
-                                                color: PrimaryColor,
-                                                fontWeight: FontWeight.bold
-                                            ),
-                                            ),
-                                          ],
-                                        )
-                                      ],
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(top: 8, bottom: 2, left: 5, right: 5),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Text("Status: ", style: TextStyle(
-                                                fontSize: 20,
-                                                color: yellowColor,
-                                                fontWeight: FontWeight.bold
-                                            ),
-                                            ),
-                                            Text( getStatus(orders!=null?orders['orderStatus']:null),
-                                              style: TextStyle(
-                                                  fontSize: 20,
-                                                  color: PrimaryColor,
-                                                  fontWeight: FontWeight.bold
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.only(left: 5, top: 5),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Text('Order Type: ',
-                                              style: TextStyle(
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: yellowColor
-                                              ),
-                                            ),
-                                            Text(getOrderType(orders['orderType']),
-                                              style: TextStyle(
-                                                  fontSize: 20,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: PrimaryColor
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          )
 
-                        ],
+                                  ],
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(left: 5, top: 5),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          'Customer: ',
+                                          style: TextStyle(
+                                            color: yellowColor,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                            //fontStyle: FontStyle.italic,
+                                          ),
+                                        ),
+                                        Text(
+                                          "Rasheed Ahmed Tarar",
+                                          //userDetail!=null?userDetail['firstName'].toString():"",
+                                          style:TextStyle(
+                                            color: blueColor,
+                                            fontSize: 20,
+                                            fontWeight: FontWeight.bold,
+                                            //fontStyle: FontStyle.italic,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Container(
+                        width: MediaQuery.of(context).size.width,
+                        height: 1,
+                        color: yellowColor,
                       ),
                       Padding(
                         padding: const EdgeInsets.all(5),
                         child: Container(
-                          height: 215,
+                          height: 330,
                           //color: Colors.transparent,
                           child: ListView.builder(
                               padding: EdgeInsets.all(4),
@@ -826,7 +864,7 @@ class _KitchenTabViewState extends State<InQueueOrdersScreenForTab>{
                                                     child: Row(
                                                       children: [
                                                         Text("Size: ",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 20,color: yellowColor,),),
-                                                        Text(orders['orderItems'][i]['sizeName']!=null?orders['orderItems'][i]['sizeName'].toString():"Deal",
+                                                        Text(orders['orderItems'][i]['sizeName']!=null?orders['orderItems'][i]['sizeName'].toString():"-",
                                                           //"-"+foodList1[index]['sizeName'].toString()!=null?foodList1[index]['sizeName'].toString():"empty",
                                                           style: TextStyle(
                                                               color: PrimaryColor,
@@ -905,45 +943,54 @@ class _KitchenTabViewState extends State<InQueueOrdersScreenForTab>{
                         ),
                       ),
                       Container(
+                        width: MediaQuery.of(context).size.width,
+                        height: 1,
+                        color: yellowColor,
+                      ),
+
+                      Container(
                         // width: MediaQuery.of(context).size.width,
                         // height: MediaQuery.of(context).size.height /8,
                         // color: Colors.white12,
                         child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            InkWell(
-                              onTap: (){
-                                //  _showDialog(orderList[index]['id']);
-                                var orderStatusData={
-                                  "Id":orders['id'],
-                                  "status":4,
-                                  "EstimatedPrepareTime":10,
-                                };
-                                print(orderStatusData);
-                                Network_Operations.changeOrderStatus(context, token, orderStatusData).then((res) {
-                                  if(res){
-                                    WidgetsBinding.instance
-                                        .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
-                                  }
-                                  //print(value);
-                                });
-                              },
-                              child: Padding(
-                                padding: const EdgeInsets.all(10.0),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    border: Border.all(color: yellowColor),
-                                    borderRadius: BorderRadius.all(Radius.circular(10)) ,
-                                    color: yellowColor,
-                                  ),
-                                  width: MediaQuery.of(context).size.width,
-                                  height: 40,
-
-                                  child: Center(
-                                    child: Text('Mark as Preparing',style: TextStyle(color: BackgroundColor,fontSize: 25,fontWeight: FontWeight.bold),),
-                                  ),
-                                ),
-                              ),
-                            ),
+                            // InkWell(
+                            //   onTap: (){
+                            //     //  _showDialog(orderList[index]['id']);
+                            //     var orderStatusData={
+                            //       "Id":orders['id'],
+                            //       "status":4,
+                            //       "EstimatedPrepareTime":10,
+                            //     };
+                            //     print(orderStatusData);
+                            //     Network_Operations.changeOrderStatus(context, token, orderStatusData).then((res) {
+                            //       if(res){
+                            //         WidgetsBinding.instance
+                            //             .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                            //       }
+                            //       //print(value);
+                            //     });
+                            //   },
+                            //   child: Padding(
+                            //     padding: const EdgeInsets.all(10.0),
+                            //     child: Container(
+                            //       decoration: BoxDecoration(
+                            //         border: Border.all(color: yellowColor),
+                            //         borderRadius: BorderRadius.all(Radius.circular(10)) ,
+                            //         color: yellowColor,
+                            //       ),
+                            //       width: MediaQuery.of(context).size.width,
+                            //       height: 40,
+                            //
+                            //       child: Center(
+                            //         child: Text('Mark as Preparing',style: TextStyle(color: BackgroundColor,fontSize: 25,fontWeight: FontWeight.bold),),
+                            //       ),
+                            //     ),
+                            //   ),
+                            // ),
+                            SizedBox(height: 25,),
                             InkWell(
                               onTap: (){
                                 // Utils.urlToFile(context,_store.image).then((value){
@@ -961,7 +1008,7 @@ class _KitchenTabViewState extends State<InQueueOrdersScreenForTab>{
                                     color: yellowColor,
                                   ),
                                   width: MediaQuery.of(context).size.width,
-                                  height: 40,
+                                  height: 60,
 
                                   child: Center(
                                     child: Text('Print',style: TextStyle(color: BackgroundColor,fontSize: 25,fontWeight: FontWeight.bold),),

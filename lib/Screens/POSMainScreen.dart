@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:ffi';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:exabistro_pos/Screens/LoadingScreen.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
@@ -18,10 +17,14 @@ import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:exabistro_pos/networks/sqlite_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_counter/flutter_counter.dart';
 import 'package:intl/intl.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 class POSMainScreen extends StatefulWidget {
   dynamic store;
@@ -40,7 +43,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
   List<String> menuTypeDropdownItems = ["Products", "Deals"];
   List<String> discountTypeDropdownItems = ["Percentage", "Cash"];
   String selectedMenuType;
-  var overallTotalPrice=0.0,overallTotalPriceWithTax=0.0;
+  var overallTotalPrice=0.0,overallTotalPriceWithTax=0.0,totalTax=0.0;
   List<CartItems> cartList = [];
   TimeOfDay pickingTime;
   Order finalOrder;
@@ -49,15 +52,14 @@ class _POSMainScreenState extends State<POSMainScreen> {
   List<Map> orderitem1 = [];
   List<Tax> orderTaxes=[],typeBasedTaxes=[];
   dynamic ordersList;
-  List<dynamic> toppingList = [], orderItems = [],priorities=[],tables=[];
+  List<dynamic> toppingList = [], orderItems = [],tables=[];
   List<String> topping = [];
-  var priceWithPriority=0.0;
   double totalprice = 0.00, applyVoucherPrice;
   TextEditingController addnotes, applyVoucher;
   String orderType;
   int orderTypeId;
   var voucherValidity;
-  var selectedOrderType,selectedOrderTypeId,selectedPriority,selectedPriorityId,selectedWaiter,selectedWaiterId,selectedTable,selectedTableId;
+  var selectedOrderType,selectedOrderTypeId,selectedWaiter,selectedWaiterId,selectedTable,selectedTableId;
   TextEditingController timePickerField,customerName,customerPhone,customerEmail,customerAddress,discountValue;
   List orderTypeList = ["Dine-In", "TakeAway","Home Delivery"];
 
@@ -75,7 +77,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
     ]);
     Utils.check_connectivity().then((isConnected) {
       if (isConnected) {
-        print(widget.store["id"]);
+        print(widget.store);
         Network_Operations.getCategories(context, widget.store["id"])
             .then((sub) {
           setState(() {
@@ -124,18 +126,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                       }
                     });
                   });
-                  SharedPreferences.getInstance().then((prefs){
-                    Network_Operations.getAllOrdersPriority(context,prefs.getString("token"),widget.store["id"]).then((orderPriorities){
-                      setState(() {
-                        if(orderPriorities!=null&&orderPriorities.length>0) {
-                          this.priorities = orderPriorities;
-                          print(priorities);
-                        }
-                          //priorities.add({"name":"Normal","percentage":0.0});
-                      });
-                    });
-                  });
-                  
                   Network_Operations.getTaxListByStoreId(context,widget.store["id"]).then((taxes){
                     setState(() {
                       this.orderTaxes=taxes;
@@ -161,6 +151,171 @@ class _POSMainScreenState extends State<POSMainScreen> {
         Utils.showError(context, "Network Error");
       }
     });
+  }
+  buildInvoice()async{
+    var invoiceData=cartList.map((cartItems){
+      return [
+        cartItems.productName,
+        cartItems.price.toString(),
+        "x "+cartItems.quantity.toString(),
+        cartItems.totalPrice.toString(),
+      ];
+    }).toList();
+    final doc = pw.Document();
+    doc.addPage(pw.MultiPage(
+      pageFormat: PdfPageFormat.a4,
+       footer: (context){
+         return pw.Column(
+           crossAxisAlignment: pw.CrossAxisAlignment.center,
+           children: [
+             pw.Divider(),
+             pw.SizedBox(
+                 height: 2 * PdfPageFormat.mm
+             ),
+             pw.Row(
+               mainAxisSize: pw.MainAxisSize.min,
+               crossAxisAlignment: pw.CrossAxisAlignment.end,
+               children: [
+                pw.Text("Address",style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                 pw.SizedBox(
+                     width: 2 * PdfPageFormat.mm
+                 ),
+                 pw.Text(widget.store["address"].toString())
+               ]
+             ),
+             pw.Row(
+                 mainAxisSize: pw.MainAxisSize.min,
+                 crossAxisAlignment: pw.CrossAxisAlignment.end,
+                 children: [
+                   pw.Text("Phone",style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                   pw.SizedBox(
+                       width: 2 * PdfPageFormat.mm
+                   ),
+                   pw.Text(widget.store["cellNo"].toString())
+                 ]
+             ),
+           ]
+         );
+       },
+        build: (pw.Context context) {
+           return[
+            pw.Column(
+                 children: [
+                   pw.Column(
+                       crossAxisAlignment: pw.CrossAxisAlignment.start,
+                       children: [
+                         pw.Text(
+                           "Invoice",
+                           style: pw.TextStyle(fontSize: 24,fontWeight: pw.FontWeight.bold),
+                         ),
+                         pw.SizedBox(
+                             height: 20
+                         ),
+                         pw.Text(
+                           "Some Description",
+                         ),
+                         pw.SizedBox(
+                             height: 20
+                         ),
+                         pw.Table.fromTextArray(
+                             headers: ["Name","Unit Price","Quantity","Total"],
+                             data:invoiceData,
+                             border: null,
+                             headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                             headerDecoration: pw.BoxDecoration(color: PdfColors.grey300),
+                             cellHeight: 30,
+                             cellAlignments: {
+                               0: pw.Alignment.centerLeft,
+                               1: pw.Alignment.centerLeft,
+                               2: pw.Alignment.centerLeft,
+                               3: pw.Alignment.centerLeft
+                             }
+                         ),
+                         pw.Divider(),
+                         pw.Container(
+                             alignment: pw.Alignment.centerRight,
+                             child: pw.Row(
+                               children: [
+                                 pw.Spacer(flex: 6),
+                                 pw.Expanded(
+                                   flex:4,
+                                   child: pw.Column(
+                                       crossAxisAlignment: pw.CrossAxisAlignment.start,
+                                       children: [
+                                         pw.Container(
+                                             width: double.infinity,
+                                             child: pw.Row(
+                                                 children: [
+                                                   pw.Expanded(
+                                                       child: pw.Text("SubTotal",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
+                                                   ),
+                                                   pw.Text(
+                                                       overallTotalPrice.toString(),
+                                                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
+                                                   )
+                                                 ]
+                                             )
+                                         ),
+                                         pw.Container(
+                                             width: double.infinity,
+                                             child: pw.Row(
+                                                 children: [
+                                                   pw.Expanded(
+                                                       child: pw.Text("Tax",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
+                                                   ),
+                                                   pw.Text(
+                                                       totalTax.toString(),
+                                                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
+                                                   )
+                                                 ]
+                                             )
+                                         ),
+                                         pw.Divider(),
+                                         pw.Container(
+                                             width: double.infinity,
+                                             child: pw.Row(
+                                                 children: [
+                                                   pw.Expanded(
+                                                       child: pw.Text("Total",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
+                                                   ),
+                                                   pw.Text(
+                                                       overallTotalPriceWithTax.toString(),
+                                                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
+                                                   )
+                                                 ]
+                                             )
+                                         ),
+                                         pw.SizedBox(
+                                             height: 2 * PdfPageFormat.mm
+                                         ),
+                                         pw.Container(
+                                             height:1,
+                                             color: PdfColors.grey400
+                                         ),
+                                         pw.SizedBox(
+                                             height: 0.5 * PdfPageFormat.mm
+                                         ),
+                                         pw.Container(
+                                             height:1,
+                                             color: PdfColors.grey400
+                                         ),
+                                       ]
+                                   ),
+                                 )
+                               ],
+                             )
+                         )
+                       ]
+                   )
+                 ],
+
+             )];
+
+        }
+
+    ));
+    await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => doc.save());
   }
 
   @override
@@ -497,12 +652,10 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             onTap: () {
                                               setState(() {
                                                 overallTotalPriceWithTax=0.0;
-                                                priceWithPriority=0.0;
+                                                totalTax=0.0;
                                                 typeBasedTaxes.clear();
                                                 taxesList.clear();
                                                 orderItems.clear();
-                                                selectedPriority=null;
-                                                selectedPriorityId=null;
                                                 selectedTable=null;
                                                 selectedTableId=null;
                                                 overallTotalPriceWithTax=overallTotalPrice;
@@ -513,10 +666,12 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                       if(t.percentage!=null&&t.percentage!=0.0){
                                                         var percentTax= overallTotalPrice/100*t.percentage;
                                                         print(percentTax);
+                                                        totalTax=totalTax+percentTax;
                                                         overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
                                                       }
                                                       if(t.price!=null&&t.price!=0.0){
                                                         overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
+                                                        totalTax=totalTax+t.price;
                                                       }
                                                       typeBasedTaxes.add(t);
 
@@ -527,11 +682,13 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                   }
                                                 }
                                               });
+
                                               showDialog(context: context, builder:(BuildContext context){
                                                 return Dialog(
-                                                  insetPadding: EdgeInsets.all(16),
+                                                  backgroundColor: Colors.transparent,
+                                                 // insetPadding: EdgeInsets.all(16),
                                                     child: Container(
-                                                        height:MediaQuery.of(context).size.height/1.68,
+                                                        height:MediaQuery.of(context).size.height- 430,
                                                         width: MediaQuery.of(context).size.width/2,
                                                         child: orderPopUpHorizontalDineIn()
                                                     )
@@ -560,12 +717,9 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                 onTap: () {
                                                   setState(() {
                                                     overallTotalPriceWithTax=0.0;
-                                                    priceWithPriority=0.0;
                                                     typeBasedTaxes.clear();
                                                     taxesList.clear();
                                                     orderItems.clear();
-                                                    selectedPriority=null;
-                                                    selectedPriorityId=null;
                                                     overallTotalPriceWithTax=overallTotalPrice;
                                                     var tempTaxList = orderTaxes.where((element) => element.takeAway);
                                                     if(tempTaxList!=null&&tempTaxList.length>0){
@@ -591,8 +745,9 @@ class _POSMainScreenState extends State<POSMainScreen> {
 
                                                   showDialog(context: context, builder:(BuildContext context){
                                                     return Dialog(
+                                                      backgroundColor: Colors.transparent,
                                                         child: Container(
-                                                            height:MediaQuery.of(context).size.height/1.68,
+                                                            height:MediaQuery.of(context).size.height - 430,
                                                             width: MediaQuery.of(context).size.width/2,
                                                             child: orderPopupHorizontalTakeAway()
                                                         )
@@ -621,12 +776,9 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                 onTap: () {
                                                   setState(() {
                                                     overallTotalPriceWithTax=0.0;
-                                                    priceWithPriority=0.0;
                                                     typeBasedTaxes.clear();
                                                     taxesList.clear();
                                                     orderItems.clear();
-                                                    selectedPriority=null;
-                                                    selectedPriorityId=null;
                                                     overallTotalPriceWithTax=overallTotalPrice;
                                                     var tempTaxList = orderTaxes.where((element) => element.delivery);
                                                     if(tempTaxList!=null&&tempTaxList.length>0){
@@ -651,8 +803,9 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                   });
                                                   showDialog(context: context, builder:(BuildContext context){
                                                     return Dialog(
+                                                      backgroundColor: Colors.transparent,
                                                         child: Container(
-                                                            height:MediaQuery.of(context).size.height/1.68,
+                                                            height:MediaQuery.of(context).size.height - 430,
                                                             width: MediaQuery.of(context).size.width/2,
                                                             child: orderPopupHorizontalDelivery()
                                                         )
@@ -1458,7 +1611,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
         builder: (context,innersetState){
           return Center(
             child: Container(
-                height:MediaQuery.of(context).size.height/1.68,
+                height:MediaQuery.of(context).size.height - 430,
                 width: MediaQuery.of(context).size.width/2,
                 decoration: BoxDecoration(
                     image: DecorationImage(
@@ -1467,325 +1620,210 @@ class _POSMainScreenState extends State<POSMainScreen> {
                       image: AssetImage('assets/bb.jpg'),
                     )
                 ),
-                child: ListView(
+                child: Column(
                   children: [
-                    Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: DropdownButtonFormField<String>(
-                                  decoration: InputDecoration(
-                                    labelText: "Select Type",
-                                    alignLabelWithHint: true,
-                                    labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                    enabledBorder: OutlineInputBorder(
-                                    ),
-                                    focusedBorder:  OutlineInputBorder(
-                                      borderSide: BorderSide(color:yellowColor),
-                                    ),
-                                  ),
-
-                                  value: selectedType,
-                                  onChanged: (Value) {
-                                    innersetState(() {
-                                      selectedType = Value;
-                                    });
-                                  },
-                                  items: types.map((value) {
-                                    return  DropdownMenuItem<String>(
-                                      value: value,
-                                      child: Row(
-                                        children: <Widget>[
-                                          Text(
-                                            value,
-                                            style:  TextStyle(color: yellowColor,fontSize: 13),
-                                          ),
-                                          //user.icon,
-                                          //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                        ],
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: DropdownButtonFormField<String>(
-                                  decoration: InputDecoration(
-                                    labelText: "Order Priority",
-                                    labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                    enabledBorder: OutlineInputBorder(
-                                    ),
-                                    focusedBorder:  OutlineInputBorder(
-                                      borderSide: BorderSide(color:yellowColor),
-                                    ),
-                                  ),
-
-                                  value: selectedPriority,
-                                  onChanged: (Value) {
-                                    innersetState(() {
-                                      if(selectedPriority!=null){
-                                        priceWithPriority=overallTotalPriceWithTax;
-                                        typeBasedTaxes.remove(typeBasedTaxes.last);
-                                      }
-                                      selectedPriority=Value;
-                                      selectedPriorityId=priorities[priorities.indexOf(priorities.where((element) =>element["name"]==selectedPriority).toList()[0])]["id"];
-                                      var tempPriorityPercentage=priorities[priorities.indexOf(priorities.where((element) =>element["name"]==selectedPriority).toList()[0])]["percentage"];
-                                      priceWithPriority=overallTotalPriceWithTax+(overallTotalPriceWithTax/100*tempPriorityPercentage);
-                                      typeBasedTaxes.add(Tax(name: selectedPriority,id: selectedPriorityId,percentage:priorities[priorities.indexOf(priorities.where((element) =>element["name"]==selectedPriority).toList()[0])]["percentage"]));
-                                    });
-                                  },
-                                  items: priorities.map((value) {
-                                    return  DropdownMenuItem<String>(
-                                      value: value["name"],
-                                      child: Row(
-                                        children: <Widget>[
-                                          Text(
-                                            value["name"],
-                                            style:  TextStyle(color: yellowColor,fontSize: 13),
-                                          ),
-                                          //user.icon,
-                                          //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                        ],
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              ),
-                            ),
-                          ],
+                    Container(
+                      width: MediaQuery.of(context).size.width,
+                      height: 40,
+                      color: yellowColor,
+                      child: Center(
+                        child: Text(
+                          "Place Order For Delivery",
+                          style: TextStyle(
+                              fontSize: 25,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
                         ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: TextFormField(
-                                  controller: customerName,
-                                  decoration: InputDecoration(
-                                    border: OutlineInputBorder(),
-                                    hintText: "Customer Name",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: TextFormField(
-                                  controller: customerEmail,
-                                  decoration: InputDecoration(
-
-                                    border: OutlineInputBorder(
-
-                                    ),
-                                    hintText: "Customer Email",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: TextFormField(
-                                  controller: customerPhone,
-                                  decoration: InputDecoration(
-                                    border: OutlineInputBorder(),
-                                    hintText: "Customer Phone#",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            Expanded(
-                              child: Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: TextFormField(
-                                  controller: customerAddress,
-                                  decoration: InputDecoration(
-                                    border: OutlineInputBorder(),
-                                    hintText: "Customer Address",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: DropdownButtonFormField<String>(
-                                      decoration: InputDecoration(
-                                        labelText: "Select Discount Type",
-                                        alignLabelWithHint: true,
-                                        labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                        enabledBorder: OutlineInputBorder(
-                                        ),
-                                        focusedBorder:  OutlineInputBorder(
-                                          borderSide: BorderSide(color:yellowColor),
-                                        ),
-                                      ),
-
-                                      value: selectedDiscountType,
-                                      onChanged: (Value) {
-                                        innersetState(() {
-                                          selectedDiscountType = Value;
-                                        });
-                                      },
-                                      items: discountType.map((value) {
-                                        return  DropdownMenuItem<String>(
-                                          value: value,
-                                          child: Row(
-                                            children: <Widget>[
-                                              Text(
-                                                value,
-                                                style:  TextStyle(color: yellowColor,fontSize: 13),
-                                              ),
-                                              //user.icon,
-                                              //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                            ],
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: DropdownButtonFormField<String>(
+                                        decoration: InputDecoration(
+                                          labelText: "Select Type",
+                                          alignLabelWithHint: true,
+                                          labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                          enabledBorder: OutlineInputBorder(
                                           ),
-                                        );
-                                      }).toList(),
+                                          focusedBorder:  OutlineInputBorder(
+                                            borderSide: BorderSide(color:yellowColor),
+                                          ),
+                                        ),
+
+                                        value: selectedType,
+                                        onChanged: (Value) {
+                                          innersetState(() {
+                                            selectedType = Value;
+                                          });
+                                        },
+                                        items: types.map((value) {
+                                          return  DropdownMenuItem<String>(
+                                            value: value,
+                                            child: Row(
+                                              children: <Widget>[
+                                                Text(
+                                                  value,
+                                                  style:  TextStyle(color: yellowColor,fontSize: 13),
+                                                ),
+                                                //user.icon,
+                                                //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                              ],
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
                                     ),
                                   ),
-                                  Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: TextFormField(
-                                      controller: discountValue,
-                                      onChanged: (value){
-                                        innersetState(() {
-                                          if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                            if(priceWithPriority!=0.0){
-                                              var tempPercentage=(priceWithPriority/100*double.parse(value));
-                                              print("discount with Priority "+tempPercentage.toString());
-                                            }else{
-                                              var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
-                                              print("discount without Priority "+tempPercentage.toString());
-                                            }
-                                          }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
-                                            if(priceWithPriority!=0.0){
-                                              var tempSum=priceWithPriority-double.parse(value);
-                                              print("discount with Priority "+tempSum.toString());
-                                            }else{
-                                              var tempSum=overallTotalPriceWithTax-double.parse(value);
-                                              print("discount without Priority "+tempSum.toString());
-                                            }
-                                          }
-                                        });
-
-                                      },
-                                      decoration: InputDecoration(
-                                        border: OutlineInputBorder(),
-                                        hintText: "Discount Amount / Percentage",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: TextFormField(
+                                        controller: customerName,
+                                        decoration: InputDecoration(
+                                          border: OutlineInputBorder(),
+                                          hintText: "Customer Name",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                        ),
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            Expanded(
-                              child: Column(
+                              Row(
                                 children: [
-                                  Container(
-                                    width: MediaQuery.of(context).size.width,
-                                    height: 40,
-                                    color: yellowColor,
+                                  Expanded(
                                     child: Padding(
                                       padding: const EdgeInsets.all(8.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment
-                                            .spaceBetween,
-                                        children: [
-                                          Text(
-                                            "SubTotal: ",
-                                            style: TextStyle(
-                                                fontSize:
-                                                20,
-                                                color:
-                                                Colors.white,
-                                                fontWeight:
-                                                FontWeight
-                                                    .bold),
-                                          ),
-                                          Row(
-                                            children: [
-                                              Text(
-                                                widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
-                                                style: TextStyle(
-                                                    fontSize:
-                                                    20,
-                                                    color:
-                                                    Colors.white,
-                                                    fontWeight:
-                                                    FontWeight.bold),
-                                              ),
-                                              SizedBox(
-                                                width: 2,
-                                              ),
-                                              Text(
-                                                overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
-                                                style: TextStyle(
-                                                    fontSize:
-                                                    20,
-                                                    color:
-                                                    blueColor,
-                                                    fontWeight:
-                                                    FontWeight.bold),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
+                                      child: TextFormField(
+                                        controller: customerPhone,
+                                        decoration: InputDecoration(
+                                          border: OutlineInputBorder(),
+                                          hintText: "Customer Phone#",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                        ),
                                       ),
                                     ),
                                   ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(2.0),
-                                    child: Container(
-                                        width: MediaQuery.of(
-                                            context)
-                                            .size
-                                            .width,
-                                        height: 75,
-                                        decoration: BoxDecoration(
-                                          border: Border.all(color: yellowColor),
-                                          //borderRadius: BorderRadius.circular(8)
-                                        ),
 
-                                        child: ListView.builder(itemCount: typeBasedTaxes.length,itemBuilder: (context, index){
-                                          return  Padding(
-                                            padding:
-                                            const EdgeInsets
-                                                .all(8.0),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: TextFormField(
+                                        controller: customerAddress,
+                                        decoration: InputDecoration(
+                                          border: OutlineInputBorder(),
+                                          hintText: "Customer Address",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: DropdownButtonFormField<String>(
+                                            decoration: InputDecoration(
+                                              labelText: "Select Discount Type",
+                                              alignLabelWithHint: true,
+                                              labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                              enabledBorder: OutlineInputBorder(
+                                              ),
+                                              focusedBorder:  OutlineInputBorder(
+                                                borderSide: BorderSide(color:yellowColor),
+                                              ),
+                                            ),
+
+                                            value: selectedDiscountType,
+                                            onChanged: (Value) {
+                                              innersetState(() {
+                                                selectedDiscountType = Value;
+                                              });
+                                            },
+                                            items: discountType.map((value) {
+                                              return  DropdownMenuItem<String>(
+                                                value: value,
+                                                child: Row(
+                                                  children: <Widget>[
+                                                    Text(
+                                                      value,
+                                                      style:  TextStyle(color: yellowColor,fontSize: 13),
+                                                    ),
+                                                    //user.icon,
+                                                    //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                                  ],
+                                                ),
+                                              );
+                                            }).toList(),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: TextFormField(
+                                            controller: discountValue,
+                                            onChanged: (value){
+                                              innersetState(() {
+                                                if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
+                                                  if(overallTotalPriceWithTax!=0.0){
+                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
+                                                    print("discount with Priority "+tempPercentage.toString());
+                                                  }else{
+                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
+                                                    print("discount without Priority "+tempPercentage.toString());
+                                                  }
+                                                }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
+                                                  if(overallTotalPriceWithTax!=0.0){
+                                                    var tempSum=overallTotalPriceWithTax-double.parse(value);
+                                                    print("discount with Priority "+tempSum.toString());
+                                                  }else{
+                                                    var tempSum=overallTotalPriceWithTax-double.parse(value);
+                                                    print("discount without Priority "+tempSum.toString());
+                                                  }
+                                                }
+                                              });
+
+                                            },
+                                            decoration: InputDecoration(
+                                              border: OutlineInputBorder(),
+                                              hintText: "Discount Amount / Percentage",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                          width: MediaQuery.of(context).size.width,
+                                          height: 40,
+                                          color: yellowColor,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
                                             child: Row(
                                               mainAxisAlignment:
                                               MainAxisAlignment
                                                   .spaceBetween,
                                               children: [
                                                 Text(
-                                                  typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?typeBasedTaxes[index].name+" (${typeBasedTaxes[index].percentage.toStringAsFixed(1)})":typeBasedTaxes[index].name,
+                                                  "SubTotal: ",
                                                   style: TextStyle(
                                                       fontSize:
-                                                      16,
+                                                      20,
                                                       color:
-                                                      yellowColor,
+                                                      Colors.white,
                                                       fontWeight:
                                                       FontWeight
                                                           .bold),
@@ -1793,178 +1831,264 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                 Row(
                                                   children: [
                                                     Text(
-                                                      typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):"",                                                      style: TextStyle(
-                                                        fontSize:
-                                                        16,
-                                                        color:
-                                                        blueColor,
-                                                        fontWeight:
-                                                        FontWeight.bold),
+                                                      widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          Colors.white,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                    SizedBox(
+                                                      width: 2,
+                                                    ),
+                                                    Text(
+                                                      overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          blueColor,
+                                                          fontWeight:
+                                                          FontWeight.bold),
                                                     ),
                                                   ],
                                                 ),
                                               ],
                                             ),
-                                          );
-                                        })
-                                    ),
-                                  ),
-                                  Container(
-                                    width: MediaQuery.of(context).size.width,
-                                    height: 40,
-                                    color: yellowColor,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment
-                                            .spaceBetween,
-                                        children: [
-                                          Text(
-                                            "Total: ",
-                                            style: TextStyle(
-                                                fontSize:
-                                                20,
-                                                color:
-                                                Colors.white,
-                                                fontWeight:
-                                                FontWeight
-                                                    .bold),
                                           ),
-                                          Row(
-                                            children: [
-                                              Text(
-                                                widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":"",
-                                                style: TextStyle(
-                                                    fontSize:
-                                                    20,
-                                                    color:
-                                                    Colors.white,
-                                                    fontWeight:
-                                                    FontWeight.bold),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(2.0),
+                                          child: Container(
+                                              width: MediaQuery.of(
+                                                  context)
+                                                  .size
+                                                  .width,
+                                              height: 75,
+                                              decoration: BoxDecoration(
+                                                border: Border.all(color: yellowColor),
+                                                //borderRadius: BorderRadius.circular(8)
                                               ),
-                                              SizedBox(
-                                                width: 2,
-                                              ),
-                                              Text(
-                                                priceWithPriority!=null&&priceWithPriority!=0.0?priceWithPriority.toStringAsFixed(1)+"/-":overallTotalPriceWithTax.toStringAsFixed(1)+"/-",
-                                                style: TextStyle(
-                                                    fontSize:
-                                                    20,
-                                                    color:
-                                                    blueColor,
-                                                    fontWeight:
-                                                    FontWeight.bold),
-                                              ),
-                                            ],
+
+                                              child: ListView.builder(itemCount: typeBasedTaxes.length,itemBuilder: (context, index){
+                                                return  Padding(
+                                                  padding:
+                                                  const EdgeInsets
+                                                      .all(8.0),
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                    children: [
+                                                      Text(
+                                                        typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?typeBasedTaxes[index].name+" (${typeBasedTaxes[index].percentage.toStringAsFixed(1)})":typeBasedTaxes[index].name,
+                                                        style: TextStyle(
+                                                            fontSize:
+                                                            16,
+                                                            color:
+                                                            yellowColor,
+                                                            fontWeight:
+                                                            FontWeight
+                                                                .bold),
+                                                      ),
+                                                      Row(
+                                                        children: [
+                                                          Text(
+                                                            typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):"",                                                      style: TextStyle(
+                                                              fontSize:
+                                                              16,
+                                                              color:
+                                                              blueColor,
+                                                              fontWeight:
+                                                              FontWeight.bold),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              })
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                        Container(
+                                          width: MediaQuery.of(context).size.width,
+                                          height: 40,
+                                          color: yellowColor,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                  .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  "Total: ",
+                                                  style: TextStyle(
+                                                      fontSize:
+                                                      20,
+                                                      color:
+                                                      Colors.white,
+                                                      fontWeight:
+                                                      FontWeight
+                                                          .bold),
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":"",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          Colors.white,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                    SizedBox(
+                                                      width: 2,
+                                                    ),
+                                                    Text(
+                                                      overallTotalPriceWithTax!=null&&overallTotalPriceWithTax!=0.0?overallTotalPriceWithTax.toStringAsFixed(1)+"/-":overallTotalPrice.toStringAsFixed(1)+"/-",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          blueColor,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height:15),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: InkWell(
-                            onTap: (){
-                              if(customerName.text!=null&&customerName.text.isNotEmpty&&customerAddress.text!=null&&customerAddress.text.isNotEmpty){
-                                for(int i=0;i<cartList.length;i++){
-                                  orderItems.add({
-                                    "dealid":cartList[i].dealId,
-                                    "name":cartList[i].productName,
-                                    "price":cartList[i].price,
-                                    "quantity":cartList[i].quantity,
-                                    "totalprice":cartList[i].totalPrice,
-                                    "havetopping":cartList[i].topping=="null"||cartList[i].topping==null || cartList[i].topping== "[]" ?false:jsonDecode(cartList[i].topping).length>0?true:false,
-                                    "sizeid":cartList[i].sizeId,
-                                    "IsDeal": cartList[i].isDeal==0?false:true,
-                                    "productid":cartList[i].productId,
-                                    "orderitemstoppings":cartList[i].topping==null||cartList[i].topping == "[]"?[]:jsonDecode(cartList[i].topping),
-                                  });
-                                }
-                                print(taxesList);
-                                dynamic order = {
-                                  "DailySessionNo": 7,
-                                  "OrderPriorityId":selectedPriorityId!=null?selectedPriorityId:null,
-                                  "storeId":widget.store["id"],
-                                  "DeviceToken":null,
-                                  "ordertype":3,
-                                  "NetTotal":priceWithPriority,
-                                  //  "grosstotal":widget.netTotal,
-                                  "comment":null,
-                                  "TableId":null,
-                                  "DeliveryAddress" : customerAddress.text,
-                                  "DeliveryLongitude" : null,
-                                  "DeliveryLatitude" : null,
-                                  "PaymentType" : 1,
-                                  "orderitems":orderItems,
-                                  "CardNumber": null,
-                                  "CVV": null,
-                                  "ExpiryDate": null,
-                                  "OrderTaxes":taxesList,
-                                  "VoucherCode": "",
-                                  "OrderStatus":7,
-                                  "CustomerEmail":customerEmail.text,
-                                  "CustomerContactNo":customerPhone.text,
-                                  "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false
-                                };
-                                SharedPreferences.getInstance().then((prefs){
-                                  setState(() {
-                                    isLoading=true;
-                                    Navigator.of(context).pop(context);
-                                  });
-                                  Network_Operations.placeOrder(context, prefs.getString("token"), order).then((isOrderPlaced){
-                                    if(isOrderPlaced){
-                                      orderItems.clear();
-                                      sqlite_helper().getcart1().then((value) {
+                              SizedBox(height:15),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: InkWell(
+                                  onTap: (){
+                                    if(customerName.text!=null&&customerName.text.isNotEmpty&&customerAddress.text!=null&&customerAddress.text.isNotEmpty){
+                                      for(int i=0;i<cartList.length;i++){
+                                        orderItems.add({
+                                          "dealid":cartList[i].dealId,
+                                          "name":cartList[i].productName,
+                                          "price":cartList[i].price,
+                                          "quantity":cartList[i].quantity,
+                                          "totalprice":cartList[i].totalPrice,
+                                          "havetopping":cartList[i].topping=="null"||cartList[i].topping==null || cartList[i].topping== "[]" ?false:jsonDecode(cartList[i].topping).length>0?true:false,
+                                          "sizeid":cartList[i].sizeId,
+                                          "IsDeal": cartList[i].isDeal==0?false:true,
+                                          "productid":cartList[i].productId,
+                                          "orderitemstoppings":cartList[i].topping==null||cartList[i].topping == "[]"?[]:jsonDecode(cartList[i].topping),
+                                        });
+                                      }
+                                      print(taxesList);
+                                      dynamic order = {
+                                        "DailySessionNo": 7,
+                                        "storeId":widget.store["id"],
+                                        "DeviceToken":null,
+                                        "ordertype":3,
+                                        "NetTotal":overallTotalPriceWithTax,
+                                        //  "grosstotal":widget.netTotal,
+                                        "comment":null,
+                                        "TableId":null,
+                                        "DeliveryAddress" : customerAddress.text,
+                                        "DeliveryLongitude" : null,
+                                        "DeliveryLatitude" : null,
+                                        "PaymentType" : 1,
+                                        "orderitems":orderItems,
+                                        "CardNumber": null,
+                                        "CVV": null,
+                                        "ExpiryDate": null,
+                                        "OrderTaxes":taxesList,
+                                        "VoucherCode": "",
+                                        "OrderStatus":7,
+                                        "CustomerEmail":customerEmail.text,
+                                        "CustomerContactNo":customerPhone.text,
+                                        "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false
+                                      };
+                                      SharedPreferences.getInstance().then((prefs){
                                         setState(() {
-                                          cartList.clear();
-                                          cartList = value;
-                                          isLoading=false;
+                                          isLoading=true;
+                                          Navigator.of(context).pop(context);
+                                        });
+                                        Network_Operations.placeOrder(context, prefs.getString("token"), order).then((orderPlaced){
+                                          if(orderPlaced!=null){
+                                            orderItems.clear();
+                                            sqlite_helper().getcart1().then((value) {
+                                              setState(() {
+                                                cartList.clear();
+                                                cartList = value;
+                                                isLoading=false;
+                                              });
+                                            });
+                                            sqlite_helper().gettotal().then((value){
+                                              setState(() {
+                                                overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                              });
+                                            });
+                                            if(selectedType=="Payment"){
+                                              setState(() {
+                                                var payCash ={
+                                                  "orderid": jsonDecode(orderPlaced)["id"],
+                                                  "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                                                  "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                                                  "Comment": null,
+                                                  "PaymentType": 1,
+                                                  "OrderStatus": 7,
+                                                };
+                                                Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
+                                                  if(isPaid){
+                                                    Utils.showSuccess(this.context,"Payment Successful");
+                                                  }else{
+                                                    Utils.showError(this.context,"Problem in Making Payment");
+                                                  }
+                                                });
+                                              });
+                                            }
+                                            Utils.showSuccess(this.context,"Order Placed successfully");
+                                          }else{
+                                            Utils.showError(this.context,"Unable to Place Order");
+                                          }
                                         });
                                       });
-                                      sqlite_helper().gettotal().then((value){
-                                        setState(() {
-                                          overallTotalPrice=value[0]["SUM(totalPrice)"];
-                                        });
-                                      });
-                                      Utils.showSuccess(context,"Order Placed successfully");
-                                    }else{
-                                      Utils.showError(context,"Unable to Place Order");
+                                      debugPrint(order.toString());
                                     }
-                                  });
-                                });
-                                debugPrint(order.toString());
-                              }
-                            },
-                            child: Card(
-                              elevation:8,
-                              child: Container(
-                                width: 400,
-                                height: 60,
-                                decoration: BoxDecoration(
-                                    color: yellowColor,
-                                    borderRadius: BorderRadius.circular(4)
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    "Submit Order",
-                                    style: TextStyle(
-                                        fontSize: 25,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold),
+                                  },
+                                  child: Card(
+                                    elevation:8,
+                                    child: Container(
+                                      width: 400,
+                                      height: 60,
+                                      decoration: BoxDecoration(
+                                          color: yellowColor,
+                                          borderRadius: BorderRadius.circular(4)
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          "Submit Order",
+                                          style: TextStyle(
+                                              fontSize: 25,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 )
@@ -1985,7 +2109,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
         builder: (context,innersetState){
           return Center(
             child: Container(
-                height:MediaQuery.of(context).size.height/1.68,
+                height:MediaQuery.of(context).size.height - 430,
                 width: MediaQuery.of(context).size.width/2,
                 decoration: BoxDecoration(
                     image: DecorationImage(
@@ -1994,338 +2118,226 @@ class _POSMainScreenState extends State<POSMainScreen> {
                       image: AssetImage('assets/bb.jpg'),
                     )
                 ),
-                child: ListView(
+                child: Column(
                   children: [
-                    Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: DropdownButtonFormField<String>(
-                                  decoration: InputDecoration(
-                                    labelText: "Select Type",
-                                    alignLabelWithHint: true,
-                                    labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                    enabledBorder: OutlineInputBorder(
-                                    ),
-                                    focusedBorder:  OutlineInputBorder(
-                                      borderSide: BorderSide(color:yellowColor),
-                                    ),
-                                  ),
-
-                                  value: selectedType,
-                                  onChanged: (Value) {
-                                    innersetState(() {
-                                      selectedType = Value;
-                                    });
-                                  },
-                                  items: types.map((value) {
-                                    return  DropdownMenuItem<String>(
-                                      value: value,
-                                      child: Row(
-                                        children: <Widget>[
-                                          Text(
-                                            value,
-                                            style:  TextStyle(color: yellowColor,fontSize: 13),
-                                          ),
-                                          //user.icon,
-                                          //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                        ],
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: DropdownButtonFormField<String>(
-                                  decoration: InputDecoration(
-                                    hintText: "Select Order Priority",
-                                    labelText: "Order Priority",
-                                    labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                    enabledBorder: OutlineInputBorder(
-                                    ),
-                                    focusedBorder:  OutlineInputBorder(
-                                      borderSide: BorderSide(color:yellowColor),
-                                    ),
-                                  ),
-
-                                  value: selectedPriority,
-                                  onChanged: (Value) {
-                                    innersetState(() {
-                                      if(selectedPriority!=null){
-                                        priceWithPriority=overallTotalPriceWithTax;
-                                        typeBasedTaxes.remove(typeBasedTaxes.last);
-                                      }
-                                      selectedPriority=Value;
-                                      selectedPriorityId=priorities[priorities.indexOf(priorities.where((element) =>element["name"]==selectedPriority).toList()[0])]["id"];
-                                      var tempPriorityPercentage=priorities[priorities.indexOf(priorities.where((element) =>element["name"]==selectedPriority).toList()[0])]["percentage"];
-                                      priceWithPriority=overallTotalPriceWithTax+(overallTotalPriceWithTax/100*tempPriorityPercentage);
-                                      typeBasedTaxes.add(Tax(name: selectedPriority,id: selectedPriorityId,percentage:priorities[priorities.indexOf(priorities.where((element) =>element["name"]==selectedPriority).toList()[0])]["percentage"]));
-                                    });
-                                  },
-                                  items: priorities.map((value) {
-                                    return  DropdownMenuItem<String>(
-                                      value: value["name"],
-                                      child: Row(
-                                        children: <Widget>[
-                                          Text(
-                                            value["name"],
-                                            style:  TextStyle(color: yellowColor,fontSize: 13),
-                                          ),
-                                          //user.icon,
-                                          //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                        ],
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              ),
-                            ),
-                          ],
+                    Container(
+                      width: MediaQuery.of(context).size.width,
+                      height: 40,
+                      color: yellowColor,
+                      child: Center(
+                        child: Text(
+                          "Place Order For Take-Away",
+                          style: TextStyle(
+                              fontSize: 25,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
                         ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: TextFormField(
-                                  controller: customerName,
-                                  decoration: InputDecoration(
-                                    border: OutlineInputBorder(),
-                                    hintText: "Customer Name",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: TextFormField(
-                                  controller: customerEmail,
-                                  decoration: InputDecoration(
-
-                                    border: OutlineInputBorder(
-
-                                    ),
-                                    hintText: "Customer Email",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: TextFormField(
-                                  controller: customerPhone,
-                                  decoration: InputDecoration(
-                                    border: OutlineInputBorder(),
-                                    hintText: "Customer Phone#",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: TextFormField(
-                                  controller: timePickerField,
-                                  decoration: InputDecoration(
-                                      labelText: "Select Picking Time",
-                                      border: OutlineInputBorder(),
-                                      hintText: "Select Picking Time"
-                                  ),
-                                  onTap: ()async{
-                                    FocusScope.of(context).requestFocus(new FocusNode());
-                                    var time = await showTimePicker(
-                                        context: context,
-                                        initialTime: TimeOfDay.now()
-                                    );
-                                    innersetState(() {
-                                      timePickerField.text=time.hour.toString()+":"+time.minute.toString()+":00";
-                                      pickingTime=time;
-                                    });
-                                  },
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: DropdownButtonFormField<String>(
-                                      decoration: InputDecoration(
-                                        labelText: "Select Discount Type",
-                                        alignLabelWithHint: true,
-                                        labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                        enabledBorder: OutlineInputBorder(
-                                        ),
-                                        focusedBorder:  OutlineInputBorder(
-                                          borderSide: BorderSide(color:yellowColor),
-                                        ),
-                                      ),
-
-                                      value: selectedDiscountType,
-                                      onChanged: (Value) {
-                                        innersetState(() {
-                                          selectedDiscountType = Value;
-                                        });
-                                      },
-                                      items: discountType.map((value) {
-                                        return  DropdownMenuItem<String>(
-                                          value: value,
-                                          child: Row(
-                                            children: <Widget>[
-                                              Text(
-                                                value,
-                                                style:  TextStyle(color: yellowColor,fontSize: 13),
-                                              ),
-                                              //user.icon,
-                                              //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                            ],
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: DropdownButtonFormField<String>(
+                                        decoration: InputDecoration(
+                                          labelText: "Select Type",
+                                          alignLabelWithHint: true,
+                                          labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                          enabledBorder: OutlineInputBorder(
                                           ),
-                                        );
-                                      }).toList(),
+                                          focusedBorder:  OutlineInputBorder(
+                                            borderSide: BorderSide(color:yellowColor),
+                                          ),
+                                        ),
+
+                                        value: selectedType,
+                                        onChanged: (Value) {
+                                          innersetState(() {
+                                            selectedType = Value;
+                                          });
+                                        },
+                                        items: types.map((value) {
+                                          return  DropdownMenuItem<String>(
+                                            value: value,
+                                            child: Row(
+                                              children: <Widget>[
+                                                Text(
+                                                  value,
+                                                  style:  TextStyle(color: yellowColor,fontSize: 13),
+                                                ),
+                                                //user.icon,
+                                                //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                              ],
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
                                     ),
                                   ),
-                                  Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: TextFormField(
-                                      controller: discountValue,
-                                      onChanged: (value){
-                                        innersetState(() {
-                                          if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                            if(priceWithPriority!=0.0){
-                                              var tempPercentage=(priceWithPriority/100*double.parse(value));
-                                              print("discount with Priority "+tempPercentage.toString());
-                                            }else{
-                                              var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
-                                              print("discount without Priority "+tempPercentage.toString());
-                                            }
-                                          }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
-                                            if(priceWithPriority!=0.0){
-                                             var tempSum=priceWithPriority-double.parse(value);
-                                              print("discount with Priority "+tempSum.toString());
-                                            }else{
-                                              var tempSum=overallTotalPriceWithTax-double.parse(value);
-                                              print("discount without Priority "+tempSum.toString());
-                                            }
-                                          }
-                                        });
-
-                                      },
-                                      decoration: InputDecoration(
-                                        border: OutlineInputBorder(),
-                                        hintText: "Discount Amount / Percentage",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: TextFormField(
+                                        controller: timePickerField,
+                                        decoration: InputDecoration(
+                                            labelText: "Select Picking Time",
+                                            border: OutlineInputBorder(),
+                                            hintText: "Select Picking Time",
+                                          labelStyle: TextStyle(color: yellowColor, fontWeight: FontWeight.bold)
+                                        ),
+                                        onTap: ()async{
+                                          FocusScope.of(context).requestFocus(new FocusNode());
+                                          var time = await showTimePicker(
+                                              context: context,
+                                              initialTime: TimeOfDay.now()
+                                          );
+                                          innersetState(() {
+                                            timePickerField.text=time.hour.toString()+":"+time.minute.toString()+":00";
+                                            pickingTime=time;
+                                          });
+                                        },
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            Expanded(
-                              child: Column(
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Container(
-                                    width: MediaQuery.of(context).size.width,
-                                    height: 40,
-                                    color: yellowColor,
+                                  Expanded(
                                     child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment
-                                            .spaceBetween,
-                                        children: [
-                                          Text(
-                                            "SubTotal: ",
-                                            style: TextStyle(
-                                                fontSize:
-                                                20,
-                                                color:
-                                                Colors.white,
-                                                fontWeight:
-                                                FontWeight
-                                                    .bold),
-                                          ),
-                                          Row(
-                                            children: [
-                                              Text(
-                                                widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
-                                                style: TextStyle(
-                                                    fontSize:
-                                                    20,
-                                                    color:
-                                                    Colors.white,
-                                                    fontWeight:
-                                                    FontWeight.bold),
-                                              ),
-                                              SizedBox(
-                                                width: 2,
-                                              ),
-                                              Text(
-                                                overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
-                                                style: TextStyle(
-                                                    fontSize:
-                                                    20,
-                                                    color:
-                                                    blueColor,
-                                                    fontWeight:
-                                                    FontWeight.bold),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
+                                      padding: EdgeInsets.all(8.0),
+                                      child: TextFormField(
+                                        controller: customerName,
+                                        decoration: InputDecoration(
+                                          border: OutlineInputBorder(),
+                                          hintText: "Customer Name",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                        ),
                                       ),
                                     ),
                                   ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(2.0),
-                                    child: Container(
-                                        width: MediaQuery.of(
-                                            context)
-                                            .size
-                                            .width,
-                                        height: 75,
-                                        decoration: BoxDecoration(
-                                          border: Border.all(color: yellowColor),
-                                          //borderRadius: BorderRadius.circular(8)
-                                        ),
 
-                                        child: ListView.builder(itemCount: typeBasedTaxes.length,itemBuilder: (context, index){
-                                          return  Padding(
-                                            padding:
-                                            const EdgeInsets
-                                                .all(8.0),
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: TextFormField(
+                                        controller: customerPhone,
+                                        decoration: InputDecoration(
+                                          border: OutlineInputBorder(),
+                                          hintText: "Customer Phone#",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+
+                                ],
+                              ),
+
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: DropdownButtonFormField<String>(
+                                            decoration: InputDecoration(
+                                              labelText: "Select Discount Type",
+                                              alignLabelWithHint: true,
+                                              labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                              enabledBorder: OutlineInputBorder(
+                                              ),
+                                              focusedBorder:  OutlineInputBorder(
+                                                borderSide: BorderSide(color:yellowColor),
+                                              ),
+                                            ),
+
+                                            value: selectedDiscountType,
+                                            onChanged: (Value) {
+                                              innersetState(() {
+                                                selectedDiscountType = Value;
+                                              });
+                                            },
+                                            items: discountType.map((value) {
+                                              return  DropdownMenuItem<String>(
+                                                value: value,
+                                                child: Row(
+                                                  children: <Widget>[
+                                                    Text(
+                                                      value,
+                                                      style:  TextStyle(color: yellowColor,fontSize: 13),
+                                                    ),
+                                                    //user.icon,
+                                                    //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                                  ],
+                                                ),
+                                              );
+                                            }).toList(),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: TextFormField(
+                                            controller: discountValue,
+                                            onChanged: (value){
+                                              innersetState(() {
+                                                if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
+                                                  if(overallTotalPriceWithTax!=0.0){
+                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
+                                                    print("discount with Priority "+tempPercentage.toString());
+                                                  }else{
+                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
+                                                    print("discount without Priority "+tempPercentage.toString());
+                                                  }
+                                                }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
+                                                  if(overallTotalPriceWithTax!=0.0){
+                                                   var tempSum=overallTotalPriceWithTax-double.parse(value);
+                                                    print("discount with Priority "+tempSum.toString());
+                                                  }else{
+                                                    var tempSum=overallTotalPriceWithTax-double.parse(value);
+                                                    print("discount without Priority "+tempSum.toString());
+                                                  }
+                                                }
+                                              });
+
+                                            },
+                                            decoration: InputDecoration(
+                                              border: OutlineInputBorder(),
+                                              hintText: "Discount Amount / Percentage",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                          width: MediaQuery.of(context).size.width,
+                                          height: 40,
+                                          color: yellowColor,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
                                             child: Row(
                                               mainAxisAlignment:
                                               MainAxisAlignment
                                                   .spaceBetween,
                                               children: [
                                                 Text(
-                                                  typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?typeBasedTaxes[index].name+" (${typeBasedTaxes[index].percentage.toStringAsFixed(1)})":typeBasedTaxes[index].name,
+                                                  "SubTotal: ",
                                                   style: TextStyle(
                                                       fontSize:
-                                                      16,
+                                                      20,
                                                       color:
-                                                      yellowColor,
+                                                      Colors.white,
                                                       fontWeight:
                                                       FontWeight
                                                           .bold),
@@ -2333,9 +2345,23 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                 Row(
                                                   children: [
                                                     Text(
-                                                      typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+": "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?widget.store["currencyCode"]+" "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):"",                                                      style: TextStyle(
+                                                      widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                                      style: TextStyle(
                                                           fontSize:
-                                                          16,
+                                                          20,
+                                                          color:
+                                                          Colors.white,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                    SizedBox(
+                                                      width: 2,
+                                                    ),
+                                                    Text(
+                                                      overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
                                                           color:
                                                           blueColor,
                                                           fontWeight:
@@ -2345,167 +2371,252 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                 ),
                                               ],
                                             ),
-                                          );
-                                        })
-                                    ),
-                                  ),
-                                  Container(
-                                    width: MediaQuery.of(context).size.width,
-                                    height: 40,
-                                    color: yellowColor,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment
-                                            .spaceBetween,
-                                        children: [
-                                          Text(
-                                            "Total: ",
-                                            style: TextStyle(
-                                                fontSize:
-                                                20,
-                                                color:
-                                                Colors.white,
-                                                fontWeight:
-                                                FontWeight
-                                                    .bold),
                                           ),
-                                          Row(
-                                            children: [
-                                              Text(
-                                                widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":"",
-                                                style: TextStyle(
-                                                    fontSize:
-                                                    20,
-                                                    color:
-                                                    Colors.white,
-                                                    fontWeight:
-                                                    FontWeight.bold),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(2.0),
+                                          child: Container(
+                                              width: MediaQuery.of(
+                                                  context)
+                                                  .size
+                                                  .width,
+                                              height: 75,
+                                              decoration: BoxDecoration(
+                                                border: Border.all(color: yellowColor),
+                                                //borderRadius: BorderRadius.circular(8)
                                               ),
-                                              SizedBox(
-                                                width: 2,
-                                              ),
-                                              Text(
-                                                priceWithPriority!=null&&priceWithPriority!=0.0?priceWithPriority.toStringAsFixed(1)+"/-":overallTotalPriceWithTax.toStringAsFixed(1)+"/-",
-                                                style: TextStyle(
-                                                    fontSize:
-                                                    20,
-                                                    color:
-                                                    blueColor,
-                                                    fontWeight:
-                                                    FontWeight.bold),
-                                              ),
-                                            ],
+
+                                              child: ListView.builder(itemCount: typeBasedTaxes.length,itemBuilder: (context, index){
+                                                return  Padding(
+                                                  padding:
+                                                  const EdgeInsets
+                                                      .all(8.0),
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                    children: [
+                                                      Text(
+                                                        typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?typeBasedTaxes[index].name+" (${typeBasedTaxes[index].percentage.toStringAsFixed(1)})":typeBasedTaxes[index].name,
+                                                        style: TextStyle(
+                                                            fontSize:
+                                                            16,
+                                                            color:
+                                                            yellowColor,
+                                                            fontWeight:
+                                                            FontWeight
+                                                                .bold),
+                                                      ),
+                                                      Row(
+                                                        children: [
+                                                          Text(
+                                                            typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+": "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?widget.store["currencyCode"]+" "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):"",                                                      style: TextStyle(
+                                                                fontSize:
+                                                                16,
+                                                                color:
+                                                                blueColor,
+                                                                fontWeight:
+                                                                FontWeight.bold),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              })
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                        Container(
+                                          width: MediaQuery.of(context).size.width,
+                                          height: 40,
+                                          color: yellowColor,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                  .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  "Total: ",
+                                                  style: TextStyle(
+                                                      fontSize:
+                                                      20,
+                                                      color:
+                                                      Colors.white,
+                                                      fontWeight:
+                                                      FontWeight
+                                                          .bold),
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":"",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          Colors.white,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                    SizedBox(
+                                                      width: 2,
+                                                    ),
+                                                    Text(
+                                                      overallTotalPriceWithTax!=null&&overallTotalPriceWithTax!=0.0?overallTotalPriceWithTax.toStringAsFixed(1)+"/-":overallTotalPrice.toStringAsFixed(1)+"/-",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          blueColor,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height:10),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: InkWell(
-                            onTap: (){
-                              if(customerName.text!=null&&customerName.text!=""){
-                                for(int i=0;i<cartList.length;i++){
-                                  orderItems.add({
-                                    "dealid":cartList[i].dealId,
-                                    "name":cartList[i].productName,
-                                    "price":cartList[i].price,
-                                    "quantity":cartList[i].quantity,
-                                    "totalprice":cartList[i].totalPrice,
-                                    "havetopping":cartList[i].topping=="null"||cartList[i].topping==null || cartList[i].topping== "[]" ?false:jsonDecode(cartList[i].topping).length>0?true:false,
-                                    "sizeid":cartList[i].sizeId,
-                                    "IsDeal": cartList[i].isDeal==0?false:true,
-                                    "productid":cartList[i].productId,
-                                    "orderitemstoppings":cartList[i].topping==null||cartList[i].topping == "[]"?[]:jsonDecode(cartList[i].topping),
-                                  });
-                                }
-                                print(taxesList);
-                                dynamic order = {
-                                  "DailySessionNo": 7,
-                                  "OrderPriorityId":selectedPriorityId!=null?selectedPriorityId:null,
-                                  "storeId":widget.store["id"],
-                                  "DeviceToken":null,
-                                  "ordertype":2,
-                                  "NetTotal":priceWithPriority,
-                                  //  "grosstotal":widget.netTotal,
-                                  "comment":null,
-                                  "TableId":null,
-                                  "DeliveryAddress" : null,
-                                  "DeliveryLongitude" : null,
-                                  "DeliveryLatitude" : null,
-                                  "PaymentType" : 1,
-                                  "orderitems":orderItems,
-                                  "CardNumber": null,
-                                  "CVV": null,
-                                  "ExpiryDate": null,
-                                  "EstimatedTakeAwayTime":pickingTime!=null?DateFormat("hh:mm:ss").format(DateTime(DateTime.now().year,DateTime.now().month,DateTime.now().day,pickingTime.hour,pickingTime.minute)).toString():null,
-                                  "OrderTaxes":taxesList,
-                                  "VoucherCode": "",
-                                  "OrderStatus":7,
-                                  "CustomerEmail":customerEmail.text,
-                                  "CustomerContactNo":customerPhone.text,
-                                  "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false
-                                };
-                                SharedPreferences.getInstance().then((prefs){
-                                  setState(() {
-                                    isLoading=true;
-                                    Navigator.of(context).pop(context);
-                                  });
-                                  Network_Operations.placeOrder(context, prefs.getString("token"), order).then((isOrderPlaced){
-                                    if(isOrderPlaced){
-                                      orderItems.clear();
-                                      sqlite_helper().getcart1().then((value) {
-                                        setState(() {
-                                          cartList.clear();
-                                          cartList = value;
-                                          isLoading=false;
+                              SizedBox(height:10),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: InkWell(
+                                  onTap: (){
+                                    if(customerName.text!=null&&customerName.text!=""){
+                                      for(int i=0;i<cartList.length;i++){
+                                        orderItems.add({
+                                          "dealid":cartList[i].dealId,
+                                          "name":cartList[i].productName,
+                                          "price":cartList[i].price,
+                                          "quantity":cartList[i].quantity,
+                                          "totalprice":cartList[i].totalPrice,
+                                          "havetopping":cartList[i].topping=="null"||cartList[i].topping==null || cartList[i].topping== "[]" ?false:jsonDecode(cartList[i].topping).length>0?true:false,
+                                          "sizeid":cartList[i].sizeId,
+                                          "IsDeal": cartList[i].isDeal==0?false:true,
+                                          "productid":cartList[i].productId,
+                                          "orderitemstoppings":cartList[i].topping==null||cartList[i].topping == "[]"?[]:jsonDecode(cartList[i].topping),
                                         });
+                                      }
+                                      print(taxesList);
+                                      dynamic order = {
+                                        "DailySessionNo": 7,
+                                        "storeId":widget.store["id"],
+                                        "DeviceToken":null,
+                                        "ordertype":2,
+                                        "NetTotal":overallTotalPriceWithTax,
+                                        //  "grosstotal":widget.netTotal,
+                                        "comment":null,
+                                        "TableId":null,
+                                        "DeliveryAddress" : null,
+                                        "DeliveryLongitude" : null,
+                                        "DeliveryLatitude" : null,
+                                        "PaymentType" : 1,
+                                        "orderitems":orderItems,
+                                        "CardNumber": null,
+                                        "CVV": null,
+                                        "ExpiryDate": null,
+                                        "EstimatedTakeAwayTime":pickingTime!=null?DateFormat("hh:mm:ss").format(DateTime(DateTime.now().year,DateTime.now().month,DateTime.now().day,pickingTime.hour,pickingTime.minute)).toString():null,
+                                        "OrderTaxes":taxesList,
+                                        "VoucherCode": "",
+                                        "OrderStatus":7,
+                                        "CustomerEmail":customerEmail.text,
+                                        "CustomerContactNo":customerPhone.text,
+                                        "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false
+                                      };
+                                      Utils.check_connectivity().then((isConnected){
+                                        if(isConnected){
+                                          SharedPreferences.getInstance().then((prefs){
+                                            setState(() {
+                                              isLoading=true;
+                                              Navigator.of(context).pop(context);
+                                            });
+                                            Network_Operations.placeOrder(context, prefs.getString("token"), order).then((orderPlaced){
+                                              if(orderPlaced!=null){
+                                                print("Order Placed "+orderPlaced.toString());
+                                                orderItems.clear();
+                                                sqlite_helper().getcart1().then((value) {
+                                                  setState(() {
+                                                    cartList.clear();
+                                                    cartList = value;
+                                                    isLoading=false;
+                                                  });
+                                                });
+                                                sqlite_helper().gettotal().then((value){
+                                                  setState(() {
+                                                    overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                                  });
+                                                });
+                                                if(selectedType=="Payment"){
+                                                  setState(() {
+                                                    var payCash ={
+                                                      "orderid": jsonDecode(orderPlaced)["id"],
+                                                      "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                                                      "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                                                      "Comment": null,
+                                                      "PaymentType": 1,
+                                                      "OrderStatus": 7,
+                                                      //"ActualDeliveryTime": DateTime.now().toString().substring(11,16)
+                                                    };
+                                                    Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
+                                                      if(isPaid){
+                                                        Utils.showSuccess(this.context,"Payment Successful");
+                                                      }else{
+                                                        Utils.showError(this.context,"Problem in Making Payment");
+                                                      }
+                                                    });
+                                                  });
+                                                }
+                                                Utils.showSuccess(this.context,"Order Placed successfully");
+                                              }else{
+                                                setState(() {
+                                                  isLoading=false;
+                                                });
+                                                Utils.showError(this.context,"Unable to Place Order");
+                                              }
+                                            });
+                                          });
+                                        }else{
+                                          setState(() {
+                                            isLoading=false;
+                                          });
+                                        }
                                       });
-                                      sqlite_helper().gettotal().then((value){
-                                        setState(() {
-                                          overallTotalPrice=value[0]["SUM(totalPrice)"];
-                                        });
-                                      });
-                                      Utils.showSuccess(context,"Order Placed successfully");
-                                    }else{
-                                      Utils.showError(context,"Unable to Place Order");
+
                                     }
-                                  });
-                                });
-                                debugPrint(order.toString());
-                              }
-                            },
-                            child: Card(
-                              elevation:8,
-                              child: Container(
-                                width: 400,
-                                height: 60,
-                                decoration: BoxDecoration(
-                                    color: yellowColor,
-                                    borderRadius: BorderRadius.circular(4)
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    "Submit Order",
-                                    style: TextStyle(
-                                        fontSize: 25,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold),
+                                  },
+                                  child: Card(
+                                    elevation:8,
+                                    child: Container(
+                                      width: 400,
+                                      height: 60,
+                                      decoration: BoxDecoration(
+                                          color: yellowColor,
+                                          borderRadius: BorderRadius.circular(4)
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          "Submit Order",
+                                          style: TextStyle(
+                                              fontSize: 25,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 )
@@ -2525,7 +2636,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
         builder: (context,innersetState){
           return Center(
             child: Container(
-                height:MediaQuery.of(context).size.height/1.68,
+                height:MediaQuery.of(context).size.height - 430,
                 width: MediaQuery.of(context).size.width/2,
                 decoration: BoxDecoration(
                     image: DecorationImage(
@@ -2534,355 +2645,240 @@ class _POSMainScreenState extends State<POSMainScreen> {
                       image: AssetImage('assets/bb.jpg'),
                     )
                 ),
-                child: ListView(
+                child: Column(
                   children: [
-                    Column(
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: DropdownButtonFormField<String>(
-                                  decoration: InputDecoration(
-                                    labelText: "Select Type",
-                                    alignLabelWithHint: true,
-                                    labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                    enabledBorder: OutlineInputBorder(
-                                    ),
-                                    focusedBorder:  OutlineInputBorder(
-                                      borderSide: BorderSide(color:yellowColor),
-                                    ),
-                                  ),
-
-                                  value: selectedType,
-                                  onChanged: (Value) {
-                                    innersetState(() {
-                                      selectedType = Value;
-                                    });
-                                  },
-                                  items: types.map((value) {
-                                    return  DropdownMenuItem<String>(
-                                      value: value,
-                                      child: Row(
-                                        children: <Widget>[
-                                          Text(
-                                            value,
-                                            style:  TextStyle(color: yellowColor,fontSize: 13),
-                                          ),
-                                          //user.icon,
-                                          //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                        ],
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: DropdownButtonFormField<String>(
-                                  decoration: InputDecoration(
-                                    hintText: "Select Order Priority",
-                                    labelText: "Order Priority",
-                                    labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                    enabledBorder: OutlineInputBorder(
-                                    ),
-                                    focusedBorder:  OutlineInputBorder(
-                                      borderSide: BorderSide(color:yellowColor),
-                                    ),
-                                  ),
-
-                                  value: selectedPriority,
-                                  onChanged: (Value) {
-                                    innersetState(() {
-                                      if(selectedPriority!=null){
-                                        priceWithPriority=overallTotalPriceWithTax;
-                                        typeBasedTaxes.remove(typeBasedTaxes.last);
-                                      }
-                                      selectedPriority=Value;
-                                      selectedPriorityId=priorities[priorities.indexOf(priorities.where((element) =>element["name"]==selectedPriority).toList()[0])]["id"];
-                                      var tempPriorityPercentage=priorities[priorities.indexOf(priorities.where((element) =>element["name"]==selectedPriority).toList()[0])]["percentage"];
-                                      priceWithPriority=overallTotalPriceWithTax+(overallTotalPriceWithTax/100*tempPriorityPercentage);
-                                      typeBasedTaxes.add(Tax(name: selectedPriority,id: selectedPriorityId,percentage:priorities[priorities.indexOf(priorities.where((element) =>element["name"]==selectedPriority).toList()[0])]["percentage"]));
-                                    });
-                                  },
-                                  items: priorities.map((value) {
-                                    return  DropdownMenuItem<String>(
-                                      value: value["name"],
-                                      child: Row(
-                                        children: <Widget>[
-                                          Text(
-                                            value["name"],
-                                            style:  TextStyle(color: yellowColor,fontSize: 13),
-                                          ),
-                                          //user.icon,
-                                          //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                        ],
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              ),
-                            ),
-                          ],
+                    Container(
+                        width: MediaQuery.of(context).size.width,
+                        height: 40,
+                        color: yellowColor,
+                        child: Center(
+                          child: Text(
+                            "Place Order For Dine-In",
+                            style: TextStyle(
+                                fontSize: 25,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold),
+                          ),
                         ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: TextFormField(
-                                  controller: customerName,
-                                  decoration: InputDecoration(
-                                    border: OutlineInputBorder(),
-                                    hintText: "Customer Name",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Expanded(
-                              child: Padding(
-                                padding: EdgeInsets.all(8.0),
-                                child: TextFormField(
-                                  controller: customerEmail,
-                                  decoration: InputDecoration(
-
-                                    border: OutlineInputBorder(
-
-                                    ),
-                                    hintText: "Customer Email",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: TextFormField(
-                                  controller: customerPhone,
-                                  decoration: InputDecoration(
-                                    border: OutlineInputBorder(),
-                                    hintText: "Customer Phone#",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            Expanded(
-                              child: Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: DropdownButtonFormField<String>(
-                                  decoration: InputDecoration(
-                                    hintText: "Select Table",
-                                    labelText: "Table",
-                                    labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                    enabledBorder: OutlineInputBorder(
-                                    ),
-                                    focusedBorder:  OutlineInputBorder(
-                                      borderSide: BorderSide(color:yellowColor),
-                                    ),
-                                  ),
-
-                                  value: selectedTable,
-                                  onChanged: (Value) {
-                                    innersetState(() {
-                                         selectedTable=Value;
-                                         selectedTableId=tables[tables.indexOf(tables.where((element) =>element["name"]==selectedTable).toList()[0])]["id"];
-                                         print("Selected Table Id"+selectedTableId.toString());
-                                    });
-                                  },
-                                  items: tables.map((value) {
-                                    return  DropdownMenuItem<String>(
-                                      value: value["name"],
-                                      child: Row(
-                                        children: <Widget>[
-                                          Text(
-                                            value["name"],
-                                            style:  TextStyle(color: yellowColor,fontSize: 13),
-                                          ),
-                                          //user.icon,
-                                          //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                        ],
-                                      ),
-                                    );
-                                  }).toList(),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Column(
+                    ),
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Padding(
-                                    padding: const EdgeInsets.all(8.0),
-                                    child: DropdownButtonFormField<String>(
-                                      decoration: InputDecoration(
-                                        labelText: "Select Discount Type",
-                                        alignLabelWithHint: true,
-                                        labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                        enabledBorder: OutlineInputBorder(
-                                        ),
-                                        focusedBorder:  OutlineInputBorder(
-                                          borderSide: BorderSide(color:yellowColor),
-                                        ),
-                                      ),
-
-                                      value: selectedDiscountType,
-                                      onChanged: (Value) {
-                                        innersetState(() {
-                                          selectedDiscountType = Value;
-                                        });
-                                      },
-                                      items: discountType.map((value) {
-                                        return  DropdownMenuItem<String>(
-                                          value: value,
-                                          child: Row(
-                                            children: <Widget>[
-                                              Text(
-                                                value,
-                                                style:  TextStyle(color: yellowColor,fontSize: 13),
-                                              ),
-                                              //user.icon,
-                                              //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                            ],
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: DropdownButtonFormField<String>(
+                                        decoration: InputDecoration(
+                                          labelText: "Select Type",
+                                          alignLabelWithHint: true,
+                                          labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                          enabledBorder: OutlineInputBorder(
                                           ),
-                                        );
-                                      }).toList(),
+                                          focusedBorder:  OutlineInputBorder(
+                                            borderSide: BorderSide(color:yellowColor),
+                                          ),
+                                        ),
+
+                                        value: selectedType,
+                                        onChanged: (Value) {
+                                          innersetState(() {
+                                            selectedType = Value;
+                                          });
+                                        },
+                                        items: types.map((value) {
+                                          return  DropdownMenuItem<String>(
+                                            value: value,
+                                            child: Row(
+                                              children: <Widget>[
+                                                Text(
+                                                  value,
+                                                  style:  TextStyle(color: yellowColor,fontSize: 13),
+                                                ),
+                                                //user.icon,
+                                                //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                              ],
+                                            ),
+                                          );
+                                        }).toList(),
+                                      ),
                                     ),
                                   ),
-                                  Padding(
-                                    padding: EdgeInsets.all(8.0),
-                                    child: TextFormField(
-                                      controller: discountValue,
-                                      onChanged: (value){
-                                        innersetState(() {
-                                          if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                            if(priceWithPriority!=0.0){
-                                              var tempPercentage=(priceWithPriority/100*double.parse(value));
-                                              print("discount with Priority "+tempPercentage.toString());
-                                            }else{
-                                              var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
-                                              print("discount without Priority "+tempPercentage.toString());
-                                            }
-                                          }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
-                                            if(priceWithPriority!=0.0){
-                                              var tempSum=priceWithPriority-double.parse(value);
-                                              print("discount with Priority "+tempSum.toString());
-                                            }else{
-                                              var tempSum=overallTotalPriceWithTax-double.parse(value);
-                                              print("discount without Priority "+tempSum.toString());
-                                            }
-                                          }
-                                        });
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(12.0),
+                                      child: DropdownButtonFormField<String>(
+                                        decoration: InputDecoration(
+                                          hintText: "Select Table",
+                                          labelText: "Table",
+                                          labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                          enabledBorder: OutlineInputBorder(
+                                          ),
+                                          focusedBorder:  OutlineInputBorder(
+                                            borderSide: BorderSide(color:yellowColor),
+                                          ),
+                                        ),
 
-                                      },
-                                      decoration: InputDecoration(
-                                        border: OutlineInputBorder(),
-                                        hintText: "Discount Amount / Percentage",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                        value: selectedTable,
+                                        onChanged: (Value) {
+                                          innersetState(() {
+                                            selectedTable=Value;
+                                            selectedTableId=tables[tables.indexOf(tables.where((element) =>element["name"]==selectedTable).toList()[0])]["id"];
+                                            print("Selected Table Id"+selectedTableId.toString());
+                                          });
+                                        },
+                                        items: tables.map((value) {
+                                          return  DropdownMenuItem<String>(
+                                            value: value["name"],
+                                            child: Row(
+                                              children: <Widget>[
+                                                Text(
+                                                  value["name"],
+                                                  style:  TextStyle(color: yellowColor,fontSize: 13),
+                                                ),
+                                                //user.icon,
+                                                //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                              ],
+                                            ),
+                                          );
+                                        }).toList(),
                                       ),
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                            Expanded(
-                              child: Column(
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Container(
-                                    width: MediaQuery.of(context).size.width,
-                                    height: 40,
-                                    color: yellowColor,
+                                  Expanded(
                                     child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment
-                                            .spaceBetween,
-                                        children: [
-                                          Text(
-                                            "SubTotal: ",
-                                            style: TextStyle(
-                                                fontSize:
-                                                20,
-                                                color:
-                                                Colors.white,
-                                                fontWeight:
-                                                FontWeight
-                                                    .bold),
-                                          ),
-                                          Row(
-                                            children: [
-                                              Text(
-                                                widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
-                                                style: TextStyle(
-                                                    fontSize:
-                                                    20,
-                                                    color:
-                                                    Colors.white,
-                                                    fontWeight:
-                                                    FontWeight.bold),
-                                              ),
-                                              SizedBox(
-                                                width: 2,
-                                              ),
-                                              Text(
-                                                overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
-                                                style: TextStyle(
-                                                    fontSize:
-                                                    20,
-                                                    color:
-                                                    blueColor,
-                                                    fontWeight:
-                                                    FontWeight.bold),
-                                              ),
-                                            ],
-                                          ),
-                                        ],
+                                      padding: EdgeInsets.all(8.0),
+                                      child: TextFormField(
+                                        controller: customerName,
+                                        decoration: InputDecoration(
+                                          border: OutlineInputBorder(),
+                                          hintText: "Customer Name",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                        ),
                                       ),
                                     ),
                                   ),
-                                  Padding(
-                                    padding: const EdgeInsets.all(2.0),
-                                    child: Container(
-                                        width: MediaQuery.of(
-                                            context)
-                                            .size
-                                            .width,
-                                        height: 75,
-                                        decoration: BoxDecoration(
-                                          border: Border.all(color: yellowColor),
-                                          //borderRadius: BorderRadius.circular(8)
+                                  Expanded(
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: TextFormField(
+                                        controller: customerPhone,
+                                        decoration: InputDecoration(
+                                          border: OutlineInputBorder(),
+                                          hintText: "Customer Phone#",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                         ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
 
-                                        child: ListView.builder(itemCount: typeBasedTaxes.length,itemBuilder: (context, index){
-                                          return  Padding(
-                                            padding:
-                                            const EdgeInsets
-                                                .all(8.0),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: DropdownButtonFormField<String>(
+                                            decoration: InputDecoration(
+                                              labelText: "Select Discount Type",
+                                              alignLabelWithHint: true,
+                                              labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                              enabledBorder: OutlineInputBorder(
+                                              ),
+                                              focusedBorder:  OutlineInputBorder(
+                                                borderSide: BorderSide(color:yellowColor),
+                                              ),
+                                            ),
+
+                                            value: selectedDiscountType,
+                                            onChanged: (Value) {
+                                              innersetState(() {
+                                                selectedDiscountType = Value;
+                                              });
+                                            },
+                                            items: discountType.map((value) {
+                                              return  DropdownMenuItem<String>(
+                                                value: value,
+                                                child: Row(
+                                                  children: <Widget>[
+                                                    Text(
+                                                      value,
+                                                      style:  TextStyle(color: yellowColor,fontSize: 13),
+                                                    ),
+                                                    //user.icon,
+                                                    //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                                  ],
+                                                ),
+                                              );
+                                            }).toList(),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: TextFormField(
+                                            controller: discountValue,
+                                            onChanged: (value){
+                                              innersetState(() {
+                                                if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
+                                                  if(overallTotalPriceWithTax!=0.0){
+                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
+                                                    print("discount with Priority "+tempPercentage.toString());
+                                                  }else{
+                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
+                                                    print("discount without Priority "+tempPercentage.toString());
+                                                  }
+                                                }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
+                                                  if(overallTotalPriceWithTax!=0.0){
+                                                    var tempSum=overallTotalPriceWithTax-double.parse(value);
+                                                    print("discount with Priority "+tempSum.toString());
+                                                  }else{
+                                                    var tempSum=overallTotalPriceWithTax-double.parse(value);
+                                                    print("discount without Priority "+tempSum.toString());
+                                                  }
+                                                }
+                                              });
+
+                                            },
+                                            decoration: InputDecoration(
+                                              border: OutlineInputBorder(),
+                                              hintText: "Discount Amount / Percentage",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                          width: MediaQuery.of(context).size.width,
+                                          height: 40,
+                                          color: yellowColor,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
                                             child: Row(
                                               mainAxisAlignment:
                                               MainAxisAlignment
                                                   .spaceBetween,
                                               children: [
                                                 Text(
-                                                  typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?typeBasedTaxes[index].name+" (${typeBasedTaxes[index].percentage.toStringAsFixed(1)})":typeBasedTaxes[index].name,
+                                                  "SubTotal: ",
                                                   style: TextStyle(
                                                       fontSize:
-                                                      16,
+                                                      20,
                                                       color:
-                                                      yellowColor,
+                                                      Colors.white,
                                                       fontWeight:
                                                       FontWeight
                                                           .bold),
@@ -2890,182 +2886,272 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                 Row(
                                                   children: [
                                                     Text(
-                                                      typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):"",                                                      style: TextStyle(
-                                                        fontSize:
-                                                        16,
-                                                        color:
-                                                        blueColor,
-                                                        fontWeight:
-                                                        FontWeight.bold),
+                                                      widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          Colors.white,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                    SizedBox(
+                                                      width: 2,
+                                                    ),
+                                                    Text(
+                                                      overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          blueColor,
+                                                          fontWeight:
+                                                          FontWeight.bold),
                                                     ),
                                                   ],
                                                 ),
                                               ],
                                             ),
-                                          );
-                                        })
-                                    ),
-                                  ),
-                                  Container(
-                                    width: MediaQuery.of(context).size.width,
-                                    height: 40,
-                                    color: yellowColor,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment
-                                            .spaceBetween,
-                                        children: [
-                                          Text(
-                                            "Total: ",
-                                            style: TextStyle(
-                                                fontSize:
-                                                20,
-                                                color:
-                                                Colors.white,
-                                                fontWeight:
-                                                FontWeight
-                                                    .bold),
                                           ),
-                                          Row(
-                                            children: [
-                                              Text(
-                                                widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":"",
-                                                style: TextStyle(
-                                                    fontSize:
-                                                    20,
-                                                    color:
-                                                    Colors.white,
-                                                    fontWeight:
-                                                    FontWeight.bold),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(2.0),
+                                          child: Container(
+                                              width: MediaQuery.of(
+                                                  context)
+                                                  .size
+                                                  .width,
+                                              height: 75,
+                                              decoration: BoxDecoration(
+                                                border: Border.all(color: yellowColor),
+                                                //borderRadius: BorderRadius.circular(8)
                                               ),
-                                              SizedBox(
-                                                width: 2,
-                                              ),
-                                              Text(
-                                                priceWithPriority!=null&&priceWithPriority!=0.0?priceWithPriority.toStringAsFixed(1)+"/-":overallTotalPriceWithTax.toStringAsFixed(1)+"/-",
-                                                style: TextStyle(
-                                                    fontSize:
-                                                    20,
-                                                    color:
-                                                    blueColor,
-                                                    fontWeight:
-                                                    FontWeight.bold),
-                                              ),
-                                            ],
+
+                                              child: ListView.builder(itemCount: typeBasedTaxes.length,itemBuilder: (context, index){
+                                                return  Padding(
+                                                  padding:
+                                                  const EdgeInsets
+                                                      .all(8.0),
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                    children: [
+                                                      Text(
+                                                        typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?typeBasedTaxes[index].name+" (${typeBasedTaxes[index].percentage.toStringAsFixed(1)})":typeBasedTaxes[index].name,
+                                                        style: TextStyle(
+                                                            fontSize:
+                                                            16,
+                                                            color:
+                                                            yellowColor,
+                                                            fontWeight:
+                                                            FontWeight
+                                                                .bold),
+                                                      ),
+                                                      Row(
+                                                        children: [
+                                                          Text(
+                                                            typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):"",                                                      style: TextStyle(
+                                                              fontSize:
+                                                              16,
+                                                              color:
+                                                              blueColor,
+                                                              fontWeight:
+                                                              FontWeight.bold),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              })
                                           ),
-                                        ],
-                                      ),
+                                        ),
+                                        Container(
+                                          width: MediaQuery.of(context).size.width,
+                                          height: 40,
+                                          color: yellowColor,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                  .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  "Total: ",
+                                                  style: TextStyle(
+                                                      fontSize:
+                                                      20,
+                                                      color:
+                                                      Colors.white,
+                                                      fontWeight:
+                                                      FontWeight
+                                                          .bold),
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":"",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          Colors.white,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                    SizedBox(
+                                                      width: 2,
+                                                    ),
+                                                    Text(
+                                                      overallTotalPriceWithTax!=null&&overallTotalPriceWithTax!=0.0?overallTotalPriceWithTax.toStringAsFixed(1)+"/-":overallTotalPrice.toStringAsFixed(1)+"/-",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          blueColor,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],
                               ),
-                            ),
-                          ],
-                        ),
-                        SizedBox(height:10),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: InkWell(
-                            onTap: (){
-                              if(customerName.text!=null&&customerName.text.isNotEmpty&&selectedTableId!=null){
-                                for(int i=0;i<cartList.length;i++){
-                                  orderItems.add({
-                                    "dealid":cartList[i].dealId,
-                                    "name":cartList[i].productName,
-                                    "price":cartList[i].price,
-                                    "quantity":cartList[i].quantity,
-                                    "totalprice":cartList[i].totalPrice,
-                                    "havetopping":cartList[i].topping=="null"||cartList[i].topping==null || cartList[i].topping== "[]" ?false:jsonDecode(cartList[i].topping).length>0?true:false,
-                                    "sizeid":cartList[i].sizeId,
-                                    "IsDeal": cartList[i].isDeal==0?false:true,
-                                    "productid":cartList[i].productId,
-                                    "orderitemstoppings":cartList[i].topping==null||cartList[i].topping == "[]"?[]:jsonDecode(cartList[i].topping),
-                                  });
-                                }
-                                print(selectedTableId);
-                                dynamic order = {
-                                  "DineInEndTime":DateFormat("HH:mm:ss").format(DateTime.now().add(Duration(hours: 1))),
-                                  "DailySessionNo": 7,
-                                  "TableId":selectedTableId!=null?selectedTableId:null,
-                                  "OrderPriorityId":selectedPriorityId!=null?selectedPriorityId:null,
-                                  "storeId":widget.store["id"],
-                                  "DeviceToken":null,
-                                  "ordertype":1,
-                                  "NetTotal":priceWithPriority,
-                                  //  "grosstotal":widget.netTotal,
-                                  "comment":null,
-                                  "DeliveryAddress" : null,
-                                  "DeliveryLongitude" : null,
-                                  "DeliveryLatitude" : null,
-                                  "PaymentType" : 1,
-                                  "orderitems":orderItems,
-                                  "CardNumber": null,
-                                  "CVV": null,
-                                  "ExpiryDate": null,
-                                  "OrderTaxes":taxesList,
-                                  "VoucherCode": "",
-                                  "OrderStatus":7,
-                                  "CustomerEmail":customerEmail.text,
-                                  "CustomerContactNo":customerPhone.text,
-                                  "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false
-                                };
-                                SharedPreferences.getInstance().then((prefs){
-                                  setState(() {
-                                    isLoading=true;
-                                    Navigator.of(context).pop(context);
-                                  });
-                                  Network_Operations.placeOrder(context, prefs.getString("token"), order).then((isOrderPlaced){
-                                    if(isOrderPlaced){
-                                      orderItems.clear();
-                                      sqlite_helper().getcart1().then((value) {
+                              SizedBox(height:10),
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: InkWell(
+                                  onTap: (){
+                                    if(customerName.text!=null&&customerName.text.isNotEmpty&&selectedTableId!=null){
+                                      for(int i=0;i<cartList.length;i++){
+                                        orderItems.add({
+                                          "dealid":cartList[i].dealId,
+                                          "name":cartList[i].productName,
+                                          "price":cartList[i].price,
+                                          "quantity":cartList[i].quantity,
+                                          "totalprice":cartList[i].totalPrice,
+                                          "havetopping":cartList[i].topping=="null"||cartList[i].topping==null || cartList[i].topping== "[]" ?false:jsonDecode(cartList[i].topping).length>0?true:false,
+                                          "sizeid":cartList[i].sizeId,
+                                          "IsDeal": cartList[i].isDeal==0?false:true,
+                                          "productid":cartList[i].productId,
+                                          "orderitemstoppings":cartList[i].topping==null||cartList[i].topping == "[]"?[]:jsonDecode(cartList[i].topping),
+                                        });
+                                      }
+                                      print(selectedType);
+                                      print(overallTotalPriceWithTax);
+
+                                      dynamic order = {
+                                        "DineInEndTime":DateFormat("HH:mm:ss").format(DateTime.now().add(Duration(hours: 1))),
+                                        "DailySessionNo": 7,
+                                        "TableId":selectedTableId!=null?selectedTableId:null,
+                                        "storeId":widget.store["id"],
+                                        "DeviceToken":null,
+                                        "ordertype":1,
+                                        "NetTotal":overallTotalPrice,
+                                        //  "grosstotal":widget.netTotal,
+                                        "comment":null,
+                                        "DeliveryAddress" : null,
+                                        "DeliveryLongitude" : null,
+                                        "DeliveryLatitude" : null,
+                                        "PaymentType" : 1,
+                                        "orderitems":orderItems,
+                                        "CardNumber": null,
+                                        "CVV": null,
+                                        "ExpiryDate": null,
+                                        "OrderTaxes":taxesList,
+                                        "VoucherCode": "",
+                                        "OrderStatus":7,
+                                        "CustomerEmail":customerEmail.text,
+                                        "CustomerContactNo":customerPhone.text,
+                                        "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false
+                                      };
+                                      print(order.toString());
+                                      SharedPreferences.getInstance().then((prefs){
                                         setState(() {
-                                          cartList.clear();
-                                          cartList = value;
-                                          isLoading=false;
+                                          isLoading=true;
+                                          Navigator.of(context).pop(context);
+                                        });
+                                        Network_Operations.placeOrder(context, prefs.getString("token"), order).then((orderPlaced){
+                                          if(orderPlaced!=null){
+                                            orderItems.clear();
+                                            sqlite_helper().getcart1().then((value) {
+                                              setState(() {
+                                                cartList.clear();
+                                                cartList = value;
+                                                isLoading=false;
+                                              });
+                                            });
+                                            sqlite_helper().gettotal().then((value){
+                                              setState(() {
+                                                overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                              });
+                                            });
+                                            if(selectedType=="Payment"){
+                                              print("Price With Tax "+overallTotalPriceWithTax.toString());
+                                              setState(() {
+                                                var payCash ={
+                                                  "orderid": jsonDecode(orderPlaced)["id"],
+                                                  "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                                                  "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                                                  "Comment": null,
+                                                  "PaymentType": 1,
+                                                  "OrderStatus": 7,
+                                                  //"ActualDeliveryTime": DateTime.now().toString().substring(11,16)
+                                                };
+                                                Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
+                                                  if(isPaid){
+                                                    Utils.showSuccess(this.context,"Payment Successful");
+                                                  }else{
+                                                    Utils.showError(this.context,"Problem in Making Payment");
+                                                  }
+                                                });
+                                              });
+                                            }
+                                            Utils.showSuccess(this.context,"Order Placed successfully");
+                                          }else{
+                                            setState(() {
+                                              isLoading=false;
+                                            });
+                                            Utils.showError(this.context,"Unable to Place Order");
+                                          }
                                         });
                                       });
-                                      sqlite_helper().gettotal().then((value){
-                                        setState(() {
-                                          overallTotalPrice=value[0]["SUM(totalPrice)"];
-                                        });
-                                      });
-                                      Utils.showSuccess(context,"Order Placed successfully");
-                                    }else{
-                                      setState(() {
-                                        isLoading=false;
-                                      });
-                                      Utils.showError(context,"Unable to Place Order");
                                     }
-                                  });
-                                });
-                                debugPrint(order.toString());
-                              }
-                            },
-                            child: Card(
-                              elevation:8,
-                              child: Container(
-                                width: 400,
-                                height: 60,
-                                decoration: BoxDecoration(
-                                    color: yellowColor,
-                                    borderRadius: BorderRadius.circular(4)
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    "Submit Order",
-                                    style: TextStyle(
-                                        fontSize: 25,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold),
+                                  },
+                                  child: Card(
+                                    elevation:8,
+                                    child: Container(
+                                      width: 400,
+                                      height: 60,
+                                      decoration: BoxDecoration(
+                                          color: yellowColor,
+                                          borderRadius: BorderRadius.circular(4)
+                                      ),
+                                      child: Center(
+                                        child: Text(
+                                          "Submit Order",
+                                          style: TextStyle(
+                                              fontSize: 25,
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
+                            ],
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 )
@@ -4257,7 +4343,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 dealId: null,
                                 sizeId: selectedSizeId,
                                 sizeName: selectedSizeName,
-                                price: selectedSizeObj["discountedPrice"]==0.0&&updatedPrice == 0.0 ? price:selectedSizeObj["discountedPrice"]!=0.0&&updatedPrice == 0.0?selectedSizeObj["discountedPrice"] : updatedPrice,
+                                price: selectedSizeObj["discountedPrice"]==0.0? price:selectedSizeObj["discountedPrice"]!=0.0?selectedSizeObj["discountedPrice"] : price,
                                 totalPrice:selectedSizeObj["discountedPrice"]==0.0&&updatedPrice == 0.0 ? price:selectedSizeObj["discountedPrice"]!=0.0&&updatedPrice == 0.0?selectedSizeObj["discountedPrice"] : updatedPrice,
                                 quantity: count,
                                 storeId: product.storeId,
@@ -4287,7 +4373,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 dealId: null,
                                 sizeId: selectedSizeId,
                                 sizeName: selectedSizeName,
-                                price: selectedSizeObj["discountedPrice"]==0.0&&updatedPrice == 0.0 ? price:selectedSizeObj["discountedPrice"]!=0.0&&updatedPrice == 0.0?selectedSizeObj["discountedPrice"] : updatedPrice,
+                                price: selectedSizeObj["discountedPrice"]==0.0? price:selectedSizeObj["discountedPrice"]!=0.0?selectedSizeObj["discountedPrice"] : price,
                                 totalPrice:selectedSizeObj["discountedPrice"]==0.0&&updatedPrice == 0.0 ? price:selectedSizeObj["discountedPrice"]!=0.0&&updatedPrice == 0.0?selectedSizeObj["discountedPrice"] : updatedPrice,
                                 quantity: count,
                                 storeId: product.storeId,
