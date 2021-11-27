@@ -514,5 +514,32 @@ class Network_Operations{
     }
     return null;
   }
+  static Future<dynamic> getItemsByOrderId(BuildContext context,String token,int OrderId)async{
+
+    try{
+      Map<String,String> headers = {'Authorization':'Bearer '+token};
+      var response=await http.get(Uri.parse(Utils.baseUrl()+"orders/GetItemsByOrderId/"+OrderId.toString()),headers: headers);
+      var data= jsonDecode(response.body);
+      if(response.statusCode==200){
+        return data;
+      }
+      // else if(response.statusCode == 401){
+      //   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => LoginScreen()), (route) => false);
+      // }
+      else{
+
+        Utils.showError(context, "Please Try Again");
+      }
+    }catch(e){
+      var claims= Utils.parseJwt(token);
+      if(DateTime.fromMillisecondsSinceEpoch(int.parse(claims['exp'].toString()+"000")).isBefore(DateTime.now())){
+        Utils.showError(context, "Token Expire Please Login Again");
+        // Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => LoginScreen()), (route) => false);
+      }else {
+        Utils.showError(context, "Error Found: $e");
+      }
+    }
+    return null;
+  }
 
 }

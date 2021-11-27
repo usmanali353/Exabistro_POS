@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:exabistro_pos/Screens/LoadingScreen.dart';
+import 'package:exabistro_pos/Screens/LoginScreen.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/components/constants.dart';
 import 'package:exabistro_pos/model/Additionals.dart';
@@ -19,6 +20,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_counter/flutter_counter.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -38,7 +40,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
   List<Categories> subCategories = [];
   List<dynamic> dealsList = [],taxesList=[];
   List<Products> products = [];
-  String categoryName = "";
+  String categoryName = "",userId="";
   bool isLoading = true;
   List<String> menuTypeDropdownItems = ["Products", "Deals"];
   List<String> discountTypeDropdownItems = ["Percentage", "Cash"];
@@ -97,6 +99,9 @@ class _POSMainScreenState extends State<POSMainScreen> {
                   } else
                     isLoading = false;
                   SharedPreferences.getInstance().then((prefs) {
+                    setState(() {
+                      this.userId=prefs.getString("userId");
+                    });
                     Network_Operations.getAllDeals(
                             context, prefs.getString("token"), widget.store["id"])
                         .then((dealsList) {
@@ -153,6 +158,19 @@ class _POSMainScreenState extends State<POSMainScreen> {
     });
   }
   buildInvoice()async{
+    print("OrdersList "+ordersList.toString());
+    final titles = <String>[
+      'Order Number:',
+      'Order Date:',
+      'Order Type:',
+      'Items Qty:'
+    ];
+    final data = <String>[
+      ordersList["id"].toString(),
+     DateFormat.yMd().format(DateTime.now()).toString(),
+    ordersList["result"]["orderType"]==1?"Dine-In":ordersList["result"]["orderType"]==2?"Take-Away":ordersList["result"]["orderType"]==3?"Home Delivery":"None",
+      ordersList["result"]["orderItems"].length.toString(),
+    ];
     var invoiceData=cartList.map((cartItems){
       return [
         cartItems.productName,
@@ -163,7 +181,75 @@ class _POSMainScreenState extends State<POSMainScreen> {
     }).toList();
     final doc = pw.Document();
     doc.addPage(pw.MultiPage(
-      pageFormat: PdfPageFormat.a4,
+     // pageFormat: PdfPageFormat.a4,
+       header: (context){
+        return pw.Column(
+          crossAxisAlignment: pw.CrossAxisAlignment.start,
+          children: [
+            pw.SizedBox(height: 1 * PdfPageFormat.cm),
+            pw.Row(
+              mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+              children: [
+                pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                  children: [
+                    pw.Text(widget.store["name"].toString(),style: pw.TextStyle(fontSize:20,fontWeight: pw.FontWeight.bold)),
+                    pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                    pw.Text(widget.store["address"].toString()),
+                  ]
+                ),
+                pw.Container(
+                  width: 50,
+                  height:50,
+                  child: pw.BarcodeWidget(
+                      barcode: pw.Barcode.qrCode(),
+                      data: "http://dev.exabistro.com/#/storeMenu/${widget.store["id"]}"
+                  )
+                )
+
+              ]
+            ),
+            pw.SizedBox(height: 1 * PdfPageFormat.cm),
+            pw.Row(
+                crossAxisAlignment: pw.CrossAxisAlignment.end,
+                mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                children: [
+                  pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: [
+                        pw.Text(customerName.text.toString(),style: pw.TextStyle(fontSize: 18,fontWeight: pw.FontWeight.bold)),
+                        pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                        pw.Text(customerPhone.text.toString()),
+                      ]
+                  ),
+                  pw.Column(
+                      crossAxisAlignment: pw.CrossAxisAlignment.start,
+                      children: List.generate(titles.length, (index){
+                        final title = titles[index];
+                        final value = data[index];
+                        return pw.Container(
+                          width: 200,
+                          child: pw.Row(
+                              children:[
+                                pw.Expanded(
+                                    child: pw.Text(title,style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
+                                ),
+                                pw.Text(
+                                    value,
+                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
+                                )
+                              ]
+
+                          )
+                        );
+                      })
+                  ),
+                ]
+            ),
+            pw.SizedBox(height: 2 * PdfPageFormat.cm),
+          ]
+        );
+       },
        footer: (context){
          return pw.Column(
            crossAxisAlignment: pw.CrossAxisAlignment.center,
@@ -208,9 +294,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                            "Invoice",
                            style: pw.TextStyle(fontSize: 24,fontWeight: pw.FontWeight.bold),
                          ),
-                         pw.SizedBox(
-                             height: 20
-                         ),
+
                          pw.Text(
                            "Some Description",
                          ),
@@ -324,6 +408,17 @@ class _POSMainScreenState extends State<POSMainScreen> {
         ? LoadingScreen()
         : Scaffold(
             appBar: AppBar(
+              actions: [
+                IconButton(
+                  icon:  FaIcon(FontAwesomeIcons.signOutAlt, color: blueColor, size: 25,),
+                  onPressed: (){
+                    SharedPreferences.getInstance().then((value) {
+                      value.remove("token");
+                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>LoginScreen()), (route) => false);
+                    } );
+                  },
+                ),
+              ],
               title: Text(
                 'Exabistro - POS',
                 style: TextStyle(
@@ -653,6 +748,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                               setState(() {
                                                 overallTotalPriceWithTax=0.0;
                                                 totalTax=0.0;
+                                                selectedType=null;
                                                 typeBasedTaxes.clear();
                                                 taxesList.clear();
                                                 orderItems.clear();
@@ -695,20 +791,23 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                 );
                                               });
                                               },
-                                            child: Container(
-                                              width: 160,
-                                              height: 70,
-                                              decoration: BoxDecoration(
-                                                color: yellowColor,
-                                                borderRadius: BorderRadius.circular(8)
-                                              ),
-                                              child: Center(
-                                                child: Text(
-                                                  "Dine-In",
-                                                  style: TextStyle(
-                                                      fontSize: 25,
-                                                      color: Colors.white,
-                                                      fontWeight: FontWeight.bold),
+                                            child: Card(
+                                              elevation:5,
+                                              child: Container(
+                                                width: 160,
+                                                height: 70,
+                                                decoration: BoxDecoration(
+                                                  color: yellowColor,
+                                                  borderRadius: BorderRadius.circular(4)
+                                                ),
+                                                child: Center(
+                                                  child: Text(
+                                                    "Dine-In",
+                                                    style: TextStyle(
+                                                        fontSize: 25,
+                                                        color: Colors.white,
+                                                        fontWeight: FontWeight.bold),
+                                                  ),
                                                 ),
                                               ),
                                             ),
@@ -718,6 +817,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                   setState(() {
                                                     overallTotalPriceWithTax=0.0;
                                                     typeBasedTaxes.clear();
+                                                    selectedType=null;
                                                     taxesList.clear();
                                                     orderItems.clear();
                                                     overallTotalPriceWithTax=overallTotalPrice;
@@ -754,20 +854,23 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                     );
                                                   });
                                                 },
-                                            child: Container(
-                                              width: 160,
-                                              height: 70,
-                                              decoration: BoxDecoration(
-                                                  color: yellowColor,
-                                                  borderRadius: BorderRadius.circular(8)
-                                              ),
-                                              child: Center(
-                                                child: Text(
-                                                  "Take-Away",
-                                                  style: TextStyle(
-                                                      fontSize: 25,
-                                                      color: Colors.white,
-                                                      fontWeight: FontWeight.bold),
+                                            child: Card(
+                                              elevation:5,
+                                              child: Container(
+                                                width: 160,
+                                                height: 70,
+                                                decoration: BoxDecoration(
+                                                    color: yellowColor,
+                                                    borderRadius: BorderRadius.circular(4)
+                                                ),
+                                                child: Center(
+                                                  child: Text(
+                                                    "Take-Away",
+                                                    style: TextStyle(
+                                                        fontSize: 25,
+                                                        color: Colors.white,
+                                                        fontWeight: FontWeight.bold),
+                                                  ),
                                                 ),
                                               ),
                                             ),
@@ -777,6 +880,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                   setState(() {
                                                     overallTotalPriceWithTax=0.0;
                                                     typeBasedTaxes.clear();
+                                                    selectedType=null;
                                                     taxesList.clear();
                                                     orderItems.clear();
                                                     overallTotalPriceWithTax=overallTotalPrice;
@@ -812,20 +916,23 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                     );
                                                   });
                                                 },
-                                            child: Container(
-                                              width: 160,
-                                              height: 70,
-                                              decoration: BoxDecoration(
-                                                  color: yellowColor,
-                                                  borderRadius: BorderRadius.circular(8)
-                                              ),
-                                              child: Center(
-                                                child: Text(
-                                                  "Delivery",
-                                                  style: TextStyle(
-                                                      fontSize: 25,
-                                                      color: Colors.white,
-                                                      fontWeight: FontWeight.bold),
+                                            child: Card(
+                                              elevation:5,
+                                              child: Container(
+                                                width: 160,
+                                                height: 70,
+                                                decoration: BoxDecoration(
+                                                    color: yellowColor,
+                                                    borderRadius: BorderRadius.circular(4)
+                                                ),
+                                                child: Center(
+                                                  child: Text(
+                                                    "Delivery",
+                                                    style: TextStyle(
+                                                        fontSize: 25,
+                                                        color: Colors.white,
+                                                        fontWeight: FontWeight.bold),
+                                                  ),
                                                 ),
                                               ),
                                             ),
@@ -1690,7 +1797,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         controller: customerName,
                                         decoration: InputDecoration(
                                           border: OutlineInputBorder(),
-                                          hintText: "Customer Name",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                          hintText: "Customer Name*",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                         ),
                                       ),
                                     ),
@@ -1706,7 +1813,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         controller: customerPhone,
                                         decoration: InputDecoration(
                                           border: OutlineInputBorder(),
-                                          hintText: "Customer Phone#",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                          hintText: "Customer Phone# *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                         ),
                                       ),
                                     ),
@@ -1719,7 +1826,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         controller: customerAddress,
                                         decoration: InputDecoration(
                                           border: OutlineInputBorder(),
-                                          hintText: "Customer Address",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                          hintText: "Customer Address*",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                         ),
                                       ),
                                     ),
@@ -2011,8 +2118,10 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         "OrderTaxes":taxesList,
                                         "VoucherCode": "",
                                         "OrderStatus":7,
-                                        "CustomerEmail":customerEmail.text,
+                                        "customerName":customerName.text,
+                                        
                                         "CustomerContactNo":customerPhone.text,
+                                        "employeeId": int.parse(userId),
                                         "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false
                                       };
                                       SharedPreferences.getInstance().then((prefs){
@@ -2036,7 +2145,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                               });
                                             });
                                             if(selectedType=="Payment"){
-                                              setState(() {
                                                 var payCash ={
                                                   "orderid": jsonDecode(orderPlaced)["id"],
                                                   "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
@@ -2052,7 +2160,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                     Utils.showError(this.context,"Problem in Making Payment");
                                                   }
                                                 });
-                                              });
+
                                             }
                                             Utils.showSuccess(this.context,"Order Placed successfully");
                                           }else{
@@ -2187,9 +2295,9 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                       child: TextFormField(
                                         controller: timePickerField,
                                         decoration: InputDecoration(
-                                            labelText: "Select Picking Time",
+                                            labelText: "Select Picking Time*",
                                             border: OutlineInputBorder(),
-                                            hintText: "Select Picking Time",
+                                            hintText: "Select Picking Time*",
                                           labelStyle: TextStyle(color: yellowColor, fontWeight: FontWeight.bold)
                                         ),
                                         onTap: ()async{
@@ -2218,7 +2326,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         controller: customerName,
                                         decoration: InputDecoration(
                                           border: OutlineInputBorder(),
-                                          hintText: "Customer Name",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                          hintText: "Customer Name*",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                         ),
                                       ),
                                     ),
@@ -2231,7 +2339,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         controller: customerPhone,
                                         decoration: InputDecoration(
                                           border: OutlineInputBorder(),
-                                          hintText: "Customer Phone#",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                          hintText: "Customer Phone# *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                         ),
                                       ),
                                     ),
@@ -2526,8 +2634,10 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         "OrderTaxes":taxesList,
                                         "VoucherCode": "",
                                         "OrderStatus":7,
-                                        "CustomerEmail":customerEmail.text,
+                                        "customerName":customerName.text,
+                                        
                                         "CustomerContactNo":customerPhone.text,
+                                        "employeeId": int.parse(userId),
                                         "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false
                                       };
                                       Utils.check_connectivity().then((isConnected){
@@ -2554,7 +2664,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                   });
                                                 });
                                                 if(selectedType=="Payment"){
-                                                  setState(() {
+
                                                     var payCash ={
                                                       "orderid": jsonDecode(orderPlaced)["id"],
                                                       "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
@@ -2564,6 +2674,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                       "OrderStatus": 7,
                                                       //"ActualDeliveryTime": DateTime.now().toString().substring(11,16)
                                                     };
+                                                    print("PayCash "+payCash.toString());
                                                     Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
                                                       if(isPaid){
                                                         Utils.showSuccess(this.context,"Payment Successful");
@@ -2571,7 +2682,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                         Utils.showError(this.context,"Problem in Making Payment");
                                                       }
                                                     });
-                                                  });
+
                                                 }
                                                 Utils.showSuccess(this.context,"Order Placed successfully");
                                               }else{
@@ -2713,8 +2824,8 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                       padding: const EdgeInsets.all(12.0),
                                       child: DropdownButtonFormField<String>(
                                         decoration: InputDecoration(
-                                          hintText: "Select Table",
-                                          labelText: "Table",
+                                          hintText: "Select Table *",
+                                          labelText: "Select Table *",
                                           labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
                                           enabledBorder: OutlineInputBorder(
                                           ),
@@ -2761,7 +2872,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         controller: customerName,
                                         decoration: InputDecoration(
                                           border: OutlineInputBorder(),
-                                          hintText: "Customer Name",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                          hintText: "Customer Name *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                         ),
                                       ),
                                     ),
@@ -2773,7 +2884,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         controller: customerPhone,
                                         decoration: InputDecoration(
                                           border: OutlineInputBorder(),
-                                          hintText: "Customer Phone#",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                          hintText: "Customer Phone# *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                         ),
                                       ),
                                     ),
@@ -2830,21 +2941,13 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             onChanged: (value){
                                               innersetState(() {
                                                 if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                                  if(overallTotalPriceWithTax!=0.0){
-                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
-                                                    print("discount with Priority "+tempPercentage.toString());
-                                                  }else{
                                                     var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
                                                     print("discount without Priority "+tempPercentage.toString());
-                                                  }
                                                 }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
-                                                  if(overallTotalPriceWithTax!=0.0){
-                                                    var tempSum=overallTotalPriceWithTax-double.parse(value);
-                                                    print("discount with Priority "+tempSum.toString());
-                                                  }else{
+
                                                     var tempSum=overallTotalPriceWithTax-double.parse(value);
                                                     print("discount without Priority "+tempSum.toString());
-                                                  }
+
                                                 }
                                               });
 
@@ -3045,8 +3148,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                           "orderitemstoppings":cartList[i].topping==null||cartList[i].topping == "[]"?[]:jsonDecode(cartList[i].topping),
                                         });
                                       }
-                                      print(selectedType);
-                                      print(overallTotalPriceWithTax);
 
                                       dynamic order = {
                                         "DineInEndTime":DateFormat("HH:mm:ss").format(DateTime.now().add(Duration(hours: 1))),
@@ -3068,9 +3169,10 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         "ExpiryDate": null,
                                         "OrderTaxes":taxesList,
                                         "VoucherCode": "",
-                                        "OrderStatus":7,
-                                        "CustomerEmail":customerEmail.text,
+                                        "OrderStatus":1,
+                                        "customerName":customerName.text,
                                         "CustomerContactNo":customerPhone.text,
+                                        "employeeId": int.parse(userId),
                                         "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false
                                       };
                                       print(order.toString());
@@ -3081,6 +3183,9 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         });
                                         Network_Operations.placeOrder(context, prefs.getString("token"), order).then((orderPlaced){
                                           if(orderPlaced!=null){
+                                            setState(() {
+                                              this.ordersList=jsonDecode(orderPlaced);
+                                            });
                                             orderItems.clear();
                                             sqlite_helper().getcart1().then((value) {
                                               setState(() {
@@ -3095,17 +3200,17 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                               });
                                             });
                                             if(selectedType=="Payment"){
-                                              print("Price With Tax "+overallTotalPriceWithTax.toString());
-                                              setState(() {
+
                                                 var payCash ={
                                                   "orderid": jsonDecode(orderPlaced)["id"],
-                                                  "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
-                                                  "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                                                  "CashPay": overallTotalPriceWithTax,
+                                                  "Balance": overallTotalPriceWithTax,
                                                   "Comment": null,
                                                   "PaymentType": 1,
                                                   "OrderStatus": 7,
                                                   //"ActualDeliveryTime": DateTime.now().toString().substring(11,16)
                                                 };
+                                                   print(payCash.toString());
                                                 Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
                                                   if(isPaid){
                                                     Utils.showSuccess(this.context,"Payment Successful");
@@ -3113,7 +3218,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                     Utils.showError(this.context,"Problem in Making Payment");
                                                   }
                                                 });
-                                              });
+                                               buildInvoice();
                                             }
                                             Utils.showSuccess(this.context,"Order Placed successfully");
                                           }else{
@@ -3161,799 +3266,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
       ),
     );
   }
-
-  Widget finalizingOrderPopUp(){
-    String selectedOrderType=null;
-    int selectedOrderTypeId=0;
-    TextEditingController timePickerField=TextEditingController();
-    List<Tax> orderTaxes=[];
-    return Scaffold(
-      body: StatefulBuilder(
-        builder: (thisLowerContext, innerSetState){
-          return  Container(
-            decoration: BoxDecoration(
-                image: DecorationImage(
-                  fit: BoxFit.cover,
-                  //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
-                  image: AssetImage('assets/bb.jpg'),
-                )
-            ),
-            height:MediaQuery.of(context).size.height -70,
-            width: MediaQuery.of(context).size.width / 3,
-            child: Column(
-              children: [
-                Container(
-                  width: MediaQuery.of(context).size.width,
-                  height: 50,
-                  color: yellowColor,
-                  child: Center(
-                    child: Text(
-                      "Order Summary",
-                      style: TextStyle(
-                          fontSize: 22,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ),
-                Container(
-                //  width: MediaQuery.of(context).size.width,
-                  height: 480,
-                  child: Scrollbar(
-                    thickness: 7,
-                    hoverThickness: 7,
-                    isAlwaysShown: true,
-                    child: Expanded(
-                      child: ListView(
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: DropdownButtonFormField<String>(
-                              decoration: InputDecoration(
-                                labelText: "Order Type",
-                                alignLabelWithHint: true,
-                                //labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                enabledBorder: OutlineInputBorder(
-                                ),
-                                focusedBorder:  OutlineInputBorder(
-                                  borderSide: BorderSide(color:yellowColor),
-                                ),
-                              ),
-
-                              value: orderType,
-                              onChanged: (Value) {
-                                innerSetState(() {
-
-                                  selectedOrderType = Value;
-                                  orderTaxes.clear();
-                                  if(selectedOrderType=="Dine-In") {
-                                   var taxList=this.orderTaxes.where((element) => element.dineIn);
-                                   if(taxList!=null&&taxList.length>0){
-                                     for(Tax tax in taxList.toList()){
-                                       orderTaxes.add(tax);
-                                     }
-                                   }
-                                  }
-                                  if(selectedOrderType=="TakeAway") {
-                                   var taxList= this.orderTaxes.where((element) =>element.takeAway);
-                                   if(taxList!=null&&taxList.length>0){
-                                     for(Tax tax in taxList.toList()){
-                                       orderTaxes.add(tax);
-                                     }
-                                   }
-                                  }
-                                  if(selectedOrderType=="Home Delivery") {
-                                   var taxList= this.orderTaxes.where((element) =>element.delivery);
-                                   if(taxList!=null&&taxList.length>0){
-                                     for(Tax tax in taxList.toList()){
-                                       orderTaxes.add(tax);
-                                     }
-                                   }
-                                  }
-
-                                 // orderTypeId = orderTypeList.indexOf(orderType)+1;
-                                  //print(orderTypeId);
-                                });
-                              },
-                              items: orderTypeList.map((value) {
-                                return  DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Row(
-                                    children: <Widget>[
-                                      Text(
-                                        value,
-                                        style:  TextStyle(color: yellowColor,fontSize: 13),
-                                      ),
-                                      //user.icon,
-                                      //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Container(
-                              width: MediaQuery.of(context).size.width,
-                              height: 70,
-                              child: Padding(
-                                padding: const EdgeInsets.all(2.0),
-                                child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                  children: <Widget>[
-                                    SizedBox(
-                                      height: 30,
-                                      width: 170,
-                                      child: TextField(
-                                        controller: applyVoucher,
-                                        style: TextStyle(color: yellowColor),
-                                        decoration: InputDecoration(
-                                          hintText: "Voucher Code",hintStyle: TextStyle(color: yellowColor),
-                                        ),
-                                      ),
-                                    ),
-                                    Row(
-                                      children: <Widget>[
-                                        //FaIcon(FontAwesomeIcons.dollarSign, color: Colors.amberAccent, size: 30,),
-                                        InkWell(
-                                          // onTap: () {
-                                          //   print(applyVoucher.text);
-                                          //
-                                          //   voucherValidity =null;
-                                          //   networksOperation.checkVoucherValidity(context, applyVoucher.text, totalprice).then((value){
-                                          //     setState(() {
-                                          //       applyVoucher.text="";
-                                          //       voucherValidity = value;
-                                          //       voucherVisiblity =true;
-                                          //
-                                          //     });
-                                          //   });
-                                          //   print(voucherVisiblity);
-                                          // },
-                                          child: Container(
-                                            // width: 70,
-                                            height: 50,
-                                            decoration: BoxDecoration(
-                                                color: yellowColor,
-                                                borderRadius: BorderRadius.circular(8)
-                                            ),
-                                            child: Center(
-                                              child: Padding(
-                                                padding: const EdgeInsets.all(3.0),
-                                                child: Text("Apply Voucher", style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 18,
-                                                    fontWeight: FontWeight.bold
-                                                ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          Visibility(
-                            visible:selectedOrderType!=null&&selectedOrderType=="Home Delivery",
-                            child: Padding(
-                              padding: EdgeInsets.all(8.0),
-                              child: Container(
-                                width: MediaQuery.of(context).size.width,
-                                height: 70,
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
-                                    border: Border.all(color: blueColor, width: 1)
-                                ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(6.0),
-                                  child: TextFormField(
-                                    decoration: InputDecoration(
-                                      contentPadding: EdgeInsets.only(top: 7),
-                                      border: InputBorder.none,
-                                      hintText: "Address",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Visibility(
-                            visible:selectedOrderType!=null&& selectedOrderType=="Dine-In",
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: DropdownButtonFormField<String>(
-                                decoration: InputDecoration(
-                                  labelText: "Select Waiter",
-                                  alignLabelWithHint: true,
-                                  labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                  enabledBorder: OutlineInputBorder(
-                                  ),
-                                  focusedBorder:  OutlineInputBorder(
-                                    borderSide: BorderSide(color:yellowColor),
-                                  ),
-                                ),
-
-                                value: orderType,
-                                onChanged: (Value) {
-                                  setState(() {
-                                    orderType = Value;
-                                    orderTypeId = orderTypeList.indexOf(orderType)+1;
-                                    print(orderTypeId);
-                                  });
-                                  //taxList.clear();
-                                  // networksOperation.getTaxListByStoreIdWithOrderType(context, widget.storeId, orderType=="Dine In"?1:orderType=="Take Away"?2:orderType=="Delivery"?3:0).then((value) {
-                                  //   setState(() {
-                                  //     taxList = value;
-                                  //     print(taxList.toString()+"mnbvcxz");
-                                  //     totalPercentage=0.0;
-                                  //     totalTaxPrice =0.0;
-                                  //     orderTaxList.clear();
-                                  //     for(int i=0;i<taxList.length;i++){
-                                  //       totalTaxPrice += taxList[i].price;
-                                  //       totalPercentage += taxList[i].percentage;
-                                  //       orderTaxList.add({
-                                  //         "TaxId": taxList[i].id
-                                  //       });
-                                  //     }
-                                  //     print(orderTaxList.toString());
-                                  //   });
-                                  // });
-                                },
-                                items: orderTypeList.map((value) {
-                                  return  DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Row(
-                                      children: <Widget>[
-                                        Text(
-                                          value,
-                                          style:  TextStyle(color: yellowColor,fontSize: 13),
-                                        ),
-                                        //user.icon,
-                                        //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ),
-                          ),
-                          Visibility(
-                            visible: selectedOrderType!=null&&selectedOrderType =="TakeAway",
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: TextFormField(
-                                  controller: timePickerField,
-                                  decoration: InputDecoration(
-                                    labelText: "Select Picking Time",
-                                    border: OutlineInputBorder(),
-                                    hintText: "Select Picking Time"
-                                  ),
-                                  onTap: ()async{
-                                    FocusScope.of(context).requestFocus(new FocusNode());
-                                    var time = await showTimePicker(
-                                        context: context,
-                                        initialTime: TimeOfDay.now()
-                                    );
-                                    innerSetState(() {
-                                      timePickerField.text=time.hour.toString()+":"+time.minute.toString();
-                                    });
-
-                                  },
-                                ),
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.all(12.0),
-                            child: DropdownButtonFormField<String>(
-                              decoration: InputDecoration(
-                                labelText: "Order Priority",
-                                alignLabelWithHint: true,
-                                labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                enabledBorder: OutlineInputBorder(
-                                ),
-                                focusedBorder:  OutlineInputBorder(
-                                  borderSide: BorderSide(color:yellowColor),
-                                ),
-                              ),
-
-                              value: orderType,
-                              onChanged: (Value) {
-                                setState(() {
-                                  orderType = Value;
-                                  orderTypeId = orderTypeList.indexOf(orderType)+1;
-                                  print(orderTypeId);
-                                });
-                              },
-                              items: orderTypeList.map((value) {
-                                return  DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Row(
-                                    children: <Widget>[
-                                      Text(
-                                        value,
-                                        style:  TextStyle(color: yellowColor,fontSize: 13),
-                                      ),
-                                      //user.icon,
-                                      //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                    ],
-                                  ),
-                                );
-                              }).toList(),
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Container(
-                              width: MediaQuery.of(context).size.width,
-                              height: 70,
-                              child: Padding(
-                                padding: const EdgeInsets.all(6.0),
-                                child: TextFormField(
-                                  decoration: InputDecoration(
-                                    border: OutlineInputBorder(),
-                                    hintText: "Name",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Container(
-                              width: MediaQuery.of(context).size.width,
-                              height: 70,
-                              child: Padding(
-                                padding: const EdgeInsets.all(6.0),
-                                child: TextFormField(
-                                  decoration: InputDecoration(
-                                    border: OutlineInputBorder(),
-                                    hintText: "Email",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          Padding(
-                            padding: EdgeInsets.all(8.0),
-                            child: Container(
-                              width: MediaQuery.of(context).size.width,
-                              height: 70,
-                              child: Padding(
-                                padding: const EdgeInsets.all(6.0),
-                                child: TextFormField(
-                                  decoration: InputDecoration(
-                                    border: OutlineInputBorder(),
-                                    hintText: "Phone #",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          ///Picking Time
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                ///Order Type
-
-                ///Set Tables & Chairs
-                // Visibility(
-                //   visible: orderType=="Dine In",
-                //   child: Card(
-                //     elevation: 5,
-                //     //color: Colors.white24,
-                //     child: Container(
-                //       decoration: BoxDecoration(
-                //           color:BackgroundColor,
-                //           borderRadius: BorderRadius.circular(9),
-                //           border: Border.all(color: yellowColor, width: 2)
-                //       ),
-                //       width: MediaQuery.of(context).size.width*0.98,
-                //       padding: EdgeInsets.all(14),
-                //       child: DropdownButtonFormField<String>(
-                //         decoration: InputDecoration(
-                //           labelText: " Tables ",
-                //
-                //           alignLabelWithHint: true,
-                //           labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color: yellowColor),
-                //           enabledBorder: OutlineInputBorder(
-                //             // borderSide: BorderSide(color:
-                //             // Colors.white),
-                //           ),
-                //           focusedBorder:  OutlineInputBorder(
-                //             borderSide: BorderSide(color:
-                //             yellowColor),
-                //           ),
-                //         ),
-                //
-                //         // hint:  Text(translate('add_to_cart_screen.sauce')),
-                //         value: tableName,
-                //         // onSaved:(Value){
-                //         //     orderType = Value;
-                //         //     orderTypeId = orderTypeList.indexOf(orderTypeId);
-                //         // },
-                //         onChanged: (Value) {
-                //           setState(() {
-                //             tableName = Value;
-                //             tableId = tableDDList.indexOf(tableName);
-                //           });
-                //           networksOperation.getChairsListByTable(context, allTableList[tableId]['id']).then((value) {
-                //
-                //             if(value!=null){
-                //               countList.clear();
-                //               allChairList.clear();
-                //               for(int i=0;i<value.length;i++){
-                //                 countList.add(value[i]['name']);
-                //                 allChairList.add(value[i]);
-                //
-                //               }
-                //             }else{
-                //
-                //             }
-                //
-                //           });
-                //         },
-                //         items: tableDDList.map((value) {
-                //           return  DropdownMenuItem<String>(
-                //             value: value,
-                //             child: Row(
-                //               children: <Widget>[
-                //                 Text(
-                //                   value,
-                //                   style:  TextStyle(color: yellowColor,fontSize: 15, fontWeight: FontWeight.bold),
-                //                 ),
-                //                 //user.icon,
-                //                 //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                //               ],
-                //             ),
-                //           );
-                //         }).toList(),
-                //       ),
-                //     ),
-                //   ),
-                // ),
-                // Visibility(
-                //   visible:   countList.length>0 && orderType =="Dine In",
-                //   child: Card(
-                //     elevation: 5,
-                //     color: BackgroundColor,
-                //     child: InkWell(
-                //       onTap: () async{
-                //         _openFilterDialog();
-                //       },
-                //       child: InputDecorator(
-                //         decoration: InputDecoration(
-                //           contentPadding: EdgeInsets.all(25),
-                //           filled: true,
-                //           errorMaxLines: 4,
-                //         ),
-                //         child: Column(
-                //           crossAxisAlignment: CrossAxisAlignment.start,
-                //           children: <Widget>[
-                //             Row(
-                //               crossAxisAlignment: CrossAxisAlignment.start,
-                //               children: <Widget>[
-                //                 Expanded(
-                //                     child: Text(
-                //                       'Select Chairs For Order',
-                //                       style: TextStyle(fontSize: 15.0, color:yellowColor,fontWeight: FontWeight.bold),
-                //                     )),
-                //                 Icon(
-                //                   Icons.arrow_drop_down,
-                //                   color: Colors.black87,
-                //                   size: 25.0,
-                //                 ),
-                //               ],
-                //             ),
-                //             orderSelectedChairsList != null && orderSelectedChairsList.length > 0
-                //                 ? Wrap(
-                //               spacing: 8.0,
-                //               runSpacing: 0.0,
-                //               children: chairChips,
-                //             )
-                //                 : new Container(
-                //               padding: EdgeInsets.only(top: 4),
-                //               child: Text(
-                //                 'No Chairs selected',
-                //                 style: TextStyle(
-                //                   fontSize: 16,
-                //                   color: PrimaryColor,
-                //                 ),
-                //               ),
-                //             )
-                //           ],
-                //         ),
-                //       ),
-                //     ),
-                //   ),
-                // ),
-                ///Adding Voucher
-
-                ///Picking Time
-                // Visibility(
-                //   visible: orderType =="Take Away",
-                //   child: Padding(
-                //     padding: const EdgeInsets.all(8.0),
-                //     child: Padding(
-                //       padding: const EdgeInsets.all(8.0),
-                //       child: FormBuilderDateTimePicker(
-                //         name: "Estimate Picking time",
-                //         style: Theme.of(context).textTheme.bodyText1,
-                //         inputType: InputType.time,
-                //         validator: FormBuilderValidators.compose( [FormBuilderValidators.required(context)]),
-                //         format: DateFormat("hh:mm:ss"),
-                //         decoration: InputDecoration(labelText: "Estimate Picking time",labelStyle: TextStyle(color: yellowColor, fontWeight: FontWeight.bold),
-                //           border: OutlineInputBorder(
-                //               borderRadius: BorderRadius.circular(9.0),
-                //               borderSide: BorderSide(color: yellowColor, width: 2.0)
-                //           ),),
-                //         onChanged: (value){
-                //           setState(() {
-                //             this.pickingTime=value;
-                //           });
-                //         },
-                //       ),
-                //     ),
-                //   ),
-                // ),
-
-                ///Payment Method
-                // Padding(
-                //   padding: const EdgeInsets.all(8.0),
-                //   child: Container(
-                //       decoration: BoxDecoration(
-                //           color:BackgroundColor,
-                //           borderRadius: BorderRadius.circular(9),
-                //           border: Border.all(color: yellowColor, width: 2)
-                //       ),
-                //       child: Column(
-                //         children: [
-                //           Padding(
-                //             padding: const EdgeInsets.all(8.0),
-                //             child: Text('Payment Method',style: TextStyle(color: yellowColor,fontSize: 20,fontWeight: FontWeight.bold),),
-                //           ),
-                //           Container(
-                //             width: MediaQuery.of(context).size.width,
-                //             height: 1,
-                //             color: yellowColor,
-                //           ),
-                //
-                //           _myRadioButton(
-                //             title: orderType=="Dine In"?"Cash ":orderType=="Take Away"?"Cash on Picking ":"Cash On Delivery",
-                //             value: 1,
-                //             onChanged: (newValue) => setState(() => _groupValue = newValue,
-                //             ),
-                //           ),
-                //           _myRadioButton(
-                //               title: "Credit Card",
-                //               value: 2,
-                //               //  onChanged: (newValue) => setState(() => _groupValue = newValue,
-                //               // ),
-                //               onChanged: (value)async{
-                //                 setState(() async{
-                //                   _groupValue = value;
-                //
-                //                   cardData = await Navigator.push(context, MaterialPageRoute(builder: (context) =>  CardPayment() ));
-                //                 });
-                //               }
-                //           ),
-                //         ],
-                //       )
-                //   ),
-                // ),
-                SizedBox(height: 10,),
-
-                Container(
-                  width: MediaQuery.of(context).size.width,
-                  height: 40,
-                  color: yellowColor,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment:
-                      MainAxisAlignment
-                          .spaceBetween,
-                      children: [
-                        Text(
-                          "SubTotal: ",
-                          style: TextStyle(
-                              fontSize:
-                              20,
-                              color:
-                              Colors.white,
-                              fontWeight:
-                              FontWeight
-                                  .bold),
-                        ),
-                        Row(
-                          children: [
-                            Text(
-                              "Rs: ",
-                              style: TextStyle(
-                                  fontSize:
-                                  20,
-                                  color:
-                                  Colors.white,
-                                  fontWeight:
-                                  FontWeight.bold),
-                            ),
-                            SizedBox(
-                              width: 2,
-                            ),
-                            Text(
-                              overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
-                              style: TextStyle(
-                                  fontSize:
-                                  20,
-                                  color:
-                                  blueColor,
-                                  fontWeight:
-                                  FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(2.0),
-                  child: Container(
-                      width: MediaQuery.of(
-                          context)
-                          .size
-                          .width,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        border: Border.all(color: yellowColor),
-                        //borderRadius: BorderRadius.circular(8)
-                      ),
-
-                      child: ListView.builder(itemCount: 2,itemBuilder: (context, index){
-                        return  Padding(
-                          padding:
-                          const EdgeInsets
-                              .all(8.0),
-                          child: Row(
-                            mainAxisAlignment:
-                            MainAxisAlignment
-                                .spaceBetween,
-                            children: [
-                              Text(
-                                "SubTotal: ",
-                                style: TextStyle(
-                                    fontSize:
-                                    20,
-                                    color:
-                                    yellowColor,
-                                    fontWeight:
-                                    FontWeight
-                                        .bold),
-                              ),
-                              Row(
-                                children: [
-                                  Text(
-                                    "Rs: ",
-                                    style: TextStyle(
-                                        fontSize:
-                                        20,
-                                        color:
-                                        yellowColor,
-                                        fontWeight:
-                                        FontWeight.bold),
-                                  ),
-                                  SizedBox(
-                                    width: 2,
-                                  ),
-                                  Text(
-                                    overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
-                                    style: TextStyle(
-                                        fontSize:
-                                        25,
-                                        color:
-                                        blueColor,
-                                        fontWeight:
-                                        FontWeight.bold),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        );
-                      })
-                  ),
-                ),
-                Container(
-                  width: MediaQuery.of(context).size.width,
-                  height: 50,
-                  color: yellowColor,
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment:
-                      MainAxisAlignment
-                          .spaceBetween,
-                      children: [
-                        Text(
-                          "Total: ",
-                          style: TextStyle(
-                              fontSize:
-                              20,
-                              color:
-                              Colors.white,
-                              fontWeight:
-                              FontWeight
-                                  .bold),
-                        ),
-                        Row(
-                          children: [
-                            Text(
-                              "Rs: ",
-                              style: TextStyle(
-                                  fontSize:
-                                  20,
-                                  color:
-                                  Colors.white,
-                                  fontWeight:
-                                  FontWeight.bold),
-                            ),
-                            SizedBox(
-                              width: 2,
-                            ),
-                            Text(
-                              overallTotalPrice!=null?overallTotalPrice.toString()+"/-":"0.0/-",
-                              style: TextStyle(
-                                  fontSize:
-                                  25,
-                                  color:
-                                  blueColor,
-                                  fontWeight:
-                                  FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                ///Submit Button
-
-                SizedBox(height: 10,),
-                InkWell(
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.all(Radius.circular(8)) ,
-                        color: yellowColor,
-                      ),
-                      width: MediaQuery.of(context).size.width,
-                      height: 70,
-
-                      child: Center(
-                        child: Text('Submit Order',style: TextStyle(color: BackgroundColor,fontSize: 25,fontWeight: FontWeight.bold),),
-                      ),
-                    ),
-                  ),
-                )
-              ],
-            ),
-          );
-        }
-      )
-    );
-  }
-
   var productPopupHeight=3.5;
   Widget productsPopupLayout(Products product) {
     var count = 1;

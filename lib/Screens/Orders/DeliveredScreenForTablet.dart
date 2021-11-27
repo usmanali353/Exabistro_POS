@@ -165,7 +165,7 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                   Card(
                                     elevation:8,
                                     child: Container(
-                                      width: 200,
+                                      width: 250,
                                       height: 50,
                                       decoration: BoxDecoration(
                                         border: Border.all(color: yellowColor, width: 2),
