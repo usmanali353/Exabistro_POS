@@ -1,20 +1,24 @@
+import 'dart:convert';
 import 'dart:ui';
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/components/constants.dart';
+import 'package:exabistro_pos/model/OrderById.dart';
+import 'package:exabistro_pos/model/Orderitems.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
-import 'package:numberpicker/numberpicker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 import 'KitchenOrdersDetails.dart';
 
 
 class UnPaidOrdersScreenForTab extends StatefulWidget {
-  var storeId;
+  var store;
 
-  UnPaidOrdersScreenForTab(this.storeId);
+  UnPaidOrdersScreenForTab(this.store);
 
   @override
   _KitchenTabViewState createState() => _KitchenTabViewState();
@@ -77,7 +81,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
             return Utils.check_connectivity().then((result){
               if(result){
                 orderList.clear();
-                Network_Operations.getAllOrders(context, token,widget.storeId).then((value) {
+                Network_Operations.getAllOrders(context, token,widget.store["id"]).then((value) {
                   setState(() {
                     if(value!=null&&value.length>0){
                       value=value.reversed.toList();
@@ -92,7 +96,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                     //orderList = value;
                   });
                 });
-                Network_Operations.getTableList(context,token,widget.storeId)
+                Network_Operations.getTableList(context,token,widget.store["id"])
                     .then((value) {
                   setState(() {
                     this.allTables = value;
@@ -199,7 +203,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                               return Dialog(
                                                 backgroundColor: Colors.transparent,
                                                   child: Container(
-                                                      height: MediaQuery.of(context).size.height / 1.35,
+                                                      height: MediaQuery.of(context).size.height -200,
                                                       width: MediaQuery.of(context).size.width / 3.2,
                                                       child: ordersDetailPopupLayout(orderList[index])
                                                   )
@@ -404,7 +408,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
               Utils.check_connectivity().then((result){
                 if(result){
                   orderList.clear();
-                  Network_Operations.getOrdersByTableId(context, token,allTables[i]["id"],widget.storeId).then((value) {
+                  Network_Operations.getOrdersByTableId(context, token,allTables[i]["id"],widget.store["id"]).then((value) {
                     setState(() {
                       if(value!=null&&value.length>0){
                         for(var order in value){
@@ -501,7 +505,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                 child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Container(
-                      height:MediaQuery.of(context).size.height -250,
+                      height:MediaQuery.of(context).size.height -200,
                       width: MediaQuery.of(context).size.width / 3,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
@@ -769,7 +773,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                           Padding(
                             padding: const EdgeInsets.all(5),
                             child: Container(
-                              height: 330,
+                              height: 310,
                               //color: Colors.transparent,
                               child: ListView.builder(
                                   padding: EdgeInsets.all(4),
@@ -935,48 +939,26 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                               crossAxisAlignment: CrossAxisAlignment.end,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                // InkWell(
-                                //   onTap: (){
-                                //     //  _showDialog(orderList[index]['id']);
-                                //     var orderStatusData={
-                                //       "Id":orders['id'],
-                                //       "status":4,
-                                //       "EstimatedPrepareTime":10,
-                                //     };
-                                //     print(orderStatusData);
-                                //     Network_Operations.changeOrderStatus(context, token, orderStatusData).then((res) {
-                                //       if(res){
-                                //         WidgetsBinding.instance
-                                //             .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
-                                //       }
-                                //       //print(value);
-                                //     });
-                                //   },
-                                //   child: Padding(
-                                //     padding: const EdgeInsets.all(10.0),
-                                //     child: Container(
-                                //       decoration: BoxDecoration(
-                                //         border: Border.all(color: yellowColor),
-                                //         borderRadius: BorderRadius.all(Radius.circular(10)) ,
-                                //         color: yellowColor,
-                                //       ),
-                                //       width: MediaQuery.of(context).size.width,
-                                //       height: 40,
-                                //
-                                //       child: Center(
-                                //         child: Text('Mark as Preparing',style: TextStyle(color: BackgroundColor,fontSize: 25,fontWeight: FontWeight.bold),),
-                                //       ),
-                                //     ),
-                                //   ),
-                                // ),
-                                SizedBox(height: 25,),
-                                InkWell(
+                                orders["orderType"]>=5?InkWell(
                                   onTap: (){
-                                    // Utils.urlToFile(context,_store.image).then((value){
-                                    //   Navigator.push(context, MaterialPageRoute(builder: (context)=>PDFLaout(orderList[index]['id'],orderList[index]['orderItems'],orderList[index]['orderType'],orderList[index]['storeName'],value.readAsBytesSync())));
-                                    // });
-                                    //Navigator.push(context, MaterialPageRoute(builder: (context)=>PDFLaout(orderList[index]['id'],orderList[index]['orderItems'],orderList[index]['orderType'],orderList[index]['storeName'])));
-                                    //Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => SplashScreen()), (route) => false);
+                                    var payCash ={
+                                      "orderid": orders["id"],
+                                      "CashPay": orders["grossTotal"],
+                                      "Balance": orders["grossTotal"],
+                                      "Comment": null,
+                                      "PaymentType": 1,
+                                      "OrderStatus": 7,
+                                    };
+                                    Network_Operations.payCashOrder(this.context,token, payCash).then((isPaid){
+                                      Navigator.pop(context);
+                                      if(isPaid){
+                                        WidgetsBinding.instance
+                                            .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                                        Utils.showSuccess(this.context,"Payment Successful");
+                                      }else{
+                                        Utils.showError(this.context,"Problem in Making Payment");
+                                      }
+                                    });
                                   },
                                   child: Padding(
                                     padding: const EdgeInsets.all(10.0),
@@ -987,7 +969,29 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                         color: yellowColor,
                                       ),
                                       width: MediaQuery.of(context).size.width,
-                                      height: 60,
+                                      height: 50,
+
+                                      child: Center(
+                                        child: Text('Mark as Paid',style: TextStyle(color: BackgroundColor,fontSize: 25,fontWeight: FontWeight.bold),),
+                                      ),
+                                    ),
+                                  ),
+                                ):Container(),
+                                InkWell(
+                                  onTap: (){
+                                    print(orders.toString());
+                                   buildInvoice(orders);
+                                  },
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(10.0),
+                                    child: Container(
+                                      decoration: BoxDecoration(
+                                        border: Border.all(color: yellowColor),
+                                        borderRadius: BorderRadius.all(Radius.circular(10)) ,
+                                        color: yellowColor,
+                                      ),
+                                      width: MediaQuery.of(context).size.width,
+                                      height: 50,
 
                                       child: Center(
                                         child: Text('Print',style: TextStyle(color: BackgroundColor,fontSize: 25,fontWeight: FontWeight.bold),),
@@ -1007,6 +1011,245 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
     );
   }
 
+  buildInvoice(dynamic order)async{
+    final titles = <String>[
+      'Order Number:',
+      'Order Date:',
+      'Order Type:',
+      'Items Qty:'
+    ];
+    final data = <String>[
+      order["id"].toString(),
+      DateFormat.yMd().format(DateTime.now()).toString(),
+      order["orderType"]==1?"Dine-In":order["orderType"]==2?"Take-Away":order["orderType"]==3?"Home Delivery":"None",
+      order["orderItems"].length.toString(),
+    ];
+    List<OrderItem> orderitems=OrderItem.listOrderitemFromJson(jsonEncode(order["orderItems"]));
+    var invoiceData=orderitems.map((cartItems){
+      return [
+        cartItems.name.toString(),
+        cartItems.price.toStringAsFixed(1),
+        "x "+cartItems.quantity.toString(),
+        cartItems.totalPrice.toStringAsFixed(1),
+      ];
+    }).toList();
+    final doc = pw.Document();
+    doc.addPage(pw.MultiPage(
+      // pageFormat: PdfPageFormat.a4,
+        header: (context){
+          return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.start,
+              children: [
+                pw.SizedBox(height: 1 * PdfPageFormat.cm),
+                pw.Row(
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Text(widget.store["name"].toString(),style: pw.TextStyle(fontSize:20,fontWeight: pw.FontWeight.bold)),
+                            pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                            pw.Text(widget.store["address"].toString()),
+                          ]
+                      ),
+                      pw.Container(
+                          width: 50,
+                          height:50,
+                          child: pw.BarcodeWidget(
+                              barcode: pw.Barcode.qrCode(),
+                              data: "http://dev.exabistro.com/#/storeMenu/${widget.store["id"]}"
+                          )
+                      )
 
+                    ]
+                ),
+                pw.SizedBox(height: 1 * PdfPageFormat.cm),
+                pw.Row(
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                    children: [
+                      pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: [
+                            pw.Text(order["visitingCustomer"]!=null?order["visitingCustomer"]:customerName.toString(),style: pw.TextStyle(fontSize: 18,fontWeight: pw.FontWeight.bold)),
+                            pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                            pw.Text(order["customerContactNo"].toString()),
+                          ]
+                      ),
+                      pw.Column(
+                          crossAxisAlignment: pw.CrossAxisAlignment.start,
+                          children: List.generate(titles.length, (index){
+                            final title = titles[index];
+                            final value = data[index];
+                            return pw.Container(
+                                width: 200,
+                                child: pw.Row(
+                                    children:[
+                                      pw.Expanded(
+                                          child: pw.Text(title,style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
+                                      ),
+                                      pw.Text(
+                                          value,
+                                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
+                                      )
+                                    ]
+
+                                )
+                            );
+                          })
+                      ),
+                    ]
+                ),
+                pw.SizedBox(height: 2 * PdfPageFormat.cm),
+              ]
+          );
+        },
+        footer: (context){
+          return pw.Column(
+              crossAxisAlignment: pw.CrossAxisAlignment.center,
+              children: [
+                pw.Divider(),
+                pw.SizedBox(
+                    height: 2 * PdfPageFormat.mm
+                ),
+                pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Text("Address",style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      pw.SizedBox(
+                          width: 2 * PdfPageFormat.mm
+                      ),
+                      pw.Text(widget.store["address"].toString())
+                    ]
+                ),
+                pw.Row(
+                    mainAxisSize: pw.MainAxisSize.min,
+                    crossAxisAlignment: pw.CrossAxisAlignment.end,
+                    children: [
+                      pw.Text("Phone",style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                      pw.SizedBox(
+                          width: 2 * PdfPageFormat.mm
+                      ),
+                      pw.Text(widget.store["cellNo"].toString())
+                    ]
+                ),
+              ]
+          );
+        },
+        build: (pw.Context context) {
+          return[
+            pw.Column(
+              children: [
+                pw.Column(
+                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                    children: [
+                      pw.Text(
+                        "Invoice",
+                        style: pw.TextStyle(fontSize: 24,fontWeight: pw.FontWeight.bold),
+                      ),
+                      pw.SizedBox(
+                          height: 20
+                      ),
+                      pw.Table.fromTextArray(
+                          headers: ["Name","Unit Price","Quantity","Total"],
+                          data:invoiceData,
+                          border: null,
+                          headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                          headerDecoration: pw.BoxDecoration(color: PdfColors.grey300),
+                          cellHeight: 30,
+                          cellAlignments: {
+                            0: pw.Alignment.centerLeft,
+                            1: pw.Alignment.centerLeft,
+                            2: pw.Alignment.centerLeft,
+                            3: pw.Alignment.centerLeft
+                          }
+                      ),
+                      pw.Divider(),
+                      pw.Container(
+                          alignment: pw.Alignment.centerRight,
+                          child: pw.Row(
+                            children: [
+                              pw.Spacer(flex: 6),
+                              pw.Expanded(
+                                flex:4,
+                                child: pw.Column(
+                                    crossAxisAlignment: pw.CrossAxisAlignment.start,
+                                    children: [
+                                      pw.Container(
+                                          width: double.infinity,
+                                          child: pw.Row(
+                                              children: [
+                                                pw.Expanded(
+                                                    child: pw.Text("SubTotal",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
+                                                ),
+                                                pw.Text(
+                                                    order["netTotal"].toStringAsFixed(1),
+                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
+                                                )
+                                              ]
+                                          )
+                                      ),
+                                      pw.Container(
+                                          width: double.infinity,
+                                          child: pw.Row(
+                                              children: [
+                                                pw.Expanded(
+                                                    child: pw.Text("Tax",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
+                                                ),
+                                                pw.Text(
+                                                    (order["grossTotal"]-order["netTotal"]).toStringAsFixed(1),
+                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
+                                                )
+                                              ]
+                                          )
+                                      ),
+                                      pw.Divider(),
+                                      pw.Container(
+                                          width: double.infinity,
+                                          child: pw.Row(
+                                              children: [
+                                                pw.Expanded(
+                                                    child: pw.Text("Total",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
+                                                ),
+                                                pw.Text(
+                                                    order["grossTotal"].toString(),
+                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
+                                                )
+                                              ]
+                                          )
+                                      ),
+                                      pw.SizedBox(
+                                          height: 2 * PdfPageFormat.mm
+                                      ),
+                                      pw.Container(
+                                          height:1,
+                                          color: PdfColors.grey400
+                                      ),
+                                      pw.SizedBox(
+                                          height: 0.5 * PdfPageFormat.mm
+                                      ),
+                                      pw.Container(
+                                          height:1,
+                                          color: PdfColors.grey400
+                                      ),
+                                    ]
+                                ),
+                              )
+                            ],
+                          )
+                      )
+                    ]
+                )
+              ],
+
+            )];
+
+        }
+
+    ));
+    await Printing.layoutPdf(
+        onLayout: (PdfPageFormat format) async => doc.save());
+  }
 
 }

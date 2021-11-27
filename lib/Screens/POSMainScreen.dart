@@ -79,7 +79,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
     ]);
     Utils.check_connectivity().then((isConnected) {
       if (isConnected) {
-        print(widget.store);
         Network_Operations.getCategories(context, widget.store["id"])
             .then((sub) {
           setState(() {
@@ -2160,7 +2159,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                     Utils.showError(this.context,"Problem in Making Payment");
                                                   }
                                                 });
-
+                                                buildInvoice();
                                             }
                                             Utils.showSuccess(this.context,"Order Placed successfully");
                                           }else{
@@ -2682,7 +2681,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                         Utils.showError(this.context,"Problem in Making Payment");
                                                       }
                                                     });
-
+                                                    buildInvoice();
                                                 }
                                                 Utils.showSuccess(this.context,"Order Placed successfully");
                                               }else{
@@ -2938,18 +2937,19 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                           padding: EdgeInsets.all(8.0),
                                           child: TextFormField(
                                             controller: discountValue,
-                                            onChanged: (value){
+                                            onEditingComplete: (){
                                               innersetState(() {
                                                 if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
-                                                    print("discount without Priority "+tempPercentage.toString());
+                                                  var tempPercentage=(overallTotalPriceWithTax/100*double.parse(discountValue.text));
+                                                  typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(discountValue.text)));
                                                 }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
-
-                                                    var tempSum=overallTotalPriceWithTax-double.parse(value);
-                                                    print("discount without Priority "+tempSum.toString());
-
+                                                  var tempSum=overallTotalPriceWithTax-double.parse(discountValue.text);
+                                                  typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(discountValue.text)));
                                                 }
                                               });
+                                            },
+                                            onChanged: (value){
+
 
                                             },
                                             decoration: InputDecoration(

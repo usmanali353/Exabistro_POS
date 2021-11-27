@@ -227,7 +227,6 @@ class Network_Operations{
     return null;
   }
   static Future<List<Categories>> getCategories(BuildContext context,int storeId)async{
-    ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
 
     try{
       var isCacheExist = await APICacheManager().isAPICacheKeyExist("getCategory"+storeId.toString());
@@ -253,7 +252,6 @@ class Network_Operations{
         var response=await http.get(Uri.parse(Utils.baseUrl()+"Categories/GetAll?StoreId=$storeId&ShowByTime=1",));//0 is for time limitation
         var data= jsonDecode(response.body);
         if(response.statusCode==200){
-          pd.hide();
           APICacheDBModel cacheDBModel = new APICacheDBModel(
               key: "getCategory"+storeId.toString(), syncData: response.body);
           await APICacheManager().addCacheData(cacheDBModel);
@@ -264,15 +262,12 @@ class Network_Operations{
           }
           return list;
         }else{
-          pd.hide();
           Utils.showError(context, response.body);
         }
       }else{
-        pd.hide();
         Utils.showError(context, "You are in Offline mode");
       }
     }catch(e){
-      pd.hide();
       Utils.showError(context, e.toString());
     }
     //pd.hide();

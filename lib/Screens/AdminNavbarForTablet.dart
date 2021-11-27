@@ -89,7 +89,7 @@ class _AdminNavBarState extends State<AdminNavBarForTablet> {
         return POSMainScreen(store:widget.store);
     //return AdminProfile(widget.storeId,widget.roleId);
       case 1:
-        return PaidTabsScreen(storeId:widget.store["id"]);
+        return PaidTabsScreen(storeId:widget.store);
           //OrderListsTabsScreen(storeId:widget.store["id"]);
       case 2:
         return DeliveredScreenForTablet(widget.store);
