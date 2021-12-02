@@ -133,7 +133,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Container(
-                          height: MediaQuery.of(context).size.height,
+                          height: 400,
                           width: 250,
                           decoration: BoxDecoration(
                             color: yellowColor,
@@ -151,7 +151,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
                             Card(
                               elevation: 6,
                               child: Container(
-                                width: MediaQuery.of(context).size.width /4,
+                                width: 314,
                                 height: 60,
                                 decoration: BoxDecoration(
                                   color: yellowColor,
@@ -163,7 +163,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
                             Card(
                               elevation: 6,
                               child: Container(
-                                width: MediaQuery.of(context).size.width /4,
+                                width: 314,
                                 height: 50,
                                 child: Padding(
                                   padding: const EdgeInsets.all(4.0),
@@ -179,7 +179,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
                             Card(
                               elevation: 6,
                               child: Container(
-                                width: MediaQuery.of(context).size.width /4,
+                                width: 314,
                                 height: 50,
                                 child: Padding(
                                   padding: const EdgeInsets.all(4.0),
@@ -195,7 +195,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
                             Card(
                               elevation: 6,
                               child: Container(
-                                width: MediaQuery.of(context).size.width /4,
+                                width: 314,
                                 height: 50,
                                 child: Padding(
                                   padding: const EdgeInsets.all(4.0),
@@ -213,7 +213,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
                               elevation: 6,
                               color: yellowColor,
                               child: Container(
-                                width: MediaQuery.of(context).size.width /4,
+                                width: 314,
                                 height: 40,
                                 color: yellowColor,
                                 child: Padding(
@@ -237,7 +237,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
                               elevation: 6,
                               color: yellowColor,
                               child: Container(
-                                width: MediaQuery.of(context).size.width /4,
+                                width: 314,
                                 height: 40,
                                 color: yellowColor,
                                 child: Padding(

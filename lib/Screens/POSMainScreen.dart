@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:api_cache_manager/models/cache_db_model.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:connectivity/connectivity.dart';
 import 'package:exabistro_pos/Screens/LoadingScreen.dart';
 import 'package:exabistro_pos/Screens/LoginScreen.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
@@ -61,10 +63,11 @@ class _POSMainScreenState extends State<POSMainScreen> {
   String orderType;
   int orderTypeId;
   var voucherValidity;
+  APICacheDBModel offlineData;
   var selectedOrderType,selectedOrderTypeId,selectedWaiter,selectedWaiterId,selectedTable,selectedTableId;
   TextEditingController timePickerField,customerName,customerPhone,customerEmail,customerAddress,discountValue;
   List orderTypeList = ["Dine-In", "TakeAway","Home Delivery"];
-
+  String token;
   @override
   void initState() {
     timePickerField=TextEditingController();
@@ -77,84 +80,74 @@ class _POSMainScreenState extends State<POSMainScreen> {
       DeviceOrientation.landscapeRight,
       DeviceOrientation.landscapeLeft,
     ]);
-    Utils.check_connectivity().then((isConnected) {
-      if (isConnected) {
-        Network_Operations.getCategories(context, widget.store["id"])
-            .then((sub) {
-          setState(() {
-            if (sub != null && sub.length > 0) {
-              subCategories.addAll(sub);
-              categoryName = subCategories[0].name;
-              Network_Operations.getProduct(
-                      context,
-                      subCategories[0].id,
-                      widget.store["id"],
-                      "")
-                  .then((p) {
-                setState(() {
-                  if (p != null && p.length > 0) {
-                    isLoading = false;
-                    products.addAll(p);
-                  } else
-                    isLoading = false;
-                  SharedPreferences.getInstance().then((prefs) {
-                    setState(() {
-                      this.userId=prefs.getString("userId");
-                    });
-                    Network_Operations.getAllDeals(
-                            context, prefs.getString("token"), widget.store["id"])
-                        .then((dealsList) {
-                      setState(() {
-                        if (dealsList.length > 0) {
-                          this.dealsList.addAll(dealsList);
-                        }
-                      });
-                    });
-                    Network_Operations.getTableList(context,prefs.getString("token"),widget.store["id"]).then((value){
-                      setState(() {
-                        if(value!=null&&value.length>0){
-                          tables.addAll(value);
-                          print(tables.toString());
-                        }
-                      });
-
-                    });
+    SharedPreferences.getInstance().then((prefs){
+      Network_Operations.getCategory(context,prefs.getString("token"),widget.store["id"],"")
+          .then((sub) {
+        setState(() {
+          print("sub "+sub.toString());
+          if (sub != null && sub.length > 0) {
+            for(int i = 0;i<sub.length;i++){
+              if((int.parse(sub[i].startTime.substring(0,2)) <= TimeOfDay.now().hour ||
+                  int.parse(sub[i].endTime.substring(0,2)) >= TimeOfDay.now().hour) &&
+                  int.parse(sub[i].startTime.substring(3,5)) <= TimeOfDay.now().minute){
+                subCategories.add(sub[i]);
+              }
+            }
+            categoryName = subCategories[0].name;
+            Network_Operations.getProduct(
+                context,
+                subCategories[0].id,
+                widget.store["id"],
+                "")
+                .then((p) {
+              setState(() {
+                if (p != null && p.length > 0) {
+                  isLoading = false;
+                  products.addAll(p);
+                } else
+                  isLoading = false;
+                  setState(() {
+                    this.userId=prefs.getString("userId");
                   });
-
-                  sqlite_helper().getcart1().then((value) {
+                  Network_Operations.getAllDeals(
+                      context, prefs.getString("token"), widget.store["id"])
+                      .then((dealsList) {
                     setState(() {
-                      cartList.clear();
-                      cartList = value;
-                      if (cartList.length > 0) {
-                        print(cartList.toString());
+                      if (dealsList.length > 0) {
+                        this.dealsList.addAll(dealsList);
                       }
                     });
                   });
-                  Network_Operations.getTaxListByStoreId(context,widget.store["id"]).then((taxes){
-                    setState(() {
-                      this.orderTaxes=taxes;
-                      sqlite_helper().gettotal().then((value){
-                        setState(() {
-                          overallTotalPrice=value[0]["SUM(totalPrice)"];
-                        });
+                sqlite_helper().getcart1().then((value) {
+                  setState(() {
+                    cartList.clear();
+                    cartList = value;
+                    if (cartList.length > 0) {
+                      print(cartList.toString());
+                    }
+                  });
+                });
+                Network_Operations.getTaxListByStoreId(context,widget.store["id"]).then((taxes){
+                  setState(() {
+                    this.orderTaxes=taxes;
+                    sqlite_helper().gettotal().then((value){
+                      setState(() {
+                        overallTotalPrice=value[0]["SUM(totalPrice)"];
                       });
                     });
                   });
-
                 });
               });
-            } else {
-              isLoading = false;
-              Utils.showError(context, "No Categories Found");
-            }
-          });
+            });
+          } else {
+            isLoading = false;
+            Utils.showError(context, "No Categories Found");
+          }
         });
-      } else {
-        isLoading = false;
-        Navigator.pop(context);
-        Utils.showError(context, "Network Error");
-      }
+      });
     });
+
+
   }
   buildInvoice()async{
     print("OrdersList "+ordersList.toString());
@@ -205,7 +198,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                       data: "http://dev.exabistro.com/#/storeMenu/${widget.store["id"]}"
                   )
                 )
-
               ]
             ),
             pw.SizedBox(height: 1 * PdfPageFormat.cm),
@@ -293,10 +285,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                            "Invoice",
                            style: pw.TextStyle(fontSize: 24,fontWeight: pw.FontWeight.bold),
                          ),
-
-                         pw.Text(
-                           "Some Description",
-                         ),
                          pw.SizedBox(
                              height: 20
                          ),
@@ -353,6 +341,20 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                  ]
                                              )
                                          ),
+                                        deductedPrice!=0.0?pw.Container(
+                                             width: double.infinity,
+                                             child: pw.Row(
+                                                 children: [
+                                                   pw.Expanded(
+                                                       child: pw.Text("Discount",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
+                                                   ),
+                                                   pw.Text(
+                                                       deductedPrice.toStringAsFixed(1),
+                                                       style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
+                                                   )
+                                                 ]
+                                             )
+                                         ):pw.Container(),
                                          pw.Divider(),
                                          pw.Container(
                                              width: double.infinity,
@@ -362,7 +364,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                        child: pw.Text("Total",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
                                                    ),
                                                    pw.Text(
-                                                       overallTotalPriceWithTax.toString(),
+                                                      deductedPrice!=0.0?priceWithDiscount.toStringAsFixed(1):overallTotalPriceWithTax.toString(),
                                                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
                                                    )
                                                  ]
@@ -617,16 +619,17 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         )
                                       ],
                                     )),
-                                Container(
-                                    //color: Colors.teal,
-                                    width: MediaQuery.of(context).size.width,
-                                    height: 500,
-                                    child: selectedMenuType == "Products" ||
-                                            selectedMenuType == null
-                                        ?
-                                    //listViewLayout()
-                                    productsLayout()
-                                        : dealsLayout())
+                                Expanded(
+                                  child: Container(
+                                      //color: Colors.teal,
+                                      width: MediaQuery.of(context).size.width,
+                                      child: selectedMenuType == "Products" ||
+                                              selectedMenuType == null
+                                          ?
+                                      //listViewLayout()
+                                      productsLayout()
+                                          : dealsLayout()),
+                                )
                               ],
                             ),
                           )),
@@ -653,11 +656,12 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                     ),
                                   ),
                                 ),
-                                Container(
-                                  //color: Colors.teal,
-                                  width: MediaQuery.of(context).size.width,
-                                  height: 480,
-                                  child: cartListLayout(),
+                                Expanded(
+                                  child: Container(
+                                    //color: Colors.teal,
+                                    width: MediaQuery.of(context).size.width,
+                                    child: cartListLayout(),
+                                  ),
                                 ),
                                 Container(
                                   color: Colors.white,
@@ -747,47 +751,74 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                               setState(() {
                                                 overallTotalPriceWithTax=0.0;
                                                 totalTax=0.0;
-                                                selectedType=null;
                                                 typeBasedTaxes.clear();
                                                 taxesList.clear();
                                                 orderItems.clear();
+                                                discountValue.clear();
+                                                priceWithDiscount=0.0;
+                                                deductedPrice=0.0;
+                                                selectedDiscountType=null;
                                                 selectedTable=null;
                                                 selectedTableId=null;
+                                                customerName.clear();
+                                                customerPhone.clear();
                                                 overallTotalPriceWithTax=overallTotalPrice;
-                                                var tempTaxList = orderTaxes.where((element) => element.dineIn);
-                                                if(tempTaxList!=null&&tempTaxList.length>0){
-                                                  for(Tax t in tempTaxList.toList()){
-                                                    setState(() {
-                                                      if(t.percentage!=null&&t.percentage!=0.0){
-                                                        var percentTax= overallTotalPrice/100*t.percentage;
-                                                        print(percentTax);
-                                                        totalTax=totalTax+percentTax;
-                                                        overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
-                                                      }
-                                                      if(t.price!=null&&t.price!=0.0){
-                                                        overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
-                                                        totalTax=totalTax+t.price;
-                                                      }
-                                                      typeBasedTaxes.add(t);
+                                                if(orderTaxes!=null&&orderTaxes.length>0){
+                                                  var tempTaxList = orderTaxes.where((element) => element.dineIn);
+                                                  if(tempTaxList!=null&&tempTaxList.length>0){
+                                                    for(Tax t in tempTaxList.toList()){
+                                                      setState(() {
+                                                        if(t.percentage!=null&&t.percentage!=0.0){
+                                                          var percentTax= overallTotalPrice/100*t.percentage;
+                                                          print(percentTax);
+                                                          totalTax=totalTax+percentTax;
+                                                          overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
+                                                        }
+                                                        if(t.price!=null&&t.price!=0.0){
+                                                          overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
+                                                          totalTax=totalTax+t.price;
+                                                        }
+                                                        typeBasedTaxes.add(t);
 
-                                                      taxesList.add({
-                                                        "TaxId": t.id
+                                                        taxesList.add({
+                                                          "TaxId": t.id
+                                                        });
                                                       });
-                                                    });
+                                                    }
                                                   }
                                                 }
+
                                               });
 
-                                              showDialog(context: context, builder:(BuildContext context){
-                                                return Dialog(
-                                                  backgroundColor: Colors.transparent,
-                                                 // insetPadding: EdgeInsets.all(16),
-                                                    child: Container(
-                                                        height:MediaQuery.of(context).size.height- 430,
-                                                        width: MediaQuery.of(context).size.width/2,
-                                                        child: orderPopUpHorizontalDineIn()
-                                                    )
-                                                );
+                                              SharedPreferences.getInstance().then((prefs){
+                                                var reservationData = {
+                                                  "Date":DateTime.now().toString().substring(0,10),
+                                                  "StartTime":DateTime.now().toString().substring(10,16),
+                                                  "EndTime": DateTime.now().add(Duration(hours: 1)).toString().substring(10,16),
+                                                  "storeId":widget.store["id"]
+                                                };
+                                                print(reservationData);
+                                               Network_Operations.getAvailableTable(context,prefs.getString("token"), reservationData).then((availableTables){
+                                                 if(availableTables!=null&&availableTables.length>0){
+                                                   setState(() {
+                                                     tables.clear();
+                                                     this.tables=availableTables;
+                                                   });
+                                                   showDialog(context: context, builder:(BuildContext context){
+                                                     return Dialog(
+                                                         backgroundColor: Colors.transparent,
+                                                         // insetPadding: EdgeInsets.all(16),
+                                                         child: Container(
+                                                             height:MediaQuery.of(context).size.height- 430,
+                                                             width: MediaQuery.of(context).size.width/2,
+                                                             child: orderPopUpHorizontalDineIn()
+                                                         )
+                                                     );
+                                                   });
+                                                 }else{
+                                                   Utils.showError(this.context,"No Table is Free for DineIn");
+                                                 }
+                                               });
                                               });
                                               },
                                             child: Card(
@@ -816,28 +847,37 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                   setState(() {
                                                     overallTotalPriceWithTax=0.0;
                                                     typeBasedTaxes.clear();
-                                                    selectedType=null;
+                                                    totalTax=0.0;
+                                                    typeBasedTaxes.clear();
                                                     taxesList.clear();
                                                     orderItems.clear();
+                                                    discountValue.clear();
+                                                    customerName.clear();
+                                                    customerPhone.clear();
+                                                    priceWithDiscount=0.0;
+                                                    deductedPrice=0.0;
+                                                    selectedDiscountType=null;
                                                     overallTotalPriceWithTax=overallTotalPrice;
-                                                    var tempTaxList = orderTaxes.where((element) => element.takeAway);
-                                                    if(tempTaxList!=null&&tempTaxList.length>0){
-                                                      for(Tax t in tempTaxList.toList()){
-                                                        setState(() {
-                                                          if(t.percentage!=null&&t.percentage!=0.0){
-                                                            var percentTax= overallTotalPrice/100*t.percentage;
-                                                            print(percentTax);
-                                                            overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
-                                                          }
-                                                          if(t.price!=null&&t.price!=0.0){
-                                                            overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
-                                                          }
-                                                          typeBasedTaxes.add(t);
+                                                    if(orderTaxes!=null&&orderTaxes.length>0){
+                                                      var tempTaxList = orderTaxes.where((element) => element.takeAway);
+                                                      if(tempTaxList!=null&&tempTaxList.length>0){
+                                                        for(Tax t in tempTaxList.toList()){
+                                                          setState(() {
+                                                            if(t.percentage!=null&&t.percentage!=0.0){
+                                                              var percentTax= overallTotalPrice/100*t.percentage;
+                                                              print(percentTax);
+                                                              overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
+                                                            }
+                                                            if(t.price!=null&&t.price!=0.0){
+                                                              overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
+                                                            }
+                                                            typeBasedTaxes.add(t);
 
-                                                          taxesList.add({
-                                                            "TaxId": t.id
+                                                            taxesList.add({
+                                                              "TaxId": t.id
+                                                            });
                                                           });
-                                                        });
+                                                        }
                                                       }
                                                     }
                                                   });
@@ -878,31 +918,41 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                 onTap: () {
                                                   setState(() {
                                                     overallTotalPriceWithTax=0.0;
+                                                    totalTax=0.0;
                                                     typeBasedTaxes.clear();
-                                                    selectedType=null;
                                                     taxesList.clear();
                                                     orderItems.clear();
+                                                    discountValue.clear();
+                                                    customerAddress.clear();
+                                                    customerName.clear();
+                                                    customerPhone.clear();
+                                                    priceWithDiscount=0.0;
+                                                    deductedPrice=0.0;
+                                                    selectedDiscountType=null;
                                                     overallTotalPriceWithTax=overallTotalPrice;
-                                                    var tempTaxList = orderTaxes.where((element) => element.delivery);
-                                                    if(tempTaxList!=null&&tempTaxList.length>0){
-                                                      for(Tax t in tempTaxList.toList()){
-                                                        setState(() {
-                                                          if(t.percentage!=null&&t.percentage!=0.0){
-                                                            var percentTax= overallTotalPrice/100*t.percentage;
-                                                            print(percentTax);
-                                                            overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
-                                                          }
-                                                          if(t.price!=null&&t.price!=0.0){
-                                                            overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
-                                                          }
-                                                          typeBasedTaxes.add(t);
+                                                    if(orderTaxes!=null&&orderTaxes.length>0){
+                                                      var tempTaxList = orderTaxes.where((element) => element.delivery);
+                                                      if(tempTaxList!=null&&tempTaxList.length>0){
+                                                        for(Tax t in tempTaxList.toList()){
+                                                          setState(() {
+                                                            if(t.percentage!=null&&t.percentage!=0.0){
+                                                              var percentTax= overallTotalPrice/100*t.percentage;
+                                                              print(percentTax);
+                                                              overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
+                                                            }
+                                                            if(t.price!=null&&t.price!=0.0){
+                                                              overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
+                                                            }
+                                                            typeBasedTaxes.add(t);
 
-                                                          taxesList.add({
-                                                            "TaxId": t.id
+                                                            taxesList.add({
+                                                              "TaxId": t.id
+                                                            });
                                                           });
-                                                        });
+                                                        }
                                                       }
                                                     }
+
                                                   });
                                                   showDialog(context: context, builder:(BuildContext context){
                                                     return Dialog(
@@ -1752,45 +1802,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 children: [
                                   Expanded(
                                     child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: DropdownButtonFormField<String>(
-                                        decoration: InputDecoration(
-                                          labelText: "Select Type",
-                                          alignLabelWithHint: true,
-                                          labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                          enabledBorder: OutlineInputBorder(
-                                          ),
-                                          focusedBorder:  OutlineInputBorder(
-                                            borderSide: BorderSide(color:yellowColor),
-                                          ),
-                                        ),
-
-                                        value: selectedType,
-                                        onChanged: (Value) {
-                                          innersetState(() {
-                                            selectedType = Value;
-                                          });
-                                        },
-                                        items: types.map((value) {
-                                          return  DropdownMenuItem<String>(
-                                            value: value,
-                                            child: Row(
-                                              children: <Widget>[
-                                                Text(
-                                                  value,
-                                                  style:  TextStyle(color: yellowColor,fontSize: 13),
-                                                ),
-                                                //user.icon,
-                                                //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                              ],
-                                            ),
-                                          );
-                                        }).toList(),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Padding(
                                       padding: EdgeInsets.all(8.0),
                                       child: TextFormField(
                                         controller: customerName,
@@ -1801,10 +1812,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                       ),
                                     ),
                                   ),
-                                ],
-                              ),
-                              Row(
-                                children: [
                                   Expanded(
                                     child: Padding(
                                       padding: const EdgeInsets.all(8.0),
@@ -1817,19 +1824,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                       ),
                                     ),
                                   ),
-
-                                  Expanded(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(8.0),
-                                      child: TextFormField(
-                                        controller: customerAddress,
-                                        decoration: InputDecoration(
-                                          border: OutlineInputBorder(),
-                                          hintText: "Customer Address*",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
                                 ],
                               ),
                               Row(
@@ -1837,6 +1831,16 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                   Expanded(
                                     child: Column(
                                       children: [
+                                        Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: TextFormField(
+                                            controller: customerAddress,
+                                            decoration: InputDecoration(
+                                              border: OutlineInputBorder(),
+                                              hintText: "Customer Address*",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ),
                                         Padding(
                                           padding: const EdgeInsets.all(8.0),
                                           child: DropdownButtonFormField<String>(
@@ -1855,6 +1859,29 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             onChanged: (Value) {
                                               innersetState(() {
                                                 selectedDiscountType = Value;
+                                                priceWithDiscount=overallTotalPriceWithTax;
+                                                deductedPrice=0.0;
+                                                if(typeBasedTaxes.last.name=="Discount"){
+                                                  priceWithDiscount=overallTotalPriceWithTax;
+                                                  typeBasedTaxes.remove(typeBasedTaxes.last);
+                                                }
+                                                if(discountValue.text.isNotEmpty){
+                                                  if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
+                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(discountValue.text));
+                                                    setState(() {
+                                                      deductedPrice=tempPercentage;
+                                                    });
+                                                    priceWithDiscount=priceWithDiscount-tempPercentage;
+                                                    typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(discountValue.text)));
+                                                  }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
+                                                    setState(() {
+                                                      deductedPrice=double.parse(discountValue.text);
+                                                    });
+                                                    var tempSum=overallTotalPriceWithTax-double.parse(discountValue.text);
+                                                    priceWithDiscount=tempSum;
+                                                    typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(discountValue.text)));
+                                                  }
+                                                }
                                               });
                                             },
                                             items: discountType.map((value) {
@@ -1880,23 +1907,29 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             controller: discountValue,
                                             onChanged: (value){
                                               innersetState(() {
-                                                if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                                  if(overallTotalPriceWithTax!=0.0){
+                                                priceWithDiscount=overallTotalPriceWithTax;
+                                                if(typeBasedTaxes.last.name=="Discount"){
+                                                  //priceWithDiscount=overallTotalPriceWithTax;
+                                                  typeBasedTaxes.remove(typeBasedTaxes.last);
+                                                }
+                                                if(value.isNotEmpty){
+                                                  if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
                                                     var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
-                                                    print("discount with Priority "+tempPercentage.toString());
-                                                  }else{
-                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
-                                                    print("discount without Priority "+tempPercentage.toString());
-                                                  }
-                                                }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
-                                                  if(overallTotalPriceWithTax!=0.0){
+                                                    priceWithDiscount=priceWithDiscount-tempPercentage;
+                                                    setState(() {
+                                                      deductedPrice=tempPercentage;
+                                                    });
+                                                    typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(value)));
+                                                  }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
                                                     var tempSum=overallTotalPriceWithTax-double.parse(value);
-                                                    print("discount with Priority "+tempSum.toString());
-                                                  }else{
-                                                    var tempSum=overallTotalPriceWithTax-double.parse(value);
-                                                    print("discount without Priority "+tempSum.toString());
+                                                    setState(() {
+                                                      deductedPrice=double.parse(discountValue.text);
+                                                    });
+                                                    priceWithDiscount=tempSum;
+                                                    typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(value)));
                                                   }
                                                 }
+
                                               });
 
                                             },
@@ -1914,7 +1947,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                       children: [
                                         Container(
                                           width: MediaQuery.of(context).size.width,
-                                          height: 40,
+                                          height: 50,
                                           color: yellowColor,
                                           child: Padding(
                                             padding: const EdgeInsets.all(8.0),
@@ -1972,7 +2005,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                   context)
                                                   .size
                                                   .width,
-                                              height: 75,
+                                              height: 125,
                                               decoration: BoxDecoration(
                                                 border: Border.all(color: yellowColor),
                                                 //borderRadius: BorderRadius.circular(8)
@@ -2002,7 +2035,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                       Row(
                                                         children: [
                                                           Text(
-                                                            typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):"",                                                      style: TextStyle(
+                                                            typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"]+": "+(overallTotalPriceWithTax/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1),style: TextStyle(
                                                               fontSize:
                                                               16,
                                                               color:
@@ -2020,7 +2053,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         ),
                                         Container(
                                           width: MediaQuery.of(context).size.width,
-                                          height: 40,
+                                          height: 50,
                                           color: yellowColor,
                                           child: Padding(
                                             padding: const EdgeInsets.all(8.0),
@@ -2056,7 +2089,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                       width: 2,
                                                     ),
                                                     Text(
-                                                      overallTotalPriceWithTax!=null&&overallTotalPriceWithTax!=0.0?overallTotalPriceWithTax.toStringAsFixed(1)+"/-":overallTotalPrice.toStringAsFixed(1)+"/-",
+                                                      priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(1)+"/-":overallTotalPriceWithTax.toStringAsFixed(1)+"/-",
                                                       style: TextStyle(
                                                           fontSize:
                                                           20,
@@ -2080,8 +2113,8 @@ class _POSMainScreenState extends State<POSMainScreen> {
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: InkWell(
-                                  onTap: (){
-                                    if(customerName.text!=null&&customerName.text.isNotEmpty&&customerAddress.text!=null&&customerAddress.text.isNotEmpty){
+                                  onTap: ()async{
+                                    if(customerName.text!=null&&customerName.text.isNotEmpty&&customerAddress.text!=null&&customerAddress.text.isNotEmpty&&customerPhone.text.isNotEmpty){
                                       for(int i=0;i<cartList.length;i++){
                                         orderItems.add({
                                           "dealid":cartList[i].dealId,
@@ -2096,13 +2129,12 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                           "orderitemstoppings":cartList[i].topping==null||cartList[i].topping == "[]"?[]:jsonDecode(cartList[i].topping),
                                         });
                                       }
-                                      print(taxesList);
                                       dynamic order = {
                                         "DailySessionNo": 7,
                                         "storeId":widget.store["id"],
                                         "DeviceToken":null,
                                         "ordertype":3,
-                                        "NetTotal":overallTotalPriceWithTax,
+                                        "NetTotal":overallTotalPrice,
                                         //  "grosstotal":widget.netTotal,
                                         "comment":null,
                                         "TableId":null,
@@ -2118,56 +2150,95 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         "VoucherCode": "",
                                         "OrderStatus":7,
                                         "customerName":customerName.text,
-                                        
+                                        "discountedPrice":deductedPrice,
                                         "CustomerContactNo":customerPhone.text,
                                         "employeeId": int.parse(userId),
-                                        "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false
+                                        "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false,
+                                        "CreatedOn":DateTime.now()
                                       };
-                                      SharedPreferences.getInstance().then((prefs){
-                                        setState(() {
-                                          isLoading=true;
-                                          Navigator.of(context).pop(context);
-                                        });
-                                        Network_Operations.placeOrder(context, prefs.getString("token"), order).then((orderPlaced){
-                                          if(orderPlaced!=null){
-                                            orderItems.clear();
-                                            sqlite_helper().getcart1().then((value) {
-                                              setState(() {
-                                                cartList.clear();
-                                                cartList = value;
-                                                isLoading=false;
-                                              });
-                                            });
-                                            sqlite_helper().gettotal().then((value){
-                                              setState(() {
-                                                overallTotalPrice=value[0]["SUM(totalPrice)"];
-                                              });
-                                            });
-                                            if(selectedType=="Payment"){
-                                                var payCash ={
-                                                  "orderid": jsonDecode(orderPlaced)["id"],
-                                                  "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
-                                                  "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
-                                                  "Comment": null,
-                                                  "PaymentType": 1,
-                                                  "OrderStatus": 7,
-                                                };
-                                                Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
-                                                  if(isPaid){
-                                                    Utils.showSuccess(this.context,"Payment Successful");
-                                                  }else{
-                                                    Utils.showError(this.context,"Problem in Making Payment");
-                                                  }
-                                                });
-                                                buildInvoice();
-                                            }
-                                            Utils.showSuccess(this.context,"Order Placed successfully");
-                                          }else{
-                                            Utils.showError(this.context,"Unable to Place Order");
+                                      debugPrint(jsonEncode(order,toEncodable: Utils.myEncode));
+                                      var result= await Utils.check_connection();
+                                      if(result == ConnectivityResult.none){
+                                        var offlineOrderList=[];
+                                        //final body = jsonEncode(order,toEncodable: Utils.myEncode);
+                                        var exists = await Utils.checkOfflineDataExists("addOrderStaff");
+                                        if(exists){
+                                          print("in if");
+                                          offlineData = await Utils.getOfflineData("addOrderStaff");
+                                          //print(offlineData.syncData);
+
+                                          for(int i=0;i<jsonDecode(offlineData.syncData).length;i++){
+                                            print(jsonDecode(offlineData.syncData)[i]);
+                                            offlineOrderList.add(jsonDecode(offlineData.syncData)[i]);
                                           }
-                                        });
-                                      });
-                                      debugPrint(order.toString());
+                                          offlineOrderList.add(order);
+                                        }else
+                                          offlineOrderList.add(order);
+
+                                        //offlineOrderList.add(body);
+                                        await Utils.addOfflineData("addOrderStaff",jsonEncode(offlineOrderList));
+                                        offlineData = await Utils.getOfflineData("addOrderStaff");
+                                        Utils.showSuccess(context, "Your Order Stored Offline");
+                                      }
+                                      else if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
+                                        var exists = await Utils.checkOfflineDataExists("addOrderStaff");
+                                        if(exists){
+                                          offlineData = await Utils.getOfflineData("addOrderStaff");
+                                          showAlertDialog(context,offlineData);
+                                        }else{
+                                          SharedPreferences.getInstance().then((prefs){
+                                            setState(() {
+                                              isLoading=true;
+                                              Navigator.of(context).pop(context);
+                                            });
+                                            Network_Operations.placeOrder(context, prefs.getString("token"), order).then((orderPlaced){
+                                              if(orderPlaced!=null){
+                                                orderItems.clear();
+                                                sqlite_helper().getcart1().then((value) {
+                                                  setState(() {
+                                                    cartList.clear();
+                                                    cartList = value;
+                                                    isLoading=false;
+                                                  });
+                                                });
+                                                sqlite_helper().gettotal().then((value){
+                                                  setState(() {
+                                                    overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                                  });
+                                                });
+                                                if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
+                                                  var payCash ={
+                                                    "orderid": jsonDecode(orderPlaced)["id"],
+                                                    "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                                                    "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                                                    "Comment": null,
+                                                    "PaymentType": 1,
+                                                    "OrderStatus": 7,
+                                                  };
+                                                  Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
+                                                    if(isPaid){
+                                                      Utils.showSuccess(this.context,"Payment Successful");
+                                                    }else{
+                                                      Utils.showError(this.context,"Problem in Making Payment");
+                                                    }
+                                                  });
+                                                  buildInvoice();
+                                                }
+                                                Utils.showSuccess(this.context,"Order Placed successfully");
+                                              }else{
+                                                setState(() {
+                                                  isLoading=false;
+                                                });
+                                                print("Place Order Response "+orderPlaced.toString());
+                                                Utils.showError(this.context,"Unable to Place Order");
+                                              }
+                                            });
+                                          });
+                                        }
+
+                                      }
+                                    }else{
+                                      Utils.showError(this.context,"Provide all Required Information");
                                     }
                                   },
                                   child: Card(
@@ -2205,9 +2276,9 @@ class _POSMainScreenState extends State<POSMainScreen> {
       ),
     );
   }
-  var types=["Create Order","Payment"];
   var discountType=["Cash","Percentage"];
-  String selectedType,selectedDiscountType;
+  var priceWithDiscount=0.0,deductedPrice=0.0;
+  String selectedType="Payment",selectedDiscountType;
   Widget orderPopupHorizontalTakeAway(){
     return Scaffold(
 
@@ -2249,42 +2320,54 @@ class _POSMainScreenState extends State<POSMainScreen> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
+                                  // Expanded(
+                                  //   child: Padding(
+                                  //     padding: const EdgeInsets.all(8.0),
+                                  //     child: DropdownButtonFormField<String>(
+                                  //       decoration: InputDecoration(
+                                  //         labelText: "Select Type",
+                                  //         alignLabelWithHint: true,
+                                  //         labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                  //         enabledBorder: OutlineInputBorder(
+                                  //         ),
+                                  //         focusedBorder:  OutlineInputBorder(
+                                  //           borderSide: BorderSide(color:yellowColor),
+                                  //         ),
+                                  //       ),
+                                  //
+                                  //       value: selectedType,
+                                  //       onChanged: (Value) {
+                                  //         innersetState(() {
+                                  //           selectedType = Value;
+                                  //         });
+                                  //       },
+                                  //       items: types.map((value) {
+                                  //         return  DropdownMenuItem<String>(
+                                  //           value: value,
+                                  //           child: Row(
+                                  //             children: <Widget>[
+                                  //               Text(
+                                  //                 value,
+                                  //                 style:  TextStyle(color: yellowColor,fontSize: 13),
+                                  //               ),
+                                  //               //user.icon,
+                                  //               //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                  //             ],
+                                  //           ),
+                                  //         );
+                                  //       }).toList(),
+                                  //     ),
+                                  //   ),
+                                  // ),
                                   Expanded(
                                     child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: DropdownButtonFormField<String>(
+                                      padding: EdgeInsets.all(8.0),
+                                      child: TextFormField(
+                                        controller: customerName,
                                         decoration: InputDecoration(
-                                          labelText: "Select Type",
-                                          alignLabelWithHint: true,
-                                          labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                          enabledBorder: OutlineInputBorder(
-                                          ),
-                                          focusedBorder:  OutlineInputBorder(
-                                            borderSide: BorderSide(color:yellowColor),
-                                          ),
+                                          border: OutlineInputBorder(),
+                                          hintText: "Customer Name*",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                         ),
-
-                                        value: selectedType,
-                                        onChanged: (Value) {
-                                          innersetState(() {
-                                            selectedType = Value;
-                                          });
-                                        },
-                                        items: types.map((value) {
-                                          return  DropdownMenuItem<String>(
-                                            value: value,
-                                            child: Row(
-                                              children: <Widget>[
-                                                Text(
-                                                  value,
-                                                  style:  TextStyle(color: yellowColor,fontSize: 13),
-                                                ),
-                                                //user.icon,
-                                                //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                              ],
-                                            ),
-                                          );
-                                        }).toList(),
                                       ),
                                     ),
                                   ),
@@ -2316,42 +2399,20 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 ],
                               ),
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Expanded(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(8.0),
-                                      child: TextFormField(
-                                        controller: customerName,
-                                        decoration: InputDecoration(
-                                          border: OutlineInputBorder(),
-                                          hintText: "Customer Name*",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: TextFormField(
-                                        controller: customerPhone,
-                                        decoration: InputDecoration(
-                                          border: OutlineInputBorder(),
-                                          hintText: "Customer Phone# *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-
-                                ],
-                              ),
-
-                              Row(
                                 children: [
                                   Expanded(
                                     child: Column(
                                       children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: TextFormField(
+                                            controller: customerPhone,
+                                            decoration: InputDecoration(
+                                              border: OutlineInputBorder(),
+                                              hintText: "Customer Phone# *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ),
                                         Padding(
                                           padding: const EdgeInsets.all(8.0),
                                           child: DropdownButtonFormField<String>(
@@ -2370,6 +2431,30 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             onChanged: (Value) {
                                               innersetState(() {
                                                 selectedDiscountType = Value;
+                                                priceWithDiscount=overallTotalPriceWithTax;
+                                                deductedPrice=0.0;
+                                                if(typeBasedTaxes.last.name=="Discount"){
+                                                  priceWithDiscount=overallTotalPriceWithTax;
+                                                  typeBasedTaxes.remove(typeBasedTaxes.last);
+                                                }
+                                                if(discountValue.text.isNotEmpty){
+                                                  if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
+                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(discountValue.text));
+                                                    setState(() {
+                                                      deductedPrice=tempPercentage;
+                                                    });
+                                                    priceWithDiscount=priceWithDiscount-tempPercentage;
+                                                    typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(discountValue.text)));
+                                                  }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
+                                                    setState(() {
+                                                      deductedPrice=double.parse(discountValue.text);
+                                                    });
+                                                    var tempSum=overallTotalPriceWithTax-double.parse(discountValue.text);
+                                                    priceWithDiscount=tempSum;
+                                                    print("cash Discounted "+priceWithDiscount.toString());
+                                                    typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(discountValue.text)));
+                                                  }
+                                                }
                                               });
                                             },
                                             items: discountType.map((value) {
@@ -2395,23 +2480,30 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             controller: discountValue,
                                             onChanged: (value){
                                               innersetState(() {
-                                                if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                                  if(overallTotalPriceWithTax!=0.0){
+                                                priceWithDiscount=overallTotalPriceWithTax;
+                                                if(typeBasedTaxes.last.name=="Discount"){
+                                                  //priceWithDiscount=overallTotalPriceWithTax;
+                                                  typeBasedTaxes.remove(typeBasedTaxes.last);
+                                                }
+                                                if(value.isNotEmpty){
+                                                  if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
                                                     var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
-                                                    print("discount with Priority "+tempPercentage.toString());
-                                                  }else{
-                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
-                                                    print("discount without Priority "+tempPercentage.toString());
-                                                  }
-                                                }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
-                                                  if(overallTotalPriceWithTax!=0.0){
-                                                   var tempSum=overallTotalPriceWithTax-double.parse(value);
-                                                    print("discount with Priority "+tempSum.toString());
-                                                  }else{
+                                                    priceWithDiscount=priceWithDiscount-tempPercentage;
+                                                    setState(() {
+                                                      deductedPrice=tempPercentage;
+                                                    });
+                                                    typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(value)));
+                                                  }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
                                                     var tempSum=overallTotalPriceWithTax-double.parse(value);
-                                                    print("discount without Priority "+tempSum.toString());
+                                                    setState(() {
+                                                      deductedPrice=double.parse(discountValue.text);
+                                                    });
+                                                    priceWithDiscount=tempSum;
+                                                    print("cash Discounted "+priceWithDiscount.toString());
+                                                    typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(value)));
                                                   }
                                                 }
+
                                               });
 
                                             },
@@ -2429,7 +2521,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                       children: [
                                         Container(
                                           width: MediaQuery.of(context).size.width,
-                                          height: 40,
+                                          height: 50,
                                           color: yellowColor,
                                           child: Padding(
                                             padding: const EdgeInsets.all(8.0),
@@ -2487,7 +2579,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                   context)
                                                   .size
                                                   .width,
-                                              height: 75,
+                                              height: 125,
                                               decoration: BoxDecoration(
                                                 border: Border.all(color: yellowColor),
                                                 //borderRadius: BorderRadius.circular(8)
@@ -2517,13 +2609,13 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                       Row(
                                                         children: [
                                                           Text(
-                                                            typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+": "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?widget.store["currencyCode"]+" "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):"",                                                      style: TextStyle(
-                                                                fontSize:
-                                                                16,
-                                                                color:
-                                                                blueColor,
-                                                                fontWeight:
-                                                                FontWeight.bold),
+                                                            typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"]+": "+(overallTotalPriceWithTax/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1),style: TextStyle(
+                                                              fontSize:
+                                                              16,
+                                                              color:
+                                                              blueColor,
+                                                              fontWeight:
+                                                              FontWeight.bold),
                                                           ),
                                                         ],
                                                       ),
@@ -2535,7 +2627,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         ),
                                         Container(
                                           width: MediaQuery.of(context).size.width,
-                                          height: 40,
+                                          height: 50,
                                           color: yellowColor,
                                           child: Padding(
                                             padding: const EdgeInsets.all(8.0),
@@ -2571,7 +2663,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                       width: 2,
                                                     ),
                                                     Text(
-                                                      overallTotalPriceWithTax!=null&&overallTotalPriceWithTax!=0.0?overallTotalPriceWithTax.toStringAsFixed(1)+"/-":overallTotalPrice.toStringAsFixed(1)+"/-",
+                                                      priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(1)+"/-":overallTotalPriceWithTax.toStringAsFixed(1)+"/-",
                                                       style: TextStyle(
                                                           fontSize:
                                                           20,
@@ -2595,8 +2687,8 @@ class _POSMainScreenState extends State<POSMainScreen> {
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: InkWell(
-                                  onTap: (){
-                                    if(customerName.text!=null&&customerName.text!=""){
+                                  onTap: ()async{
+                                    if(customerName.text!=null&&customerName.text.isNotEmpty&&customerPhone.text.isNotEmpty&&timePickerField.text.isNotEmpty){
                                       for(int i=0;i<cartList.length;i++){
                                         orderItems.add({
                                           "dealid":cartList[i].dealId,
@@ -2617,7 +2709,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         "storeId":widget.store["id"],
                                         "DeviceToken":null,
                                         "ordertype":2,
-                                        "NetTotal":overallTotalPriceWithTax,
+                                        "NetTotal":overallTotalPrice,
                                         //  "grosstotal":widget.netTotal,
                                         "comment":null,
                                         "TableId":null,
@@ -2637,10 +2729,38 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         
                                         "CustomerContactNo":customerPhone.text,
                                         "employeeId": int.parse(userId),
-                                        "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false
+                                        "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false,
+                                        "CreatedOn":DateTime.now(),
+                                        "discountedPrice":deductedPrice,
                                       };
-                                      Utils.check_connectivity().then((isConnected){
-                                        if(isConnected){
+                                      var result= await Utils.check_connection();
+                                      if(result == ConnectivityResult.none){
+                                        var offlineOrderList=[];
+                                        //final body = jsonEncode(order,toEncodable: Utils.myEncode);
+                                        var exists = await Utils.checkOfflineDataExists("addOrderStaff");
+                                        if(exists){
+                                          offlineData = await Utils.getOfflineData("addOrderStaff");
+                                          //print(offlineData.syncData);
+
+                                          for(int i=0;i<jsonDecode(offlineData.syncData).length;i++){
+                                            print(jsonDecode(offlineData.syncData)[i]);
+                                            offlineOrderList.add(jsonDecode(offlineData.syncData)[i]);
+                                          }
+                                          offlineOrderList.add(order);
+                                        }else
+                                          offlineOrderList.add(order);
+
+                                        //offlineOrderList.add(body);
+                                        await Utils.addOfflineData("addOrderStaff",jsonEncode(offlineOrderList));
+                                        offlineData = await Utils.getOfflineData("addOrderStaff");
+                                        Utils.showSuccess(context, "Your Order Stored Offline");
+                                      }
+                                      else if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
+                                        var exists = await Utils.checkOfflineDataExists("addOrderStaff");
+                                        if(exists){
+                                          offlineData = await Utils.getOfflineData("addOrderStaff");
+                                          showAlertDialog(context,offlineData);
+                                        }else{
                                           SharedPreferences.getInstance().then((prefs){
                                             setState(() {
                                               isLoading=true;
@@ -2648,7 +2768,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             });
                                             Network_Operations.placeOrder(context, prefs.getString("token"), order).then((orderPlaced){
                                               if(orderPlaced!=null){
-                                                print("Order Placed "+orderPlaced.toString());
                                                 orderItems.clear();
                                                 sqlite_helper().getcart1().then((value) {
                                                   setState(() {
@@ -2662,43 +2781,35 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                     overallTotalPrice=value[0]["SUM(totalPrice)"];
                                                   });
                                                 });
-                                                if(selectedType=="Payment"){
-
-                                                    var payCash ={
-                                                      "orderid": jsonDecode(orderPlaced)["id"],
-                                                      "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
-                                                      "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
-                                                      "Comment": null,
-                                                      "PaymentType": 1,
-                                                      "OrderStatus": 7,
-                                                      //"ActualDeliveryTime": DateTime.now().toString().substring(11,16)
-                                                    };
-                                                    print("PayCash "+payCash.toString());
-                                                    Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
-                                                      if(isPaid){
-                                                        Utils.showSuccess(this.context,"Payment Successful");
-                                                      }else{
-                                                        Utils.showError(this.context,"Problem in Making Payment");
-                                                      }
-                                                    });
-                                                    buildInvoice();
+                                                if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
+                                                  var payCash ={
+                                                    "orderid": jsonDecode(orderPlaced)["id"],
+                                                    "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                                                    "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                                                    "Comment": null,
+                                                    "PaymentType": 1,
+                                                    "OrderStatus": 7,
+                                                  };
+                                                  Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
+                                                    if(isPaid){
+                                                      Utils.showSuccess(this.context,"Payment Successful");
+                                                    }else{
+                                                      Utils.showError(this.context,"Problem in Making Payment");
+                                                    }
+                                                  });
+                                                  buildInvoice();
                                                 }
                                                 Utils.showSuccess(this.context,"Order Placed successfully");
                                               }else{
-                                                setState(() {
-                                                  isLoading=false;
-                                                });
                                                 Utils.showError(this.context,"Unable to Place Order");
                                               }
                                             });
                                           });
-                                        }else{
-                                          setState(() {
-                                            isLoading=false;
-                                          });
                                         }
-                                      });
 
+                                      }
+                                    }else{
+                                      Utils.showError(this.context,"Provide all Required Information");
                                     }
                                   },
                                   child: Card(
@@ -2779,45 +2890,45 @@ class _POSMainScreenState extends State<POSMainScreen> {
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: DropdownButtonFormField<String>(
-                                        decoration: InputDecoration(
-                                          labelText: "Select Type",
-                                          alignLabelWithHint: true,
-                                          labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                          enabledBorder: OutlineInputBorder(
-                                          ),
-                                          focusedBorder:  OutlineInputBorder(
-                                            borderSide: BorderSide(color:yellowColor),
-                                          ),
-                                        ),
-
-                                        value: selectedType,
-                                        onChanged: (Value) {
-                                          innersetState(() {
-                                            selectedType = Value;
-                                          });
-                                        },
-                                        items: types.map((value) {
-                                          return  DropdownMenuItem<String>(
-                                            value: value,
-                                            child: Row(
-                                              children: <Widget>[
-                                                Text(
-                                                  value,
-                                                  style:  TextStyle(color: yellowColor,fontSize: 13),
-                                                ),
-                                                //user.icon,
-                                                //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                              ],
-                                            ),
-                                          );
-                                        }).toList(),
-                                      ),
-                                    ),
-                                  ),
+                                  // Expanded(
+                                  //   child: Padding(
+                                  //     padding: const EdgeInsets.all(8.0),
+                                  //     child: DropdownButtonFormField<String>(
+                                  //       decoration: InputDecoration(
+                                  //         labelText: "Select Type",
+                                  //         alignLabelWithHint: true,
+                                  //         labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                  //         enabledBorder: OutlineInputBorder(
+                                  //         ),
+                                  //         focusedBorder:  OutlineInputBorder(
+                                  //           borderSide: BorderSide(color:yellowColor),
+                                  //         ),
+                                  //       ),
+                                  //
+                                  //       value: selectedType,
+                                  //       onChanged: (Value) {
+                                  //         innersetState(() {
+                                  //           selectedType = Value;
+                                  //         });
+                                  //       },
+                                  //       items: types.map((value) {
+                                  //         return  DropdownMenuItem<String>(
+                                  //           value: value,
+                                  //           child: Row(
+                                  //             children: <Widget>[
+                                  //               Text(
+                                  //                 value,
+                                  //                 style:  TextStyle(color: yellowColor,fontSize: 13),
+                                  //               ),
+                                  //               //user.icon,
+                                  //               //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                  //             ],
+                                  //           ),
+                                  //         );
+                                  //       }).toList(),
+                                  //     ),
+                                  //   ),
+                                  // ),
                                   Expanded(
                                     child: Padding(
                                       padding: const EdgeInsets.all(12.0),
@@ -2838,7 +2949,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                           innersetState(() {
                                             selectedTable=Value;
                                             selectedTableId=tables[tables.indexOf(tables.where((element) =>element["name"]==selectedTable).toList()[0])]["id"];
-                                            print("Selected Table Id"+selectedTableId.toString());
                                           });
                                         },
                                         items: tables.map((value) {
@@ -2859,11 +2969,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                       ),
                                     ),
                                   ),
-                                ],
-                              ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
                                   Expanded(
                                     child: Padding(
                                       padding: EdgeInsets.all(8.0),
@@ -2876,18 +2981,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                       ),
                                     ),
                                   ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: TextFormField(
-                                        controller: customerPhone,
-                                        decoration: InputDecoration(
-                                          border: OutlineInputBorder(),
-                                          hintText: "Customer Phone# *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
                                 ],
                               ),
 
@@ -2896,6 +2989,16 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                   Expanded(
                                     child: Column(
                                       children: [
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: TextFormField(
+                                            controller: customerPhone,
+                                            decoration: InputDecoration(
+                                              border: OutlineInputBorder(),
+                                              hintText: "Customer Phone# *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ),
                                         Padding(
                                           padding: const EdgeInsets.all(8.0),
                                           child: DropdownButtonFormField<String>(
@@ -2914,6 +3017,30 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             onChanged: (Value) {
                                               innersetState(() {
                                                 selectedDiscountType = Value;
+                                                priceWithDiscount=overallTotalPriceWithTax;
+                                                deductedPrice=0.0;
+                                                if(typeBasedTaxes.last.name=="Discount"){
+                                                  priceWithDiscount=overallTotalPriceWithTax;
+                                                  typeBasedTaxes.remove(typeBasedTaxes.last);
+                                                }
+                                                if(discountValue.text.isNotEmpty){
+                                                  if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
+                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(discountValue.text));
+                                                    setState(() {
+                                                      deductedPrice=tempPercentage;
+                                                    });
+                                                    priceWithDiscount=priceWithDiscount-tempPercentage;
+                                                    typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(discountValue.text)));
+                                                  }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
+                                                    setState(() {
+                                                      deductedPrice=double.parse(discountValue.text);
+                                                    });
+                                                    var tempSum=overallTotalPriceWithTax-double.parse(discountValue.text);
+                                                    priceWithDiscount=tempSum;
+                                                    print("cash Discounted "+priceWithDiscount.toString());
+                                                    typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(discountValue.text)));
+                                                  }
+                                                }
                                               });
                                             },
                                             items: discountType.map((value) {
@@ -2937,19 +3064,33 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                           padding: EdgeInsets.all(8.0),
                                           child: TextFormField(
                                             controller: discountValue,
-                                            onEditingComplete: (){
-                                              innersetState(() {
-                                                if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                                  var tempPercentage=(overallTotalPriceWithTax/100*double.parse(discountValue.text));
-                                                  typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(discountValue.text)));
-                                                }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
-                                                  var tempSum=overallTotalPriceWithTax-double.parse(discountValue.text);
-                                                  typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(discountValue.text)));
-                                                }
-                                              });
-                                            },
                                             onChanged: (value){
+                                              innersetState(() {
+                                                priceWithDiscount=overallTotalPriceWithTax;
+                                                if(typeBasedTaxes.last.name=="Discount"){
+                                                  //priceWithDiscount=overallTotalPriceWithTax;
+                                                  typeBasedTaxes.remove(typeBasedTaxes.last);
+                                                }
+                                                if(value.isNotEmpty){
+                                                  if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
+                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
+                                                    priceWithDiscount=priceWithDiscount-tempPercentage;
+                                                    setState(() {
+                                                      deductedPrice=tempPercentage;
+                                                    });
+                                                    typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(value)));
+                                                  }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
+                                                    var tempSum=overallTotalPriceWithTax-double.parse(value);
+                                                    setState(() {
+                                                      deductedPrice=double.parse(discountValue.text);
+                                                    });
+                                                    priceWithDiscount=tempSum;
+                                                    print("cash Discounted "+priceWithDiscount.toString());
+                                                    typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(value)));
+                                                  }
+                                                }
 
+                                              });
 
                                             },
                                             decoration: InputDecoration(
@@ -2966,7 +3107,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                       children: [
                                         Container(
                                           width: MediaQuery.of(context).size.width,
-                                          height: 40,
+                                          height: 50,
                                           color: yellowColor,
                                           child: Padding(
                                             padding: const EdgeInsets.all(8.0),
@@ -3024,7 +3165,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                   context)
                                                   .size
                                                   .width,
-                                              height: 75,
+                                              height: 125,
                                               decoration: BoxDecoration(
                                                 border: Border.all(color: yellowColor),
                                                 //borderRadius: BorderRadius.circular(8)
@@ -3054,7 +3195,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                       Row(
                                                         children: [
                                                           Text(
-                                                            typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):"",                                                      style: TextStyle(
+                                                            typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"]+": "+(overallTotalPriceWithTax/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1),style: TextStyle(
                                                               fontSize:
                                                               16,
                                                               color:
@@ -3072,7 +3213,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         ),
                                         Container(
                                           width: MediaQuery.of(context).size.width,
-                                          height: 40,
+                                          height: 50,
                                           color: yellowColor,
                                           child: Padding(
                                             padding: const EdgeInsets.all(8.0),
@@ -3108,7 +3249,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                       width: 2,
                                                     ),
                                                     Text(
-                                                      overallTotalPriceWithTax!=null&&overallTotalPriceWithTax!=0.0?overallTotalPriceWithTax.toStringAsFixed(1)+"/-":overallTotalPrice.toStringAsFixed(1)+"/-",
+                                                      priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(1)+"/-":overallTotalPriceWithTax.toStringAsFixed(1)+"/-",
                                                       style: TextStyle(
                                                           fontSize:
                                                           20,
@@ -3132,8 +3273,8 @@ class _POSMainScreenState extends State<POSMainScreen> {
                               Padding(
                                 padding: const EdgeInsets.all(8.0),
                                 child: InkWell(
-                                  onTap: (){
-                                    if(customerName.text!=null&&customerName.text.isNotEmpty&&selectedTableId!=null){
+                                  onTap: ()async{
+                                    if(customerName.text!=null&&customerName.text.isNotEmpty&&selectedTableId!=null&&customerPhone.text.isNotEmpty){
                                       for(int i=0;i<cartList.length;i++){
                                         orderItems.add({
                                           "dealid":cartList[i].dealId,
@@ -3170,65 +3311,92 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         "OrderTaxes":taxesList,
                                         "VoucherCode": "",
                                         "OrderStatus":1,
+                                        "discountedPrice":deductedPrice,
                                         "customerName":customerName.text,
                                         "CustomerContactNo":customerPhone.text,
                                         "employeeId": int.parse(userId),
-                                        "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false
+                                        "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false,
+                                        "CreatedOn":DateTime.now(),
                                       };
-                                      print(order.toString());
-                                      SharedPreferences.getInstance().then((prefs){
-                                        setState(() {
-                                          isLoading=true;
-                                          Navigator.of(context).pop(context);
-                                        });
-                                        Network_Operations.placeOrder(context, prefs.getString("token"), order).then((orderPlaced){
-                                          if(orderPlaced!=null){
-                                            setState(() {
-                                              this.ordersList=jsonDecode(orderPlaced);
-                                            });
-                                            orderItems.clear();
-                                            sqlite_helper().getcart1().then((value) {
-                                              setState(() {
-                                                cartList.clear();
-                                                cartList = value;
-                                                isLoading=false;
-                                              });
-                                            });
-                                            sqlite_helper().gettotal().then((value){
-                                              setState(() {
-                                                overallTotalPrice=value[0]["SUM(totalPrice)"];
-                                              });
-                                            });
-                                            if(selectedType=="Payment"){
+                                      debugPrint(jsonEncode(order,toEncodable: Utils.myEncode));
+                                      var result= await Utils.check_connection();
+                                      if(result == ConnectivityResult.none){
+                                        var offlineOrderList=[];
+                                        //final body = jsonEncode(order,toEncodable: Utils.myEncode);
+                                        var exists = await Utils.checkOfflineDataExists("addOrderStaff");
+                                        if(exists){
+                                          print("in if");
+                                          offlineData = await Utils.getOfflineData("addOrderStaff");
+                                          //print(offlineData.syncData);
 
-                                                var payCash ={
-                                                  "orderid": jsonDecode(orderPlaced)["id"],
-                                                  "CashPay": overallTotalPriceWithTax,
-                                                  "Balance": overallTotalPriceWithTax,
-                                                  "Comment": null,
-                                                  "PaymentType": 1,
-                                                  "OrderStatus": 7,
-                                                  //"ActualDeliveryTime": DateTime.now().toString().substring(11,16)
-                                                };
-                                                   print(payCash.toString());
-                                                Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
-                                                  if(isPaid){
-                                                    Utils.showSuccess(this.context,"Payment Successful");
-                                                  }else{
-                                                    Utils.showError(this.context,"Problem in Making Payment");
-                                                  }
-                                                });
-                                               buildInvoice();
-                                            }
-                                            Utils.showSuccess(this.context,"Order Placed successfully");
-                                          }else{
-                                            setState(() {
-                                              isLoading=false;
-                                            });
-                                            Utils.showError(this.context,"Unable to Place Order");
+                                          for(int i=0;i<jsonDecode(offlineData.syncData).length;i++){
+                                            print(jsonDecode(offlineData.syncData)[i]);
+                                            offlineOrderList.add(jsonDecode(offlineData.syncData)[i]);
                                           }
-                                        });
-                                      });
+                                          offlineOrderList.add(order);
+                                        }else
+                                          offlineOrderList.add(order);
+
+                                        //offlineOrderList.add(body);
+                                        await Utils.addOfflineData("addOrderStaff",jsonEncode(offlineOrderList));
+                                        offlineData = await Utils.getOfflineData("addOrderStaff");
+                                        Utils.showSuccess(context, "Your Order Stored Offline");
+                                      }
+                                      else if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
+                                        var exists = await Utils.checkOfflineDataExists("addOrderStaff");
+                                        if(exists){
+                                          offlineData = await Utils.getOfflineData("addOrderStaff");
+                                          showAlertDialog(context,offlineData);
+                                        }else{
+                                          SharedPreferences.getInstance().then((prefs){
+                                            setState(() {
+                                              isLoading=true;
+                                              Navigator.of(context).pop(context);
+                                            });
+                                            Network_Operations.placeOrder(context, prefs.getString("token"), order).then((orderPlaced){
+                                              if(orderPlaced!=null){
+                                                orderItems.clear();
+                                                sqlite_helper().getcart1().then((value) {
+                                                  setState(() {
+                                                    cartList.clear();
+                                                    cartList = value;
+                                                    isLoading=false;
+                                                  });
+                                                });
+                                                sqlite_helper().gettotal().then((value){
+                                                  setState(() {
+                                                    overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                                  });
+                                                });
+                                                if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
+                                                  var payCash ={
+                                                    "orderid": jsonDecode(orderPlaced)["id"],
+                                                    "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                                                    "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                                                    "Comment": null,
+                                                    "PaymentType": 1,
+                                                    "OrderStatus": 7,
+                                                  };
+                                                  Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
+                                                    if(isPaid){
+                                                      Utils.showSuccess(this.context,"Payment Successful");
+                                                    }else{
+                                                      Utils.showError(this.context,"Problem in Making Payment");
+                                                    }
+                                                  });
+                                                  buildInvoice();
+                                                }
+                                                Utils.showSuccess(this.context,"Order Placed successfully");
+                                              }else{
+                                                Utils.showError(this.context,"Unable to Place Order");
+                                              }
+                                            });
+                                          });
+                                        }
+
+                                      }
+                                    }else{
+                                      Utils.showError(this.context,"Provide all Required Information");
                                     }
                                   },
                                   child: Card(
@@ -3744,6 +3912,59 @@ class _POSMainScreenState extends State<POSMainScreen> {
           );
         },
       ),
+    );
+  }
+  showAlertDialog(BuildContext context,APICacheDBModel data) {
+
+    // set up the buttons
+    Widget remindButton = TextButton(
+      child: Text("Cancel"),
+      onPressed:  () {
+        Navigator.pop(context);
+      },
+    );
+    Widget cancelButton = TextButton(
+      child: Text("Delete"),
+      onPressed:  () async{
+        Utils.deleteOfflineData("addOrderStaff");
+        Navigator.pop(context);
+      },
+    );
+    Widget launchButton = TextButton(
+      child: Text("Add From Cache"),
+      onPressed:  () {
+        print(jsonDecode(data.syncData).length);
+        for(int i=0;i<jsonDecode(data.syncData);i++)
+        {
+          Network_Operations.placeOrder(context, token,jsonDecode(data.syncData)[i]).then((value){
+            if(value){
+              Utils.showSuccess(context, "Added Successfully");
+              // Navigator.pop(context);
+            }
+          });
+        }
+        Utils.deleteOfflineData("addOrderStaff");
+        Navigator.pop(context);
+      },
+    );
+
+    // set up the AlertDialog
+    AlertDialog alert = AlertDialog(
+      title: Text("Notice"),
+      content: Text("Data is Available in your Cache do you want to add?"),
+      actions: [
+        remindButton,
+        cancelButton,
+        launchButton,
+      ],
+    );
+
+    // show the dialog
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return alert;
+      },
     );
   }
 }

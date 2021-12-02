@@ -1,4 +1,7 @@
 import 'dart:convert';
+import 'package:api_cache_manager/models/cache_db_model.dart';
+import 'package:api_cache_manager/utils/cache_manager.dart';
+import 'package:connectivity/connectivity.dart';
 import 'package:data_connection_checker/data_connection_checker.dart';
 import 'package:flushbar/flushbar.dart';
 import 'package:flutter/material.dart';
@@ -19,6 +22,27 @@ class Utils{
    static bool validateEmail(String value){
      RegExp regExp=  RegExp(r"^[a-zA-Z0-9.a-zA-Z0-9.!#$%&'*+-/=?^_`{|}~]+@[a-zA-Z0-9]+\.[a-zA-Z]+");
      return regExp.hasMatch(value);
+   }
+   static Future addOfflineData(String key,String offlineData)async{
+     APICacheDBModel cacheDBModel = new APICacheDBModel(
+         key: key, syncData: offlineData);
+     await APICacheManager().addCacheData(cacheDBModel);
+   }
+
+   static void deleteOfflineData(String key)async{
+     await APICacheManager().deleteCache(key);
+   }
+
+   static Future<bool> checkOfflineDataExists(String key)async{
+     return await APICacheManager().isAPICacheKeyExist(key);
+   }
+
+   static Future<APICacheDBModel> getOfflineData(String key)async{
+     return await APICacheManager().getCacheData(key);
+   }
+
+   static Future<ConnectivityResult> check_connection() async {
+     return await (Connectivity().checkConnectivity());
    }
    static dynamic myEncode(dynamic item){
      if(item is DateTime)

@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:ui';
+import 'package:exabistro_pos/Screens/LoadingScreen.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/components/constants.dart';
 import 'package:exabistro_pos/model/Categories.dart';
@@ -7,6 +8,7 @@ import 'package:exabistro_pos/model/OrderById.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pdf/pdf.dart';
@@ -45,7 +47,7 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
   List topping = [];
   List<dynamic> foodList = [];
   List<Map<String,dynamic>> foodList1 = [];
-  bool isListVisible = false;
+  bool isListVisible = true;
   List allTables=[];
   bool selectedCategory = true;
   List<bool> _selected = [];
@@ -93,7 +95,7 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
 
         }
       }
-      return name;
+      return name!=null?name:"-";
     }else
       return "empty";
   }
@@ -101,7 +103,7 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
   Widget build(BuildContext context) {
 
     return Scaffold(
-        appBar: AppBar(
+        appBar:!isListVisible? AppBar(
           automaticallyImplyLeading: false,
           title: Text(
             'Orders History',
@@ -112,7 +114,7 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
           ),
           centerTitle: true,
           backgroundColor: BackgroundColor,
-        ),
+        ):null,
         body: RefreshIndicator(
           key: _refreshIndicatorKey,
           onRefresh: (){
@@ -127,16 +129,21 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                 Network_Operations.getTableList(context,token,widget.store["id"])
                     .then((value) {
                   setState(() {
+                    isListVisible=false;
                     this.allTables = value;
                   });
                 });
               }else{
+                setState(() {
+                  isListVisible=false;
+                });
                 Utils.showError(context, "Network Error");
               }
             });
           },
 
-          child: ListView(
+          child:isListVisible?LoadingScreen():
+            ListView(
             physics: const NeverScrollableScrollPhysics(),
             children: [
               Container(
@@ -206,7 +213,7 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                           Padding(
                             padding: const EdgeInsets.all(5.0),
                             child: Container(
-                              height: MediaQuery.of(context).size.height / 1.45,
+                              height: MediaQuery.of(context).size.height/1.3,
                               width: MediaQuery.of(context).size.width,
                               child: GridView.builder(
                                   gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
@@ -226,7 +233,7 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                               return Dialog(
                                                 //backgroundColor: Colors.transparent,
                                                   child: Container(
-                                                      height:MediaQuery.of(context).size.height -300,
+                                                      height:MediaQuery.of(context).size.height -320,
                                                       width: MediaQuery.of(context).size.width / 3,
                                                       child: ordersDetailPopupLayout(orderList[index])
                                                   )
@@ -251,30 +258,34 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                                         borderRadius: BorderRadius.circular(4),
                                                         color: yellowColor
                                                     ),
-                                                    child: Row(
-                                                      mainAxisAlignment: MainAxisAlignment.center,
-                                                      children: [
-                                                        Row(
-                                                          children: [
-                                                            Text('Order ID: ',
-                                                              style: TextStyle(
-                                                                  fontSize: 35,
-                                                                  fontWeight: FontWeight.bold,
-                                                                  color: Colors.white
+                                                    child: Padding(
+                                                      padding: const EdgeInsets.only(right: 6, left: 6),
+                                                      child: Row(
+                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        children: [
+                                                          Row(
+                                                            children: [
+                                                              Text('Order ID: ',
+                                                                style: TextStyle(
+                                                                    fontSize: 30,
+                                                                    fontWeight: FontWeight.bold,
+                                                                    color: Colors.white
+                                                                ),
                                                               ),
-                                                            ),
-                                                            Text(
-                                                              //"01",
-                                                              orderList[index]['id']!=null?orderList[index]['id'].toString():"",
-                                                              style: TextStyle(
-                                                                  fontSize: 35,
-                                                                  color: blueColor,
-                                                                  fontWeight: FontWeight.bold
+                                                              Text(
+                                                                //"01",
+                                                                orderList[index]['id']!=null?orderList[index]['id'].toString():"",
+                                                                style: TextStyle(
+                                                                    fontSize: 30,
+                                                                    color: blueColor,
+                                                                    fontWeight: FontWeight.bold
+                                                                ),
                                                               ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ],
+                                                            ],
+                                                          ),
+                                                         orderList[index]["orderType"]==1? FaIcon(FontAwesomeIcons.utensils, color: blueColor, size:30):orderList[index]["orderType"]==2?FaIcon(FontAwesomeIcons.shoppingBag, color: blueColor,size:30):FaIcon(FontAwesomeIcons.biking, color: blueColor,size:30)
+                                                        ],
+                                                      ),
                                                     ),
                                                   ),
                                                 ),
@@ -291,7 +302,7 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                                     children: [
                                                       Row(
                                                         children: [
-                                                          Text('Order Type: ',
+                                                          Text('Total: ',
                                                             style: TextStyle(
                                                                 fontSize: 20,
                                                                 fontWeight: FontWeight.bold,
@@ -301,14 +312,27 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                                           Padding(
                                                             padding: EdgeInsets.only(left: 2.5),
                                                           ),
-                                                          Text(
-                                                            //"Dine-In",
-                                                            getOrderType(orderList[index]['orderType']),
-                                                            style: TextStyle(
-                                                                fontSize: 20,
-                                                                fontWeight: FontWeight.bold,
-                                                                color: PrimaryColor
-                                                            ),
+                                                          Row(
+                                                            children: [
+                                                              Text(
+                                                                //"Dine-In",
+                                                                widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                                                style: TextStyle(
+                                                                    fontSize: 20,
+                                                                    fontWeight: FontWeight.bold,
+                                                                    color: PrimaryColor
+                                                                ),
+                                                              ),
+                                                              Text(
+                                                                //"Dine-In",
+                                                                orderList[index]['grossTotal'].toStringAsFixed(1),
+                                                                style: TextStyle(
+                                                                    fontSize: 20,
+                                                                    fontWeight: FontWeight.bold,
+                                                                    color: PrimaryColor
+                                                                ),
+                                                              ),
+                                                            ],
                                                           ),
                                                         ],
                                                       ),
@@ -524,7 +548,7 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                 child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Container(
-                      height:MediaQuery.of(context).size.height -250,
+                      height:MediaQuery.of(context).size.height -320,
                       width: MediaQuery.of(context).size.width / 3,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
@@ -792,7 +816,7 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                           Padding(
                             padding: const EdgeInsets.all(5),
                             child: Container(
-                              height: 330,
+                              height: 280,
                               //color: Colors.transparent,
                               child: ListView.builder(
                                   padding: EdgeInsets.all(4),
@@ -992,7 +1016,6 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                 //     ),
                                 //   ),
                                 // ),
-                                SizedBox(height: 25,),
                                 InkWell(
                                   onTap: (){
                                     buildInvoice(orders);
@@ -1006,7 +1029,7 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                         color: yellowColor,
                                       ),
                                       width: MediaQuery.of(context).size.width,
-                                      height: 60,
+                                      height: 40,
 
                                       child: Center(
                                         child: Text('Print',style: TextStyle(color: BackgroundColor,fontSize: 25,fontWeight: FontWeight.bold),),

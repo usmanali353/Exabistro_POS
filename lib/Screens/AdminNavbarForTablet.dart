@@ -5,6 +5,7 @@ import 'package:exabistro_pos/components/paint/fancy_bottom_navigation.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'LoginScreen.dart';
+import 'OrdersHistoryTab/Components/Screens/PaidOrdersList.dart';
 import 'POSMainScreen.dart';
 
 
@@ -89,7 +90,7 @@ class _AdminNavBarState extends State<AdminNavBarForTablet> {
         return POSMainScreen(store:widget.store);
     //return AdminProfile(widget.storeId,widget.roleId);
       case 1:
-        return PaidTabsScreen(storeId:widget.store);
+        return widget.store["payOut"]!=null&&widget.store["payOut"]==true?PaidOrdersScreenForTab(widget.store):PaidTabsScreen(storeId:widget.store);
           //OrderListsTabsScreen(storeId:widget.store["id"]);
       case 2:
         return DeliveredScreenForTablet(widget.store);

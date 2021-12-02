@@ -7,6 +7,7 @@ import 'package:exabistro_pos/model/OrderById.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:numberpicker/numberpicker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -65,7 +66,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
           name = allTables[i]['name'];
         }
       }
-      return name;
+      return name!=null?name:"-";
     }else
       return "-";
   }
@@ -74,6 +75,18 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
   Widget build(BuildContext context) {
 
     return Scaffold(
+        appBar: widget.store["payOut"]!=null&&widget.store["payOut"]==true? AppBar(
+          automaticallyImplyLeading: false,
+          title: Text(
+            'Today Orders',
+            style: TextStyle(
+                color: yellowColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 35),
+          ),
+          centerTitle: true,
+          backgroundColor: BackgroundColor,
+        ):null,
         body: RefreshIndicator(
           key: _refreshIndicatorKey,
           onRefresh: (){
@@ -230,30 +243,34 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                         borderRadius: BorderRadius.circular(4),
                                                         color: yellowColor
                                                     ),
-                                                    child: Row(
-                                                      mainAxisAlignment: MainAxisAlignment.center,
-                                                      children: [
-                                                        Row(
-                                                          children: [
-                                                            Text('Order ID: ',
-                                                              style: TextStyle(
-                                                                  fontSize: 35,
-                                                                  fontWeight: FontWeight.bold,
-                                                                  color: Colors.white
+                                                    child: Padding(
+                                                      padding: const EdgeInsets.only(right: 6, left: 6),
+                                                      child: Row(
+                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        children: [
+                                                          Row(
+                                                            children: [
+                                                              Text('Order ID: ',
+                                                                style: TextStyle(
+                                                                    fontSize: 30,
+                                                                    fontWeight: FontWeight.bold,
+                                                                    color: Colors.white
+                                                                ),
                                                               ),
-                                                            ),
-                                                            Text(
-                                                              //"01",
-                                                              orderList[index]['id']!=null?orderList[index]['id'].toString():"",
-                                                              style: TextStyle(
-                                                                  fontSize: 35,
-                                                                  color: blueColor,
-                                                                  fontWeight: FontWeight.bold
+                                                              Text(
+                                                                //"01",
+                                                                orderList[index]['id']!=null?orderList[index]['id'].toString():"",
+                                                                style: TextStyle(
+                                                                    fontSize: 30,
+                                                                    color: blueColor,
+                                                                    fontWeight: FontWeight.bold
+                                                                ),
                                                               ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ],
+                                                            ],
+                                                          ),
+                                                          orderList[index]["orderType"]==1? FaIcon(FontAwesomeIcons.utensils, color: blueColor, size:30):orderList[index]["orderType"]==2?FaIcon(FontAwesomeIcons.shoppingBag, color: blueColor,size:30):FaIcon(FontAwesomeIcons.biking, color: blueColor,size:30)
+                                                        ],
+                                                      ),
                                                     ),
                                                   ),
                                                 ),
@@ -270,7 +287,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                     children: [
                                                       Row(
                                                         children: [
-                                                          Text('Order Type: ',
+                                                          Text('Total: ',
                                                             style: TextStyle(
                                                                 fontSize: 20,
                                                                 fontWeight: FontWeight.bold,
@@ -280,14 +297,27 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                           Padding(
                                                             padding: EdgeInsets.only(left: 2.5),
                                                           ),
-                                                          Text(
-                                                            //"Dine-In",
-                                                            getOrderType(orderList[index]['orderType']),
-                                                            style: TextStyle(
-                                                                fontSize: 20,
-                                                                fontWeight: FontWeight.bold,
-                                                                color: PrimaryColor
-                                                            ),
+                                                          Row(
+                                                            children: [
+                                                              Text(
+                                                                //"Dine-In",
+                                                                widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                                                style: TextStyle(
+                                                                    fontSize: 20,
+                                                                    fontWeight: FontWeight.bold,
+                                                                    color: PrimaryColor
+                                                                ),
+                                                              ),
+                                                              Text(
+                                                                //"Dine-In",
+                                                                orderList[index]['grossTotal'].toStringAsFixed(1),
+                                                                style: TextStyle(
+                                                                    fontSize: 20,
+                                                                    fontWeight: FontWeight.bold,
+                                                                    color: PrimaryColor
+                                                                ),
+                                                              ),
+                                                            ],
                                                           ),
                                                         ],
                                                       ),
@@ -823,7 +853,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                     topping=[];
 
                                     for(var items in orders['orderItems'][i]['orderItemsToppings']){
-                                      topping.add(items==[]?"-":items['additionalItem']['stockItemName']+" x${items['quantity'].toString()} \n");
+                                      topping.add(items==[]?"-":items['additionalItem']['stockItemName'].toString()+" x${items['quantity'].toString()} \n");
                                     }
                                     return InkWell(
                                       onTap: () {
@@ -1060,7 +1090,6 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
       order["orderItems"].length.toString(),
     ];
     List<OrderItem> orderitems=OrderItem.listOrderitemFromJson(jsonEncode(order["orderItems"]));
-    print("OrderItems Count "+orderitems.length.toString());
     var invoiceData=orderitems.map((cartItems){
       return [
         cartItems.name.toString(),
@@ -1220,7 +1249,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                     child: pw.Text("SubTotal",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
                                                 ),
                                                 pw.Text(
-                                                    order["netTotal"].toString(),
+                                                    order["netTotal"].toStringAsFixed(1),
                                                     style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
                                                 )
                                               ]
@@ -1234,7 +1263,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                     child: pw.Text("Tax",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
                                                 ),
                                                 pw.Text(
-                                                    (order["grossTotal"]-order["netTotal"]).toString(),
+                                                    (order["grossTotal"]-order["netTotal"]).toStringAsFixed(1),
                                                     style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
                                                 )
                                               ]
@@ -1249,7 +1278,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                     child: pw.Text("Total",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
                                                 ),
                                                 pw.Text(
-                                                    order["grossTotal"].toString(),
+                                                    order["grossTotal"].toStringAsFixed(1),
                                                     style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
                                                 )
                                               ]
