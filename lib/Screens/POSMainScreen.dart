@@ -62,7 +62,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
   TextEditingController addnotes, applyVoucher;
   String orderType;
   int orderTypeId;
-  var voucherValidity;
+  var voucherValidity,currentDailySession;
   APICacheDBModel offlineData;
   var selectedOrderType,selectedOrderTypeId,selectedWaiter,selectedWaiterId,selectedTable,selectedTableId;
   TextEditingController timePickerField,customerName,customerPhone,customerEmail,customerAddress,discountValue;
@@ -81,10 +81,17 @@ class _POSMainScreenState extends State<POSMainScreen> {
       DeviceOrientation.landscapeLeft,
     ]);
     SharedPreferences.getInstance().then((prefs){
+      setState(() {
+        this.token=prefs.getString("token");
+      });
+      Network_Operations.getDailySessionByStoreId(context, prefs.getString("token"),widget.store["id"]).then((dailySession){
+        setState(() {
+          currentDailySession=dailySession;
+        });
+      });
       Network_Operations.getCategory(context,prefs.getString("token"),widget.store["id"],"")
           .then((sub) {
         setState(() {
-          print("sub "+sub.toString());
           if (sub != null && sub.length > 0) {
             for(int i = 0;i<sub.length;i++){
               if((int.parse(sub[i].startTime.substring(0,2)) <= TimeOfDay.now().hour ||
@@ -2130,7 +2137,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         });
                                       }
                                       dynamic order = {
-                                        "DailySessionNo": 7,
+                                        "DailySessionNo": currentDailySession!=null?currentDailySession:7,
                                         "storeId":widget.store["id"],
                                         "DeviceToken":null,
                                         "ordertype":3,
@@ -2176,9 +2183,10 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                           offlineOrderList.add(order);
 
                                         //offlineOrderList.add(body);
-                                        await Utils.addOfflineData("addOrderStaff",jsonEncode(offlineOrderList));
+                                        await Utils.addOfflineData("addOrderStaff",jsonEncode(offlineOrderList,toEncodable: Utils.myEncode));
                                         offlineData = await Utils.getOfflineData("addOrderStaff");
-                                        Utils.showSuccess(context, "Your Order Stored Offline");
+                                        Utils.showSuccess(this.context, "Your Order Stored Offline");
+                                        Navigator.pop(context);
                                       }
                                       else if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
                                         var exists = await Utils.checkOfflineDataExists("addOrderStaff");
@@ -2229,7 +2237,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                 setState(() {
                                                   isLoading=false;
                                                 });
-                                                print("Place Order Response "+orderPlaced.toString());
                                                 Utils.showError(this.context,"Unable to Place Order");
                                               }
                                             });
@@ -2705,7 +2712,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                       }
                                       print(taxesList);
                                       dynamic order = {
-                                        "DailySessionNo": 7,
+                                        "DailySessionNo": currentDailySession!=null?currentDailySession:7,
                                         "storeId":widget.store["id"],
                                         "DeviceToken":null,
                                         "ordertype":2,
@@ -2751,9 +2758,10 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                           offlineOrderList.add(order);
 
                                         //offlineOrderList.add(body);
-                                        await Utils.addOfflineData("addOrderStaff",jsonEncode(offlineOrderList));
+                                        await Utils.addOfflineData("addOrderStaff",jsonEncode(offlineOrderList,toEncodable: Utils.myEncode));
                                         offlineData = await Utils.getOfflineData("addOrderStaff");
-                                        Utils.showSuccess(context, "Your Order Stored Offline");
+                                        Utils.showSuccess(this.context, "Your Order Stored Offline");
+                                        Navigator.pop(context);
                                       }
                                       else if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
                                         var exists = await Utils.checkOfflineDataExists("addOrderStaff");
@@ -3292,7 +3300,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
 
                                       dynamic order = {
                                         "DineInEndTime":DateFormat("HH:mm:ss").format(DateTime.now().add(Duration(hours: 1))),
-                                        "DailySessionNo": 7,
+                                        "DailySessionNo": currentDailySession!=null?currentDailySession:7,
                                         "TableId":selectedTableId!=null?selectedTableId:null,
                                         "storeId":widget.store["id"],
                                         "DeviceToken":null,
@@ -3338,9 +3346,10 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                           offlineOrderList.add(order);
 
                                         //offlineOrderList.add(body);
-                                        await Utils.addOfflineData("addOrderStaff",jsonEncode(offlineOrderList));
+                                        await Utils.addOfflineData("addOrderStaff",jsonEncode(offlineOrderList,toEncodable: Utils.myEncode));
                                         offlineData = await Utils.getOfflineData("addOrderStaff");
-                                        Utils.showSuccess(context, "Your Order Stored Offline");
+                                        Utils.showSuccess(this.context, "Your Order Stored Offline");
+                                        Navigator.pop(context);
                                       }
                                       else if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
                                         var exists = await Utils.checkOfflineDataExists("addOrderStaff");
@@ -3934,12 +3943,27 @@ class _POSMainScreenState extends State<POSMainScreen> {
       child: Text("Add From Cache"),
       onPressed:  () {
         print(jsonDecode(data.syncData).length);
-        for(int i=0;i<jsonDecode(data.syncData);i++)
+        for(int i=0;i<jsonDecode(data.syncData).length;i++)
         {
-          Network_Operations.placeOrder(context, token,jsonDecode(data.syncData)[i]).then((value){
-            if(value){
-              Utils.showSuccess(context, "Added Successfully");
-              // Navigator.pop(context);
+          Network_Operations.placeOrder(context,token,jsonDecode(data.syncData)[i]).then((value){
+            if(value!=null){
+             if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
+               var payCash ={
+                 "orderid": jsonDecode(data.syncData)[i]["id"],
+                 "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                 "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                 "Comment": null,
+                 "PaymentType": 1,
+                 "OrderStatus": 7,
+               };
+               Network_Operations.payCashOrder(this.context, token, payCash).then((isPaid){
+                 if(isPaid){
+                   Utils.showSuccess(this.context,"Payment Successful");
+                 }else{
+                   Utils.showError(this.context,"Problem in Making Payment");
+                 }
+               });
+             }
             }
           });
         }

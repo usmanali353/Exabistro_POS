@@ -135,8 +135,16 @@ class Network_Operations{
       if (connectivityResult == ConnectivityResult.none){
         if (isCacheExist) {
           var cacheData = await APICacheManager().getCacheData("productList"+categoryId.toString());
-          return Products.listProductFromJson(cacheData.syncData);
-
+          print(cacheData.syncData);
+          var data= jsonDecode(cacheData.syncData);
+          List<Products> list=List();
+          list.clear();
+          for(int i=0;i<data.length;i++){
+            list.add(Products(name: data[i]['name'],id: data[i]['id'],image: data[i]['image'],
+                subCategoryId: data[i]['subCategoryId'],isVisible: data[i]['isVisible'],orderCount: data[i]['orderCount'],totalQuantityOrdered: data[i]['totalQuantityOrdered'],
+                description: data[i]['description'],storeId: data[i]['storeId'],categoryId: data[i]['categoryId'],productSizes: data[i]['productSizes']));
+          }
+          return list;
         }else{
           Utils.showError(context, "No Offline Data");
         }
@@ -167,7 +175,7 @@ class Network_Operations{
         Utils.showError(context, "You are in Offline mode");
       }
     }catch(e){
-      Utils.showError(context, e.toString());
+      print(e);
     }
     return null;
   }
@@ -388,36 +396,65 @@ class Network_Operations{
     return null;
   }
   static Future<List<Additionals>> getAdditionals(BuildContext context,String token,int productId,int sizeId)async{
-    //ProgressDialog pd = ProgressDialog(context,type: ProgressDialogType.Normal);
-    //pd.show();
     try{
-      Map<String,String> headers = {'Authorization':'Bearer '+token};
-      var response=await http.get(Uri.parse(Utils.baseUrl()+"additionalitems/GetAdditionalItemsByCategorySizeProductId/0/"+"$sizeId/"+productId.toString()),headers: headers);
-      var data= jsonDecode(response.body);
-      if(response.statusCode==200){
-       // pd.hide();
-        return Additionals.listAdditionalsFromJson(response.body);
+      var isCacheExist = await APICacheManager().isAPICacheKeyExist("getAdditional"+productId.toString());
+      var connectivityResult = await (Connectivity().checkConnectivity());
+      if (connectivityResult == ConnectivityResult.none){
+        if (isCacheExist) {
+          var cacheData = await APICacheManager().getCacheData("getAdditional"+productId.toString());
+          return Additionals.listAdditionalsFromJson(cacheData.syncData);
+
+        }else{
+          Utils.showError(context, "No Offline Data");
+        }
       }
-      else{
-      //  pd.hide();
-        Utils.showError(context, "Please Try Again");
+      if(connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi){
+
+        Map<String,String> headers = {'Authorization':'Bearer '+token};
+        var response=await http.get(Uri.parse(Utils.baseUrl()+"additionalitems/GetAdditionalItemsByCategorySizeProductId/0/"+"$sizeId/"+productId.toString()),headers: headers);
+        var data= jsonDecode(response.body);
+        if(response.statusCode==200){
+          APICacheDBModel cacheDBModel = new APICacheDBModel(
+              key: "getAdditional"+productId.toString(), syncData: response.body);
+          await APICacheManager().addCacheData(cacheDBModel);
+          return Additionals.listAdditionalsFromJson(response.body);
+        }
+        else{
+         // pd.hide();
+          Utils.showError(context, "Please Try Again");
+        }
       }
     }catch(e){
-
+      Utils.showError(context, e.toString());
     }
     return null;
   }
   static Future<List<Tax>> getTaxListByStoreId(BuildContext context,int storeId )async{
     try{
-      var response=await http.get(Uri.parse(Utils.baseUrl()+"Taxes/GetAll/"+storeId.toString()));
-      var data= jsonDecode(response.body);
-      print(data);
-      if(response.statusCode==200){
-        return Tax.taxListFromJson(response.body);
+      var isCacheExist = await APICacheManager().isAPICacheKeyExist("getTaxList"+storeId.toString());
+      var connectivityResult = await (Connectivity().checkConnectivity());
+      if (connectivityResult == ConnectivityResult.none){
+        if (isCacheExist) {
+          var cacheData = await APICacheManager().getCacheData("getTaxList"+storeId.toString());
+          print("cache hit");
+          return Tax.taxListFromJson(cacheData.syncData);
+
+        }
       }
-      else{
-        Utils.showError(context, "Please Try Again");
-        return null;
+      if(connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi){
+
+        var response=await http.get(Uri.parse(Utils.baseUrl()+"Taxes/GetAll/"+storeId.toString()));
+        var data= jsonDecode(response.body);
+        if(response.statusCode==200){
+          APICacheDBModel cacheDBModel = new APICacheDBModel(
+              key: "getTaxList"+storeId.toString(), syncData: response.body);
+          await APICacheManager().addCacheData(cacheDBModel);
+          return Tax.taxListFromJson(response.body);
+        }
+        else{
+          Utils.showError(context, "Please Try Again");
+          return null;
+        }
       }
     }catch(e){
       print(e);
@@ -635,5 +672,49 @@ class Network_Operations{
     }
     return null;
   }
+  static Future<dynamic> getDailySessionByStoreId(BuildContext context,String token,int storeId)async{
 
+    try{
+      var isCacheExist = await APICacheManager().isAPICacheKeyExist("getDailySession"+storeId.toString());
+      var connectivityResult = await (Connectivity().checkConnectivity());
+      if (connectivityResult == ConnectivityResult.none){
+        if (isCacheExist) {
+          var cacheData = await APICacheManager().getCacheData("getDailySession"+storeId.toString());
+          return jsonDecode(cacheData.syncData);
+
+        }else{
+          Utils.showError(context, "No Offline Data");
+        }
+      }
+      if(connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi){
+        Map<String,String> headers = {'Authorization':'Bearer '+token};
+        var response=await http.get(Uri.parse(Utils.baseUrl()+"dailysession/getdailysessionno/"+storeId.toString()),headers: headers);
+        var data= jsonDecode(response.body);
+        if(response.statusCode==200){
+          print("abc"+data.toString());
+          APICacheDBModel cacheDBModel = new APICacheDBModel(
+              key: "getDailySession"+storeId.toString(), syncData: response.body);
+          await APICacheManager().addCacheData(cacheDBModel);
+          return data;
+
+        }
+        // else if(response.statusCode == 401){
+        //   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => LoginScreen()), (route) => false);
+        // }
+        else{
+
+          Utils.showError(context, "Please Try Again");
+        }
+      }
+    }catch(e){
+      var claims= Utils.parseJwt(token);
+      if(DateTime.fromMillisecondsSinceEpoch(int.parse(claims['exp'].toString()+"000")).isBefore(DateTime.now())){
+        Utils.showError(context, "Token Expire Please Login Again");
+        // Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => LoginScreen()), (route) => false);
+      }else {
+        Utils.showError(context, "Error Found: $e");
+      }
+    }
+    return null;
+  }
 }

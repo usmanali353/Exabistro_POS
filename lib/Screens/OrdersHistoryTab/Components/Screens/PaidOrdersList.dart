@@ -548,26 +548,23 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
   }
   String waiterName="-",customerName="-";
   Widget ordersDetailPopupLayout(dynamic orders) {
-     print(orders.toString());
     return Scaffold(
         backgroundColor: Colors.white.withOpacity(0.1),
         body: StatefulBuilder(
           builder: (context,innerSetstate){
-            if(orders!=null&&orders["customerId"]!=null) {
+            if(orders!=null&&orders["customerId"]!=null&&customerName!="-") {
               Network_Operations.getCustomerById(
                   context, token, orders["customerId"]).then((customerInfo) {
                 innerSetstate(() {
                   customerName=customerInfo["firstName"];
-                  print("Customer Name "+customerName);
                 });
               });
             }
-            if(orders!=null&&orders["employeeId"]!=null){
+            if(orders!=null&&orders["employeeId"]!=null&&waiterName!="-"){
               Network_Operations.getCustomerById(
                   context, token, orders["employeeId"]).then((waiterInfo) {
                  innerSetstate(() {
                    waiterName=waiterInfo["firstName"];
-                   print("employee Name "+waiterName);
                  });
               });
             }
@@ -1284,6 +1281,20 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                               ]
                                           )
                                       ),
+                                      order["discountedPrice"]!=null&&order["discountedPrice"]!=0.0?pw.Container(
+                                          width: double.infinity,
+                                          child: pw.Row(
+                                              children: [
+                                                pw.Expanded(
+                                                    child: pw.Text("Discount",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
+                                                ),
+                                                pw.Text(
+                                                    order["discountedPrice"].toStringAsFixed(1),
+                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
+                                                )
+                                              ]
+                                          )
+                                      ):pw.Container(),
                                       pw.SizedBox(
                                           height: 2 * PdfPageFormat.mm
                                       ),
@@ -1298,6 +1309,20 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                           height:1,
                                           color: PdfColors.grey400
                                       ),
+                                      order["discountedPrice"]!=null&&order["discountedPrice"]!=0.0?pw.Container(
+                                          width: double.infinity,
+                                          child: pw.Row(
+                                              children: [
+                                                pw.Expanded(
+                                                    child: pw.Text("Total",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
+                                                ),
+                                                pw.Text(
+                                                    (order["grossTotal"]-order["discountedPrice"]).toStringAsFixed(1),
+                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
+                                                )
+                                              ]
+                                          )
+                                      ):pw.Container(),
                                     ]
                                 ),
                               )

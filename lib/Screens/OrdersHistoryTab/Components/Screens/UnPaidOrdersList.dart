@@ -1234,6 +1234,20 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                               ]
                                           )
                                       ),
+                                      order["discountedPrice"]!=null&&order["discountedPrice"]!=0.0?pw.Container(
+                                          width: double.infinity,
+                                          child: pw.Row(
+                                              children: [
+                                                pw.Expanded(
+                                                    child: pw.Text("Discount",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
+                                                ),
+                                                pw.Text(
+                                                    order["discountedPrice"].toStringAsFixed(1),
+                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
+                                                )
+                                              ]
+                                          )
+                                      ):pw.Container(),
                                       pw.SizedBox(
                                           height: 2 * PdfPageFormat.mm
                                       ),
@@ -1248,6 +1262,20 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                           height:1,
                                           color: PdfColors.grey400
                                       ),
+                                      order["discountedPrice"]!=null&&order["discountedPrice"]!=0.0?pw.Container(
+                                          width: double.infinity,
+                                          child: pw.Row(
+                                              children: [
+                                                pw.Expanded(
+                                                    child: pw.Text("Total",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
+                                                ),
+                                                pw.Text(
+                                                    (order["grossTotal"]-order["discountedPrice"]).toStringAsFixed(1),
+                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
+                                                )
+                                              ]
+                                          )
+                                      ):pw.Container(),
                                     ]
                                 ),
                               )
