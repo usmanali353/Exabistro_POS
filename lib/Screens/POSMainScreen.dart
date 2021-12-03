@@ -850,7 +850,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             ),
                                           ),
                                           InkWell(
-                                                onTap: () {
+                                                onTap: () async{
                                                   setState(() {
                                                     overallTotalPriceWithTax=0.0;
                                                     typeBasedTaxes.clear();
@@ -889,16 +889,30 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                     }
                                                   });
 
-                                                  showDialog(context: context, builder:(BuildContext context){
-                                                    return Dialog(
-                                                      backgroundColor: Colors.transparent,
-                                                        child: Container(
-                                                            height:MediaQuery.of(context).size.height - 430,
-                                                            width: MediaQuery.of(context).size.width/2,
-                                                            child: orderPopupHorizontalTakeAway()
-                                                        )
-                                                    );
-                                                  });
+                                                  var result=await Utils.check_connection();
+                                                  if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi) {
+                                                    var exists = await Utils
+                                                        .checkOfflineDataExists(
+                                                        "addOrderStaff");
+                                                    if (exists) {
+                                                      offlineData = await Utils
+                                                          .getOfflineData(
+                                                          "addOrderStaff");
+                                                      showAlertDialog(
+                                                          context, offlineData);
+                                                    }
+                                                  }else{
+                                                    showDialog(context: context, builder:(BuildContext context){
+                                                      return Dialog(
+                                                          backgroundColor: Colors.transparent,
+                                                          child: Container(
+                                                              height:MediaQuery.of(context).size.height - 430,
+                                                              width: MediaQuery.of(context).size.width/2,
+                                                              child: orderPopupHorizontalTakeAway()
+                                                          )
+                                                      );
+                                                    });
+                                                  }
                                                 },
                                             child: Card(
                                               elevation:5,
@@ -922,7 +936,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             ),
                                           ),
                                           InkWell(
-                                                onTap: () {
+                                                onTap: () async{
                                                   setState(() {
                                                     overallTotalPriceWithTax=0.0;
                                                     totalTax=0.0;
@@ -961,16 +975,31 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                     }
 
                                                   });
-                                                  showDialog(context: context, builder:(BuildContext context){
-                                                    return Dialog(
-                                                      backgroundColor: Colors.transparent,
-                                                        child: Container(
-                                                            height:MediaQuery.of(context).size.height - 430,
-                                                            width: MediaQuery.of(context).size.width/2,
-                                                            child: orderPopupHorizontalDelivery()
-                                                        )
-                                                    );
-                                                  });
+                                                  var result=await Utils.check_connection();
+                                                  if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi) {
+                                                    var exists = await Utils
+                                                        .checkOfflineDataExists(
+                                                        "addOrderStaff");
+                                                    if (exists) {
+                                                      offlineData = await Utils
+                                                          .getOfflineData(
+                                                          "addOrderStaff");
+                                                      showAlertDialog(
+                                                          context, offlineData);
+                                                    }
+                                                  }else{
+                                                    showDialog(context: context, builder:(BuildContext context){
+                                                      return Dialog(
+                                                          backgroundColor: Colors.transparent,
+                                                          child: Container(
+                                                              height:MediaQuery.of(context).size.height - 430,
+                                                              width: MediaQuery.of(context).size.width/2,
+                                                              child: orderPopupHorizontalDelivery()
+                                                          )
+                                                      );
+                                                    });
+                                                  }
+
                                                 },
                                             child: Card(
                                               elevation:5,
@@ -1085,29 +1114,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
         });
   }
 
-  Widget listViewLayout(){
-    return ListView.builder(itemCount: 10,itemBuilder: (context, index){
-      return Card(
-        elevation: 8,
-        child: Container(
-          width: MediaQuery.of(context).size.width,
-          height: 120,
-          child: Row(
-            children: [
-              Container(
-                width: 340,
-                height: 120,
-                decoration: BoxDecoration(
-                  color: yellowColor,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-              )
-            ],
-          ),
-        ),
-      );
-    });
-  }
 
   Widget productsLayout() {
     return GridView.builder(
@@ -2185,15 +2191,24 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         //offlineOrderList.add(body);
                                         await Utils.addOfflineData("addOrderStaff",jsonEncode(offlineOrderList,toEncodable: Utils.myEncode));
                                         offlineData = await Utils.getOfflineData("addOrderStaff");
+                                        sqlite_helper().deletecart();
+                                        orderItems.clear();
+                                        sqlite_helper().getcart1().then((value) {
+                                          setState(() {
+                                            cartList.clear();
+                                            cartList = value;
+                                            isLoading=false;
+                                          });
+                                        });
+                                        sqlite_helper().gettotal().then((value){
+                                          setState(() {
+                                            overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                          });
+                                        });
+                                        Navigator.of(context).pop();
                                         Utils.showSuccess(this.context, "Your Order Stored Offline");
-                                        Navigator.pop(context);
                                       }
                                       else if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
-                                        var exists = await Utils.checkOfflineDataExists("addOrderStaff");
-                                        if(exists){
-                                          offlineData = await Utils.getOfflineData("addOrderStaff");
-                                          showAlertDialog(context,offlineData);
-                                        }else{
                                           SharedPreferences.getInstance().then((prefs){
                                             setState(() {
                                               isLoading=true;
@@ -2242,8 +2257,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             });
                                           });
                                         }
-
-                                      }
                                     }else{
                                       Utils.showError(this.context,"Provide all Required Information");
                                     }
@@ -2760,15 +2773,23 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         //offlineOrderList.add(body);
                                         await Utils.addOfflineData("addOrderStaff",jsonEncode(offlineOrderList,toEncodable: Utils.myEncode));
                                         offlineData = await Utils.getOfflineData("addOrderStaff");
+                                        orderItems.clear();
+                                        sqlite_helper().getcart1().then((value) {
+                                          setState(() {
+                                            cartList.clear();
+                                            cartList = value;
+                                            isLoading=false;
+                                          });
+                                        });
+                                        sqlite_helper().gettotal().then((value){
+                                          setState(() {
+                                            overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                          });
+                                        });
+                                        Navigator.of(context).pop();
                                         Utils.showSuccess(this.context, "Your Order Stored Offline");
-                                        Navigator.pop(context);
                                       }
                                       else if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
-                                        var exists = await Utils.checkOfflineDataExists("addOrderStaff");
-                                        if(exists){
-                                          offlineData = await Utils.getOfflineData("addOrderStaff");
-                                          showAlertDialog(context,offlineData);
-                                        }else{
                                           SharedPreferences.getInstance().then((prefs){
                                             setState(() {
                                               isLoading=true;
@@ -2814,8 +2835,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             });
                                           });
                                         }
-
-                                      }
                                     }else{
                                       Utils.showError(this.context,"Provide all Required Information");
                                     }
@@ -3348,8 +3367,22 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         //offlineOrderList.add(body);
                                         await Utils.addOfflineData("addOrderStaff",jsonEncode(offlineOrderList,toEncodable: Utils.myEncode));
                                         offlineData = await Utils.getOfflineData("addOrderStaff");
+                                        sqlite_helper().deletecart();
+                                        orderItems.clear();
+                                        sqlite_helper().getcart1().then((value) {
+                                          setState(() {
+                                            cartList.clear();
+                                            cartList = value;
+                                            isLoading=false;
+                                          });
+                                        });
+                                        sqlite_helper().gettotal().then((value){
+                                          setState(() {
+                                            overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                          });
+                                        });
+                                        Navigator.of(context).pop();
                                         Utils.showSuccess(this.context, "Your Order Stored Offline");
-                                        Navigator.pop(context);
                                       }
                                       else if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
                                         var exists = await Utils.checkOfflineDataExists("addOrderStaff");
@@ -3942,31 +3975,30 @@ class _POSMainScreenState extends State<POSMainScreen> {
     );
     Widget launchButton = TextButton(
       child: Text("Add From Cache"),
-      onPressed:  () {
+      onPressed:  () async {
         print(jsonDecode(data.syncData).length);
         for(int i=0;i<jsonDecode(data.syncData).length;i++)
         {
-          Network_Operations.placeOrder(context,token,jsonDecode(data.syncData)[i]).then((value){
-            if(value!=null){
-             if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
-               var payCash ={
-                 "orderid": jsonDecode(data.syncData)[i]["id"],
-                 "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
-                 "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
-                 "Comment": null,
-                 "PaymentType": 1,
-                 "OrderStatus": 7,
-               };
-               Network_Operations.payCashOrder(this.context, token, payCash).then((isPaid){
-                 if(isPaid){
-                   Utils.showSuccess(this.context,"Payment Successful");
-                 }else{
-                   Utils.showError(this.context,"Problem in Making Payment");
-                 }
-               });
-             }
+          var value= await Network_Operations.placeOrder(context,token,jsonDecode(data.syncData)[i]);
+          if(value!=null){
+            if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
+              var payCash ={
+                "orderid": value["id"],
+                "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                "Comment": null,
+                "PaymentType": 1,
+                "OrderStatus": 7,
+              };
+            bool isPaid = await Network_Operations.payCashOrder(this.context, token, payCash);
+                if(isPaid){
+                  Utils.showSuccess(this.context,"Payment Successful");
+                }else{
+                  Utils.showError(this.context,"Problem in Making Payment");
+                }
+
             }
-          });
+          }
         }
         Utils.deleteOfflineData("addOrderStaff");
         Navigator.pop(context);
