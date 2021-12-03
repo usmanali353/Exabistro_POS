@@ -3463,6 +3463,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
     for (int i = 0; i < 20; i++) {
       inputs.add(false);
     }
+
     return Scaffold(
       backgroundColor: Colors.white.withOpacity(0.1),
       body: StatefulBuilder(
