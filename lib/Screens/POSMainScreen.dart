@@ -900,6 +900,17 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                           "addOrderStaff");
                                                       showAlertDialog(
                                                           context, offlineData);
+                                                    }else{
+                                                      showDialog(context: context, builder:(BuildContext context){
+                                                        return Dialog(
+                                                            backgroundColor: Colors.transparent,
+                                                            child: Container(
+                                                                height:MediaQuery.of(context).size.height - 430,
+                                                                width: MediaQuery.of(context).size.width/2,
+                                                                child: orderPopupHorizontalTakeAway()
+                                                            )
+                                                        );
+                                                      });
                                                     }
                                                   }else{
                                                     showDialog(context: context, builder:(BuildContext context){
@@ -986,6 +997,17 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                           "addOrderStaff");
                                                       showAlertDialog(
                                                           context, offlineData);
+                                                    }else{
+                                                      showDialog(context: context, builder:(BuildContext context){
+                                                        return Dialog(
+                                                            backgroundColor: Colors.transparent,
+                                                            child: Container(
+                                                                height:MediaQuery.of(context).size.height - 430,
+                                                                width: MediaQuery.of(context).size.width/2,
+                                                                child: orderPopupHorizontalDelivery()
+                                                            )
+                                                        );
+                                                      });
                                                     }
                                                   }else{
                                                     showDialog(context: context, builder:(BuildContext context){
@@ -2773,6 +2795,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         //offlineOrderList.add(body);
                                         await Utils.addOfflineData("addOrderStaff",jsonEncode(offlineOrderList,toEncodable: Utils.myEncode));
                                         offlineData = await Utils.getOfflineData("addOrderStaff");
+                                        sqlite_helper().deletecart();
                                         orderItems.clear();
                                         sqlite_helper().getcart1().then((value) {
                                           setState(() {
@@ -2786,6 +2809,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             overallTotalPrice=value[0]["SUM(totalPrice)"];
                                           });
                                         });
+
                                         Navigator.of(context).pop();
                                         Utils.showSuccess(this.context, "Your Order Stored Offline");
                                       }
@@ -3983,7 +4007,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
           if(value!=null){
             if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
               var payCash ={
-                "orderid": value["id"],
+                "orderid": jsonDecode(value)["id"],
                 "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
                 "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
                 "Comment": null,

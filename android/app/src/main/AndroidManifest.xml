@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.exabistro_pos">
    <application
-        android:label="exabistro_pos"
+        android:label="Exabistro POS"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
