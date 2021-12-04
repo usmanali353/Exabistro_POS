@@ -82,7 +82,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
             style: TextStyle(
                 color: yellowColor,
                 fontWeight: FontWeight.bold,
-                fontSize: 35),
+                fontSize: 30),
           ),
           centerTitle: true,
           backgroundColor: BackgroundColor,
@@ -218,8 +218,8 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                               return Dialog(
                                                 backgroundColor: Colors.transparent,
                                                   child: Container(
-                                                      height: MediaQuery.of(context).size.height / 1.35,
-                                                      width: MediaQuery.of(context).size.width / 3.2,
+                                                      height: 700,
+                                                      width: 400,
                                                       child: ordersDetailPopupLayout(orderList[index])
                                                   )
                                               );
@@ -572,8 +572,8 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                 child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Container(
-                      height:MediaQuery.of(context).size.height -250,
-                      width: MediaQuery.of(context).size.width / 3,
+                      height:700,
+                      width: 400,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
                         //border: Border.all(color: yellowColor, width: 2),

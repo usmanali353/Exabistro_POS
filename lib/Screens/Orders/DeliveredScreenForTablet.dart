@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:ui';
 import 'package:exabistro_pos/Screens/LoadingScreen.dart';
+import 'package:exabistro_pos/Screens/LoginScreen.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/components/constants.dart';
 import 'package:exabistro_pos/model/Categories.dart';
@@ -105,12 +106,24 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
     return Scaffold(
         appBar:!isListVisible? AppBar(
           automaticallyImplyLeading: false,
+          actions: [
+            IconButton(
+              icon:  FaIcon(FontAwesomeIcons.signOutAlt, color: blueColor, size: 25,),
+              onPressed: (){
+                SharedPreferences.getInstance().then((value) {
+                  value.remove("token");
+                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>LoginScreen()), (route) => false);
+                } );
+              },
+            ),
+          ],
           title: Text(
             'Orders History',
+
             style: TextStyle(
                 color: yellowColor,
                 fontWeight: FontWeight.bold,
-                fontSize: 35),
+                fontSize: 30),
           ),
           centerTitle: true,
           backgroundColor: BackgroundColor,
@@ -233,8 +246,8 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                               return Dialog(
                                                 //backgroundColor: Colors.transparent,
                                                   child: Container(
-                                                      height:MediaQuery.of(context).size.height -320,
-                                                      width: MediaQuery.of(context).size.width / 3,
+                                                      height:600,
+                                                      width: 400,
                                                       child: ordersDetailPopupLayout(orderList[index])
                                                   )
                                               );
@@ -548,8 +561,8 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                 child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Container(
-                      height:MediaQuery.of(context).size.height -320,
-                      width: MediaQuery.of(context).size.width / 3,
+                      height:600,
+                      width: 400,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
                         //border: Border.all(color: yellowColor, width: 2),

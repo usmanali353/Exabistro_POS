@@ -1,3 +1,4 @@
+import 'package:exabistro_pos/Screens/LoginScreen.dart';
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/PaidOrdersList.dart';
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/UnPaidOrdersList.dart';
 import 'package:exabistro_pos/components/constants.dart';
@@ -5,6 +6,8 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 
 import 'package:flutter/services.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 
 class PaidTabsScreen extends StatefulWidget {
@@ -41,6 +44,17 @@ class PaidTabsWidgetState extends State<PaidTabsScreen> with SingleTickerProvide
         length: 2,
         child: Scaffold(
           appBar: AppBar(
+            actions: [
+              IconButton(
+                icon:  FaIcon(FontAwesomeIcons.signOutAlt, color: blueColor, size: 25,),
+                onPressed: (){
+                  SharedPreferences.getInstance().then((value) {
+                    value.remove("token");
+                    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>LoginScreen()), (route) => false);
+                  } );
+                },
+              ),
+            ],
             iconTheme: IconThemeData(
                 color: Colors.white
             ),
@@ -65,7 +79,7 @@ class PaidTabsWidgetState extends State<PaidTabsScreen> with SingleTickerProvide
                   Tab(
                     child: Align(
                       alignment: Alignment.center,
-                      child: Text("UnPaid Orders",
+                      child: Text("Unpaid Orders",
                         style: TextStyle(
                           //color: Colors.white,
                           fontSize: 20,

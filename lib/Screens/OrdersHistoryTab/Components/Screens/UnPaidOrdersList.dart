@@ -202,8 +202,8 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                               return Dialog(
                                                 backgroundColor: Colors.transparent,
                                                   child: Container(
-                                                      height: MediaQuery.of(context).size.height -200,
-                                                      width: MediaQuery.of(context).size.width / 3.2,
+                                                      height: 700,
+                                                      width: 400,
                                                       child: ordersDetailPopupLayout(orderList[index])
                                                   )
                                               );
@@ -521,8 +521,8 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                 child: Padding(
                     padding: const EdgeInsets.all(8.0),
                     child: Container(
-                      height:MediaQuery.of(context).size.height -200,
-                      width: MediaQuery.of(context).size.width / 3,
+                      height:700,
+                      width: 400,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(8),
                         //border: Border.all(color: yellowColor, width: 2),
