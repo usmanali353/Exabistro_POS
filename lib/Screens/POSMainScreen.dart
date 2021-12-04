@@ -66,7 +66,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
   APICacheDBModel offlineData;
   var selectedOrderType,selectedOrderTypeId,selectedWaiter,selectedWaiterId,selectedTable,selectedTableId;
   TextEditingController timePickerField,customerName,customerPhone,customerEmail,customerAddress,discountValue;
-  List orderTypeList = ["Dine-In", "TakeAway","Home Delivery"];
   String token;
   @override
   void initState() {
@@ -83,6 +82,19 @@ class _POSMainScreenState extends State<POSMainScreen> {
     SharedPreferences.getInstance().then((prefs){
       setState(() {
         this.token=prefs.getString("token");
+      });
+      var reservationData = {
+        "Date":DateTime.now().toString().substring(0,10),
+        "StartTime":DateTime.now().toString().substring(10,16),
+        "EndTime": DateTime.now().add(Duration(hours: 1)).toString().substring(10,16),
+        "storeId":widget.store["id"]
+      };
+      Network_Operations.getAvailableTable(context, prefs.getString("token"), reservationData).then((availableTables){
+        setState(() {
+          if(availableTables!=null&&availableTables.length>0){
+            this.tables=availableTables;
+          }
+        });
       });
       Network_Operations.getDailySessionByStoreId(context, prefs.getString("token"),widget.store["id"]).then((dailySession){
         setState(() {
@@ -457,6 +469,42 @@ class _POSMainScreenState extends State<POSMainScreen> {
                             color: Colors.white,
                             child: Column(
                               children: [
+                                Visibility(
+                                  visible: tables!=null&&tables.length>0,
+                                  child: Container(
+                                    width: MediaQuery.of(context).size.width,
+                                    height: 63,
+                                    //color: yellowColor,
+                                    child: ListView.builder(
+                                      itemCount: tables.length,
+                                        scrollDirection: Axis.horizontal,
+                                        itemBuilder: (context, index){
+                                      return Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: Card(
+                                          elevation: 6,
+                                          child: Container(
+                                            width: 120,
+                                            height: 55,
+                                            decoration: BoxDecoration(
+                                              color: yellowColor,
+                                              borderRadius: BorderRadius.circular(4),
+                                            ),
+                                            child:Center(
+                                              child: Text(
+                                                tables[index]["name"],
+                                                style: TextStyle(
+                                                    fontSize: 18,
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    })
+                                  ),
+                                ),
                                 Container(
                                   width: MediaQuery.of(context).size.width,
                                   height: 60,
@@ -734,311 +782,315 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                           ),
                                         ],
                                       ),
-
                                       Container(
                                         width: MediaQuery.of(context).size.width,
                                         height: 60,
                                         color: yellowColor,
                                         child: Center(
                                           child: Text(
-                                            "Create Your Order",
+                                            "Place Your Order",
                                             style: TextStyle(
-                                                fontSize: 25,
+                                                fontSize: 22,
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.bold),
                                           ),
                                         ),
                                       ),
-                                      SizedBox(height: 8,),
                                       Row(
-                                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                        //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                         children: [
-                                          InkWell(
-                                            onTap: () {
-                                              setState(() {
-                                                overallTotalPriceWithTax=0.0;
-                                                totalTax=0.0;
-                                                typeBasedTaxes.clear();
-                                                taxesList.clear();
-                                                orderItems.clear();
-                                                discountValue.clear();
-                                                priceWithDiscount=0.0;
-                                                deductedPrice=0.0;
-                                                selectedDiscountType=null;
-                                                selectedTable=null;
-                                                selectedTableId=null;
-                                                customerName.clear();
-                                                customerPhone.clear();
-                                                overallTotalPriceWithTax=overallTotalPrice;
-                                                if(orderTaxes!=null&&orderTaxes.length>0){
-                                                  var tempTaxList = orderTaxes.where((element) => element.dineIn);
-                                                  if(tempTaxList!=null&&tempTaxList.length>0){
-                                                    for(Tax t in tempTaxList.toList()){
-                                                      setState(() {
-                                                        if(t.percentage!=null&&t.percentage!=0.0){
-                                                          var percentTax= overallTotalPrice/100*t.percentage;
-                                                          print(percentTax);
-                                                          totalTax=totalTax+percentTax;
-                                                          overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
-                                                        }
-                                                        if(t.price!=null&&t.price!=0.0){
-                                                          overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
-                                                          totalTax=totalTax+t.price;
-                                                        }
-                                                        typeBasedTaxes.add(t);
+                                          Expanded(
+                                            child: InkWell(
+                                              onTap: () {
+                                                setState(() {
+                                                  overallTotalPriceWithTax=0.0;
+                                                  totalTax=0.0;
+                                                  typeBasedTaxes.clear();
+                                                  taxesList.clear();
+                                                  orderItems.clear();
+                                                  discountValue.clear();
+                                                  priceWithDiscount=0.0;
+                                                  deductedPrice=0.0;
+                                                  selectedDiscountType=null;
+                                                  selectedTable=null;
+                                                  selectedTableId=null;
+                                                  customerName.clear();
+                                                  customerPhone.clear();
+                                                  overallTotalPriceWithTax=overallTotalPrice;
+                                                  if(orderTaxes!=null&&orderTaxes.length>0){
+                                                    var tempTaxList = orderTaxes.where((element) => element.dineIn);
+                                                    if(tempTaxList!=null&&tempTaxList.length>0){
+                                                      for(Tax t in tempTaxList.toList()){
+                                                        setState(() {
+                                                          if(t.percentage!=null&&t.percentage!=0.0){
+                                                            var percentTax= overallTotalPrice/100*t.percentage;
+                                                            print(percentTax);
+                                                            totalTax=totalTax+percentTax;
+                                                            overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
+                                                          }
+                                                          if(t.price!=null&&t.price!=0.0){
+                                                            overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
+                                                            totalTax=totalTax+t.price;
+                                                          }
+                                                          typeBasedTaxes.add(t);
 
-                                                        taxesList.add({
-                                                          "TaxId": t.id
+                                                          taxesList.add({
+                                                            "TaxId": t.id
+                                                          });
                                                         });
-                                                      });
+                                                      }
                                                     }
                                                   }
-                                                }
 
-                                              });
+                                                });
 
-                                              SharedPreferences.getInstance().then((prefs){
-                                                var reservationData = {
-                                                  "Date":DateTime.now().toString().substring(0,10),
-                                                  "StartTime":DateTime.now().toString().substring(10,16),
-                                                  "EndTime": DateTime.now().add(Duration(hours: 1)).toString().substring(10,16),
-                                                  "storeId":widget.store["id"]
-                                                };
-                                                print(reservationData);
-                                               Network_Operations.getAvailableTable(context,prefs.getString("token"), reservationData).then((availableTables){
-                                                 if(availableTables!=null&&availableTables.length>0){
-                                                   setState(() {
-                                                     tables.clear();
-                                                     this.tables=availableTables;
-                                                   });
-                                                   showDialog(context: context, builder:(BuildContext context){
-                                                     return Dialog(
-                                                         backgroundColor: Colors.transparent,
-                                                         // insetPadding: EdgeInsets.all(16),
-                                                         child: Container(
-                                                             height:MediaQuery.of(context).size.height- 430,
-                                                             width: MediaQuery.of(context).size.width/2,
-                                                             child: orderPopUpHorizontalDineIn()
-                                                         )
-                                                     );
-                                                   });
-                                                 }else{
-                                                   Utils.showError(this.context,"No Table is Free for DineIn");
-                                                 }
-                                               });
-                                              });
-                                              },
-                                            child: Card(
-                                              elevation:5,
-                                              child: Container(
-                                                width: 160,
-                                                height: 70,
-                                                decoration: BoxDecoration(
-                                                  color: yellowColor,
-                                                  borderRadius: BorderRadius.circular(4)
-                                                ),
-                                                child: Center(
-                                                  child: Text(
-                                                    "Dine-In",
-                                                    style: TextStyle(
-                                                        fontSize: 25,
-                                                        color: Colors.white,
-                                                        fontWeight: FontWeight.bold),
+                                                SharedPreferences.getInstance().then((prefs){
+                                                  var reservationData = {
+                                                    "Date":DateTime.now().toString().substring(0,10),
+                                                    "StartTime":DateTime.now().toString().substring(10,16),
+                                                    "EndTime": DateTime.now().add(Duration(hours: 1)).toString().substring(10,16),
+                                                    "storeId":widget.store["id"]
+                                                  };
+                                                  print(reservationData);
+                                                 Network_Operations.getAvailableTable(context,prefs.getString("token"), reservationData).then((availableTables){
+                                                   if(availableTables!=null&&availableTables.length>0){
+                                                     setState(() {
+                                                       tables.clear();
+                                                       this.tables=availableTables;
+                                                     });
+                                                     showDialog(context: context, builder:(BuildContext context){
+                                                       return Dialog(
+                                                           backgroundColor: Colors.transparent,
+                                                           // insetPadding: EdgeInsets.all(16),
+                                                           child: Container(
+                                                               height:450,
+                                                               width: MediaQuery.of(context).size.width/2,
+                                                               child: orderPopUpHorizontalDineIn()
+                                                           )
+                                                       );
+                                                     });
+                                                   }else{
+                                                     Utils.showError(this.context,"No Table is Free for DineIn");
+                                                   }
+                                                 });
+                                                });
+                                                },
+                                              child: Card(
+                                                elevation:5,
+                                                child: Container(
+                                                  width: 160,
+                                                  height: 70,
+                                                  decoration: BoxDecoration(
+                                                    color: yellowColor,
+                                                    borderRadius: BorderRadius.circular(4)
+                                                  ),
+                                                  child: Center(
+                                                    child: Text(
+                                                      "Dine-In",
+                                                      style: TextStyle(
+                                                          fontSize: 25,
+                                                          color: Colors.white,
+                                                          fontWeight: FontWeight.bold),
+                                                    ),
                                                   ),
                                                 ),
                                               ),
                                             ),
                                           ),
-                                          InkWell(
-                                                onTap: () async{
-                                                  setState(() {
-                                                    overallTotalPriceWithTax=0.0;
-                                                    typeBasedTaxes.clear();
-                                                    totalTax=0.0;
-                                                    typeBasedTaxes.clear();
-                                                    taxesList.clear();
-                                                    orderItems.clear();
-                                                    discountValue.clear();
-                                                    customerName.clear();
-                                                    customerPhone.clear();
-                                                    priceWithDiscount=0.0;
-                                                    deductedPrice=0.0;
-                                                    selectedDiscountType=null;
-                                                    overallTotalPriceWithTax=overallTotalPrice;
-                                                    if(orderTaxes!=null&&orderTaxes.length>0){
-                                                      var tempTaxList = orderTaxes.where((element) => element.takeAway);
-                                                      if(tempTaxList!=null&&tempTaxList.length>0){
-                                                        for(Tax t in tempTaxList.toList()){
-                                                          setState(() {
-                                                            if(t.percentage!=null&&t.percentage!=0.0){
-                                                              var percentTax= overallTotalPrice/100*t.percentage;
-                                                              print(percentTax);
-                                                              overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
-                                                            }
-                                                            if(t.price!=null&&t.price!=0.0){
-                                                              overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
-                                                            }
-                                                            typeBasedTaxes.add(t);
+                                          Expanded(
+                                            child: InkWell(
+                                                  onTap: () async{
+                                                    setState(() {
+                                                      overallTotalPriceWithTax=0.0;
+                                                      typeBasedTaxes.clear();
+                                                      totalTax=0.0;
+                                                      typeBasedTaxes.clear();
+                                                      taxesList.clear();
+                                                      orderItems.clear();
+                                                      discountValue.clear();
+                                                      customerName.clear();
+                                                      customerPhone.clear();
+                                                      priceWithDiscount=0.0;
+                                                      deductedPrice=0.0;
+                                                      selectedDiscountType=null;
+                                                      overallTotalPriceWithTax=overallTotalPrice;
+                                                      if(orderTaxes!=null&&orderTaxes.length>0){
+                                                        var tempTaxList = orderTaxes.where((element) => element.takeAway);
+                                                        if(tempTaxList!=null&&tempTaxList.length>0){
+                                                          for(Tax t in tempTaxList.toList()){
+                                                            setState(() {
+                                                              if(t.percentage!=null&&t.percentage!=0.0){
+                                                                var percentTax= overallTotalPrice/100*t.percentage;
+                                                                print(percentTax);
+                                                                overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
+                                                              }
+                                                              if(t.price!=null&&t.price!=0.0){
+                                                                overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
+                                                              }
+                                                              typeBasedTaxes.add(t);
 
-                                                            taxesList.add({
-                                                              "TaxId": t.id
+                                                              taxesList.add({
+                                                                "TaxId": t.id
+                                                              });
                                                             });
-                                                          });
+                                                          }
                                                         }
                                                       }
-                                                    }
-                                                  });
+                                                    });
 
-                                                  var result=await Utils.check_connection();
-                                                  if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi) {
-                                                    var exists = await Utils
-                                                        .checkOfflineDataExists(
-                                                        "addOrderStaff");
-                                                    if (exists) {
-                                                      offlineData = await Utils
-                                                          .getOfflineData(
+                                                    var result=await Utils.check_connection();
+                                                    if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi) {
+                                                      var exists = await Utils
+                                                          .checkOfflineDataExists(
                                                           "addOrderStaff");
-                                                      showAlertDialog(
-                                                          context, offlineData);
+                                                      if (exists) {
+                                                        offlineData = await Utils
+                                                            .getOfflineData(
+                                                            "addOrderStaff");
+                                                        showAlertDialog(
+                                                            context, offlineData);
+                                                      }else{
+                                                        showDialog(context: context, builder:(BuildContext context){
+                                                          return Dialog(
+                                                              backgroundColor: Colors.transparent,
+                                                              child: Container(
+                                                                  height:450,
+                                                                  width: MediaQuery.of(context).size.width/2,
+                                                                  child: orderPopupHorizontalTakeAway()
+                                                              )
+                                                          );
+                                                        });
+                                                      }
                                                     }else{
                                                       showDialog(context: context, builder:(BuildContext context){
                                                         return Dialog(
                                                             backgroundColor: Colors.transparent,
                                                             child: Container(
-                                                                height:MediaQuery.of(context).size.height - 430,
+                                                                height:450,
                                                                 width: MediaQuery.of(context).size.width/2,
                                                                 child: orderPopupHorizontalTakeAway()
                                                             )
                                                         );
                                                       });
                                                     }
-                                                  }else{
-                                                    showDialog(context: context, builder:(BuildContext context){
-                                                      return Dialog(
-                                                          backgroundColor: Colors.transparent,
-                                                          child: Container(
-                                                              height:MediaQuery.of(context).size.height - 430,
-                                                              width: MediaQuery.of(context).size.width/2,
-                                                              child: orderPopupHorizontalTakeAway()
-                                                          )
-                                                      );
-                                                    });
-                                                  }
-                                                },
-                                            child: Card(
-                                              elevation:5,
-                                              child: Container(
-                                                width: 160,
-                                                height: 70,
-                                                decoration: BoxDecoration(
-                                                    color: yellowColor,
-                                                    borderRadius: BorderRadius.circular(4)
-                                                ),
-                                                child: Center(
-                                                  child: Text(
-                                                    "Take-Away",
-                                                    style: TextStyle(
-                                                        fontSize: 25,
-                                                        color: Colors.white,
-                                                        fontWeight: FontWeight.bold),
+                                                  },
+                                              child: Card(
+                                                elevation:5,
+                                                child: Container(
+                                                  width: 160,
+                                                  height: 70,
+                                                  decoration: BoxDecoration(
+                                                      color: yellowColor,
+                                                      borderRadius: BorderRadius.circular(4)
+                                                  ),
+                                                  child: Center(
+                                                    child: Text(
+                                                      "Take-Away",
+                                                      style: TextStyle(
+                                                          fontSize: 25,
+                                                          color: Colors.white,
+                                                          fontWeight: FontWeight.bold),
+                                                    ),
                                                   ),
                                                 ),
                                               ),
                                             ),
                                           ),
-                                          InkWell(
-                                                onTap: () async{
-                                                  setState(() {
-                                                    overallTotalPriceWithTax=0.0;
-                                                    totalTax=0.0;
-                                                    typeBasedTaxes.clear();
-                                                    taxesList.clear();
-                                                    orderItems.clear();
-                                                    discountValue.clear();
-                                                    customerAddress.clear();
-                                                    customerName.clear();
-                                                    customerPhone.clear();
-                                                    priceWithDiscount=0.0;
-                                                    deductedPrice=0.0;
-                                                    selectedDiscountType=null;
-                                                    overallTotalPriceWithTax=overallTotalPrice;
-                                                    if(orderTaxes!=null&&orderTaxes.length>0){
-                                                      var tempTaxList = orderTaxes.where((element) => element.delivery);
-                                                      if(tempTaxList!=null&&tempTaxList.length>0){
-                                                        for(Tax t in tempTaxList.toList()){
-                                                          setState(() {
-                                                            if(t.percentage!=null&&t.percentage!=0.0){
-                                                              var percentTax= overallTotalPrice/100*t.percentage;
-                                                              print(percentTax);
-                                                              overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
-                                                            }
-                                                            if(t.price!=null&&t.price!=0.0){
-                                                              overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
-                                                            }
-                                                            typeBasedTaxes.add(t);
+                                          Expanded(
+                                            child: InkWell(
+                                                  onTap: () async{
+                                                    setState(() {
+                                                      overallTotalPriceWithTax=0.0;
+                                                      totalTax=0.0;
+                                                      typeBasedTaxes.clear();
+                                                      taxesList.clear();
+                                                      orderItems.clear();
+                                                      discountValue.clear();
+                                                      customerAddress.clear();
+                                                      customerName.clear();
+                                                      customerPhone.clear();
+                                                      priceWithDiscount=0.0;
+                                                      deductedPrice=0.0;
+                                                      selectedDiscountType=null;
+                                                      overallTotalPriceWithTax=overallTotalPrice;
+                                                      if(orderTaxes!=null&&orderTaxes.length>0){
+                                                        var tempTaxList = orderTaxes.where((element) => element.delivery);
+                                                        if(tempTaxList!=null&&tempTaxList.length>0){
+                                                          for(Tax t in tempTaxList.toList()){
+                                                            setState(() {
+                                                              if(t.percentage!=null&&t.percentage!=0.0){
+                                                                var percentTax= overallTotalPrice/100*t.percentage;
+                                                                print(percentTax);
+                                                                overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
+                                                              }
+                                                              if(t.price!=null&&t.price!=0.0){
+                                                                overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
+                                                              }
+                                                              typeBasedTaxes.add(t);
 
-                                                            taxesList.add({
-                                                              "TaxId": t.id
+                                                              taxesList.add({
+                                                                "TaxId": t.id
+                                                              });
                                                             });
-                                                          });
+                                                          }
                                                         }
                                                       }
-                                                    }
 
-                                                  });
-                                                  var result=await Utils.check_connection();
-                                                  if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi) {
-                                                    var exists = await Utils
-                                                        .checkOfflineDataExists(
-                                                        "addOrderStaff");
-                                                    if (exists) {
-                                                      offlineData = await Utils
-                                                          .getOfflineData(
+                                                    });
+                                                    var result=await Utils.check_connection();
+                                                    if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi) {
+                                                      var exists = await Utils
+                                                          .checkOfflineDataExists(
                                                           "addOrderStaff");
-                                                      showAlertDialog(
-                                                          context, offlineData);
+                                                      if (exists) {
+                                                        offlineData = await Utils
+                                                            .getOfflineData(
+                                                            "addOrderStaff");
+                                                        showAlertDialog(
+                                                            context, offlineData);
+                                                      }else{
+                                                        showDialog(context: context, builder:(BuildContext context){
+                                                          return Dialog(
+                                                              backgroundColor: Colors.transparent,
+                                                              child: Container(
+                                                                  height:450,
+                                                                  width: MediaQuery.of(context).size.width/2,
+                                                                  child: orderPopupHorizontalDelivery()
+                                                              )
+                                                          );
+                                                        });
+                                                      }
                                                     }else{
                                                       showDialog(context: context, builder:(BuildContext context){
                                                         return Dialog(
                                                             backgroundColor: Colors.transparent,
                                                             child: Container(
-                                                                height:MediaQuery.of(context).size.height - 430,
+                                                                height:450,
                                                                 width: MediaQuery.of(context).size.width/2,
                                                                 child: orderPopupHorizontalDelivery()
                                                             )
                                                         );
                                                       });
                                                     }
-                                                  }else{
-                                                    showDialog(context: context, builder:(BuildContext context){
-                                                      return Dialog(
-                                                          backgroundColor: Colors.transparent,
-                                                          child: Container(
-                                                              height:MediaQuery.of(context).size.height - 430,
-                                                              width: MediaQuery.of(context).size.width/2,
-                                                              child: orderPopupHorizontalDelivery()
-                                                          )
-                                                      );
-                                                    });
-                                                  }
 
-                                                },
-                                            child: Card(
-                                              elevation:5,
-                                              child: Container(
-                                                width: 160,
-                                                height: 70,
-                                                decoration: BoxDecoration(
-                                                    color: yellowColor,
-                                                    borderRadius: BorderRadius.circular(4)
-                                                ),
-                                                child: Center(
-                                                  child: Text(
-                                                    "Delivery",
-                                                    style: TextStyle(
-                                                        fontSize: 25,
-                                                        color: Colors.white,
-                                                        fontWeight: FontWeight.bold),
+                                                  },
+                                              child: Card(
+                                                elevation:5,
+                                                child: Container(
+                                                  width: 160,
+                                                  height: 70,
+                                                  decoration: BoxDecoration(
+                                                      color: yellowColor,
+                                                      borderRadius: BorderRadius.circular(4)
+                                                  ),
+                                                  child: Center(
+                                                    child: Text(
+                                                      "Delivery",
+                                                      style: TextStyle(
+                                                          fontSize: 25,
+                                                          color: Colors.white,
+                                                          fontWeight: FontWeight.bold),
+                                                    ),
                                                   ),
                                                 ),
                                               ),
@@ -1078,8 +1130,8 @@ class _POSMainScreenState extends State<POSMainScreen> {
                     return Dialog(
                       backgroundColor: Colors.transparent,
                         child: Container(
-                            height: MediaQuery.of(context).size.height / 1.25,
-                            width: MediaQuery.of(context).size.width / 2.7,
+                            height: 690,
+                            width: 400,
                             child: dealsPopupLayout(dealsList[index])
                         )
                     );
@@ -1482,8 +1534,8 @@ class _POSMainScreenState extends State<POSMainScreen> {
         }
         return Center(
           child: Container(
-            height: MediaQuery.of(context).size.height / 1.25,
-            width: MediaQuery.of(context).size.width / 2.7,
+            height: 690,
+            width: 400,
             decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(8),
                 image: DecorationImage(
@@ -1802,7 +1854,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
         builder: (context,innersetState){
           return Center(
             child: Container(
-                height:MediaQuery.of(context).size.height - 430,
+                height:450,
                 width: MediaQuery.of(context).size.width/2,
                 decoration: BoxDecoration(
                     image: DecorationImage(
@@ -2329,7 +2381,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
         builder: (context,innersetState){
           return Center(
             child: Container(
-                height:MediaQuery.of(context).size.height - 430,
+                height:450,
                 width: MediaQuery.of(context).size.width/2,
                 decoration: BoxDecoration(
                     image: DecorationImage(
@@ -2908,7 +2960,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
         builder: (context,innersetState){
           return Center(
             child: Container(
-                height:MediaQuery.of(context).size.height - 430,
+                height:450,
                 width: MediaQuery.of(context).size.width/2,
                 decoration: BoxDecoration(
                     image: DecorationImage(
@@ -3421,6 +3473,19 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             });
                                             Network_Operations.placeOrder(context, prefs.getString("token"), order).then((orderPlaced){
                                               if(orderPlaced!=null){
+                                                var reservationData = {
+                                                  "Date":DateTime.now().toString().substring(0,10),
+                                                  "StartTime":DateTime.now().toString().substring(10,16),
+                                                  "EndTime": DateTime.now().add(Duration(hours: 1)).toString().substring(10,16),
+                                                  "storeId":widget.store["id"]
+                                                };
+                                                Network_Operations.getAvailableTable(context, prefs.getString("token"), reservationData).then((availableTables){
+                                                  setState(() {
+                                                    if(availableTables!=null&&availableTables.length>0){
+                                                      this.tables=availableTables;
+                                                    }
+                                                  });
+                                                });
                                                 orderItems.clear();
                                                 sqlite_helper().getcart1().then((value) {
                                                   setState(() {
@@ -3500,7 +3565,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
       ),
     );
   }
-  var productPopupHeight=3.5;
+  var productPopupHeight=330.0;
   Widget productsPopupLayout(Products product) {
     var count = 1;
     var price=0.0;
@@ -3535,12 +3600,12 @@ class _POSMainScreenState extends State<POSMainScreen> {
                 if(additionals.length>0){
                   innersetState(() {
                     isvisible=true;
-                    productPopupHeight=1.20;
+                    productPopupHeight=650.0;
                   });
                 }else
                   innersetState(() {
                     isvisible=false;
-                    productPopupHeight=2.80;
+                    productPopupHeight=330.0;
                   });
               });
             });
@@ -3625,8 +3690,8 @@ class _POSMainScreenState extends State<POSMainScreen> {
           }
           return Center(
               child: Container(
-                  height: MediaQuery.of(context).size.height / productPopupHeight,
-                  width: MediaQuery.of(context).size.width / 3.0,
+                  height: productPopupHeight,
+                  width: 400,
                   decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
                       image: DecorationImage(
