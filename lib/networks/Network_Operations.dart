@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:api_cache_manager/models/cache_db_model.dart';
 import 'package:api_cache_manager/utils/cache_manager.dart';
-import 'package:connectivity/connectivity.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:exabistro_pos/model/Additionals.dart';
 import 'package:exabistro_pos/model/Products.dart';
 import 'package:exabistro_pos/model/Tax.dart';
@@ -23,8 +23,8 @@ class Network_Operations{
       var isCacheExist = await APICacheManager().isAPICacheKeyExist("response"+email);
       var isPassExist = await APICacheManager().isAPICacheKeyExist("password"+email);
 
-      var connectivityResult = await (Connectivity().checkConnectivity());
-      if (connectivityResult == ConnectivityResult.none){
+       var result=await Utils.check_connection();
+      if (result == ConnectivityResult.none){
         if (isCacheExist && isPassExist) {
           var cacheData = await APICacheManager().getCacheData("response"+email);
           var passData = await APICacheManager().getCacheData("password"+email);
@@ -39,6 +39,7 @@ class Network_Operations{
           var claims = Utils.parseJwt(jsonDecode(cacheData.syncData)['token']);
           if(DateTime.fromMillisecondsSinceEpoch(int.parse(claims['exp'].toString()+"000")).isBefore(DateTime.now())){
             Utils.showError(context, "Token Expire Please Login Again");
+            return false;
           }else {
             if (passData.syncData == password) {
               SharedPreferences.getInstance().then((prefs) {
@@ -48,24 +49,26 @@ class Network_Operations{
                 prefs.setString('nameid', claims['nameid']);
                 prefs.setString("name", claims['unique_name']);
                 prefs.setString('password', password);
+                prefs.setString("roles", jsonEncode(decoded));
               });
               Utils.showSuccess(context, "Login Successful");
-              print(claims['IsCustomerOnly'].toString() + "vfdgfdgfdgfdgdfgd");
-              if (claims['IsCustomerOnly'] == "false") {
-
                   Navigator.pushAndRemoveUntil(context,
                       MaterialPageRoute(builder: (context) =>
                           RoleBaseStoreSelection(rolesAndStores)), (
                           Route<dynamic> route) => false);
-              }
+                  return true;
             }else{
               Utils.showError(context, "Your Password is Incorrect");
+              return false;
             }
           }
 
+        }else{
+          Utils.showError(context,"Not Connected to Internet");
+          return false;
         }
       }
-      if(connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi) {
+      if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi) {
         //pd.show();
         var response=await http.post(Uri.parse(Utils.baseUrl()+"account/login"),body:body,headers: {"Content-type":"application/json"});
         if(response!=null&&response.statusCode==200){
@@ -85,10 +88,11 @@ class Network_Operations{
             prefs.setString('nameid', claims['nameid']);
             prefs.setString("name", claims['unique_name']);
             prefs.setString('password', password);
+            prefs.setString("roles", jsonEncode(decoded));
             // prefs.setString('isCustomer', claims['IsCustomerOnly']);
           });
           Utils.showSuccess(context, "Login Successful");
-          if(claims['IsCustomerOnly'] == "false"){
+
             APICacheDBModel cacheDBModel = new APICacheDBModel(
                 key: "response"+email, syncData: response.body);
             await APICacheManager().addCacheData(cacheDBModel);
@@ -100,14 +104,17 @@ class Network_Operations{
                   //MaterialPageRoute(builder: (context) => DashboardScreen()), (
                   MaterialPageRoute(builder: (context) => RoleBaseStoreSelection(rolesAndStores)), (
                       Route<dynamic> route) => false);
-            }
+            return true;
+
         }
         else{
-          print(jsonDecode(response.body));
+
           Utils.showError(context, "${response.body}");
+          return false;
         }
       }
     }catch(e) {
+
       print(e);
       Utils.showError(context, "Please Enter Valid Email Address");
     }
@@ -131,8 +138,8 @@ class Network_Operations{
   static Future<List<Products>> getProduct(BuildContext context,int categoryId,int storeId,String search)async{
     try{
       var isCacheExist = await APICacheManager().isAPICacheKeyExist("productList"+categoryId.toString());
-      var connectivityResult = await (Connectivity().checkConnectivity());
-      if (connectivityResult == ConnectivityResult.none){
+       var result=await Utils.check_connection();
+      if (result == ConnectivityResult.none){
         if (isCacheExist) {
           var cacheData = await APICacheManager().getCacheData("productList"+categoryId.toString());
           print(cacheData.syncData);
@@ -149,7 +156,7 @@ class Network_Operations{
           Utils.showError(context, "No Offline Data");
         }
       }
-      if(connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi){
+      if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
         var response=await http.get(Uri.parse(Utils.baseUrl()+"Products/GetByCategoryId?StoreId=$storeId&categoryId="+categoryId.toString()+"&searchstring=$search"),);
         APICacheDBModel cacheDBModel = new APICacheDBModel(
             key: "productList"+categoryId.toString(), syncData: response.body);
@@ -157,7 +164,7 @@ class Network_Operations{
 
         var data= jsonDecode(response.body);
         if(response.statusCode==200){
-          if(connectivityResult != ConnectivityResult.none){
+          if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
             List<Products> list=List();
             list.clear();
             for(int i=0;i<data.length;i++){
@@ -207,17 +214,36 @@ class Network_Operations{
     try{
       // pd.show();
       Map<String,String> headers = {'Authorization':'Bearer '+token};
-      var response=await http.get(Uri.parse(Utils.baseUrl()+"tables/GetAll/?storeId=$storeId"),headers: headers);
-      var data= jsonDecode(response.body);
-      if(response.statusCode==200){
-        List list =[];
-        //pd.hide();
-        for(int i=0;i<data.length;i++){
-          if(data[i]['isVisible'] == true){
-            list.add(data[i]);
-          }
+      var isCacheExist = await APICacheManager().isAPICacheKeyExist("tableList"+storeId.toString());
+       var result=await Utils.check_connection();
+      if (result == ConnectivityResult.none){
+        if (isCacheExist) {
+          List list=[];
+          var cacheData = await APICacheManager().getCacheData("tableList"+storeId.toString());
+          print("cache hit");
+          var data= jsonDecode(cacheData.syncData);
+          if(data!=[])
+            list=List.from(data.reversed);
+          return list;
         }
-        return list;
+      }
+      if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
+        var response=await http.get(Uri.parse(Utils.baseUrl()+"tables/GetAll/?storeId=$storeId"),headers: headers);
+        var data= jsonDecode(response.body);
+        if(response.statusCode==200){
+          APICacheDBModel cacheDBModel = new APICacheDBModel(
+              key: "tableList", syncData: response.body);
+          await APICacheManager().addCacheData(cacheDBModel);
+          List list =[];
+          //pd.hide();
+          for(int i=0;i<data.length;i++){
+            if(data[i]['isVisible'] == true){
+              list.add(data[i]);
+            }
+          }
+          return list;
+      }
+
       }
       else{
        // pd.hide();
@@ -230,97 +256,24 @@ class Network_Operations{
     }
     return null;
   }
-  static Future<bool> changeOrderStatus(BuildContext context,String token,dynamic OrderStatusData)async{
-
-    try{
-      Map<String,String> headers = {'Content-Type':'application/json','Authorization':'Bearer '+token};
-      var body=jsonEncode(
-          OrderStatusData
-      );
-      print(body);
-      var response=await http.post(Uri.parse(Utils.baseUrl()+"orders/UpdateStatus"),headers: headers,body: body);
-      print(response.body);
-
-      var data= jsonDecode(response.body);
-      if(response.statusCode==200){
-        return true;
-      }
-      else{
-        Utils.showError(context, "Please Try Again");
-        return false;
-      }
-    }catch(e){
-      Utils.showError(context, "Error Found: $e");
-      return false;
-    }
-    return null;
-  }
-  static Future<List<Categories>> getCategories(BuildContext context,int storeId)async{
-
-    try{
-      var isCacheExist = await APICacheManager().isAPICacheKeyExist("getCategory"+storeId.toString());
-      var connectivityResult = await (Connectivity().checkConnectivity());
-      if (connectivityResult == ConnectivityResult.none){
-        if (isCacheExist) {
-          var cacheData = await APICacheManager().getCacheData("getCategory"+storeId.toString());
-          var data= jsonDecode(cacheData.syncData);
-          List<Categories> list=List();
-          list.clear();
-          for(int i=0;i<data.length;i++){
-            list.add(Categories(name: data[i]['name'],id: data[i]['id'],image: data[i]['image'],isSubCategoriesExist: data[i]['isSubCategoriesExist'],storeId: data[i]['storeId']));
-          }
-          return list;
-
-        }else{
-          Utils.showError(context, "No Offline Data");
-        }
-      }
-      if(connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi){
-
-        // pd.show();
-        var response=await http.get(Uri.parse(Utils.baseUrl()+"Categories/GetAll?StoreId=$storeId&ShowByTime=1",));//0 is for time limitation
-        var data= jsonDecode(response.body);
-        if(response.statusCode==200){
-          APICacheDBModel cacheDBModel = new APICacheDBModel(
-              key: "getCategory"+storeId.toString(), syncData: response.body);
-          await APICacheManager().addCacheData(cacheDBModel);
-          List<Categories> list=List();
-          list.clear();
-          for(int i=0;i<data.length;i++){
-            list.add(Categories(name: data[i]['name'],id: data[i]['id'],image: data[i]['image'],isSubCategoriesExist: data[i]['isSubCategoriesExist'],storeId: data[i]['storeId']));
-          }
-          return list;
-        }else{
-          Utils.showError(context, response.body);
-        }
-      }else{
-        Utils.showError(context, "You are in Offline mode");
-      }
-    }catch(e){
-      Utils.showError(context, e.toString());
-    }
-    //pd.hide();
-    return null;
-  }
   static Future<List<Categories>> getCategory (BuildContext context, String token,int storeId,String search) async {
     try{
       Map<String, String> headers = {'Authorization':'Bearer '+token, 'Content-Type':'application/json'};
       var isCacheExist = await APICacheManager().isAPICacheKeyExist("categoryList");
-      var connectivityResult = await (Connectivity().checkConnectivity());
-      if (connectivityResult == ConnectivityResult.none){
+       var result=await Utils.check_connection();
+      if (result == ConnectivityResult.none){
         if (isCacheExist) {
           var cacheData = await APICacheManager().getCacheData("categoryList");
           print("cache hit");
           return Categories.listCategoriesFromJson(cacheData.syncData);
-
         }
       }
-      if(connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi){
+      if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
         final response = await http.get(Uri.parse(Utils.baseUrl() +
             'Categories/GetAll?StoreId=$storeId&ShowByTime=0&searchstring=$search'),
           headers: headers,);
         if (response.statusCode == 200) {
-          if(connectivityResult != ConnectivityResult.none) {
+          if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi) {
             APICacheDBModel cacheDBModel = new APICacheDBModel(
                 key: "categoryList", syncData: response.body);
             await APICacheManager().addCacheData(cacheDBModel);
@@ -349,8 +302,8 @@ class Network_Operations{
   static Future<List<dynamic>> getAllDeals(BuildContext context,String token,int storeId,{String startingPrice,String endingPrice,String search,DateTime startDate,DateTime endDate})async{
     try{
       var isCacheExist = await APICacheManager().isAPICacheKeyExist("dealList");
-      var connectivityResult = await (Connectivity().checkConnectivity());
-      if (connectivityResult == ConnectivityResult.none){
+       var result=await Utils.check_connection();
+      if (result == ConnectivityResult.none){
         if (isCacheExist) {
           var cacheData = await APICacheManager().getCacheData("dealList");
           return jsonDecode(cacheData.syncData);
@@ -359,7 +312,7 @@ class Network_Operations{
           Utils.showError(context, "No Offline Data");
         }
       }
-      if(connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi){
+      if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
         var response;
         Map<String,String> headers = {'Authorization':'Bearer '+token};
         //  response=await http.get(Utils.baseUrl()+"deals/GetAll?storeId=$storeId&searchstring=$search",headers: headers);
@@ -398,8 +351,8 @@ class Network_Operations{
   static Future<List<Additionals>> getAdditionals(BuildContext context,String token,int productId,int sizeId)async{
     try{
       var isCacheExist = await APICacheManager().isAPICacheKeyExist("getAdditional"+productId.toString());
-      var connectivityResult = await (Connectivity().checkConnectivity());
-      if (connectivityResult == ConnectivityResult.none){
+       var result=await Utils.check_connection();
+      if (result == ConnectivityResult.none){
         if (isCacheExist) {
           var cacheData = await APICacheManager().getCacheData("getAdditional"+productId.toString());
           return Additionals.listAdditionalsFromJson(cacheData.syncData);
@@ -408,7 +361,7 @@ class Network_Operations{
           Utils.showError(context, "No Offline Data");
         }
       }
-      if(connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi){
+      if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
 
         Map<String,String> headers = {'Authorization':'Bearer '+token};
         var response=await http.get(Uri.parse(Utils.baseUrl()+"additionalitems/GetAdditionalItemsByCategorySizeProductId/0/"+"$sizeId/"+productId.toString()),headers: headers);
@@ -421,7 +374,7 @@ class Network_Operations{
         }
         else{
          // pd.hide();
-          Utils.showError(context, "Please Try Again");
+          //Utils.showError(context, "Please Try Again");
         }
       }
     }catch(e){
@@ -432,8 +385,8 @@ class Network_Operations{
   static Future<List<Tax>> getTaxListByStoreId(BuildContext context,int storeId )async{
     try{
       var isCacheExist = await APICacheManager().isAPICacheKeyExist("getTaxList"+storeId.toString());
-      var connectivityResult = await (Connectivity().checkConnectivity());
-      if (connectivityResult == ConnectivityResult.none){
+       var result=await Utils.check_connection();
+      if (result == ConnectivityResult.none){
         if (isCacheExist) {
           var cacheData = await APICacheManager().getCacheData("getTaxList"+storeId.toString());
           print("cache hit");
@@ -441,7 +394,7 @@ class Network_Operations{
 
         }
       }
-      if(connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi){
+      if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
 
         var response=await http.get(Uri.parse(Utils.baseUrl()+"Taxes/GetAll/"+storeId.toString()));
         var data= jsonDecode(response.body);
@@ -550,8 +503,8 @@ class Network_Operations{
   static Future<List<dynamic>> getAllOrders(BuildContext context,String token,int storeId)async{
     try{
       var isCacheExist = await APICacheManager().isAPICacheKeyExist("orderList"+storeId.toString());
-      var connectivityResult = await (Connectivity().checkConnectivity());
-      if (connectivityResult == ConnectivityResult.none){
+       var result=await Utils.check_connection();
+      if (result == ConnectivityResult.none){
         if (isCacheExist) {
           List list=[];
           var cacheData = await APICacheManager().getCacheData("orderList"+storeId.toString());
@@ -562,7 +515,7 @@ class Network_Operations{
           return list;
         }
       }
-      if(connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi){
+      if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
         List list=[];
         Map<String,String> headers = {'Authorization':'Bearer '+token};
         var response=await http.get(Uri.parse(Utils.baseUrl()+"orders/getallbasicorders/$storeId"),headers: headers);
@@ -614,8 +567,8 @@ class Network_Operations{
 
     try{
       var isCacheExist = await APICacheManager().isAPICacheKeyExist("customerById"+Id.toString());
-      var connectivityResult = await (Connectivity().checkConnectivity());
-      if (connectivityResult == ConnectivityResult.none){
+       var result=await Utils.check_connection();
+      if (result == ConnectivityResult.none){
         if (isCacheExist) {
           var cacheData = await APICacheManager().getCacheData("customerById"+Id.toString());
           return jsonDecode(cacheData.syncData);
@@ -623,7 +576,7 @@ class Network_Operations{
           Utils.showError(context, "No Offline Data");
         }
       }
-      if(connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi) {
+      if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi) {
         Map<String, String> headers = {'Authorization': 'Bearer ' + token};
         var response = await http.get(Uri.parse(Utils.baseUrl() + "account/GetUserById/"+ Id.toString()),headers: headers);
         var data = jsonDecode(response.body);
@@ -676,8 +629,8 @@ class Network_Operations{
 
     try{
       var isCacheExist = await APICacheManager().isAPICacheKeyExist("getDailySession"+storeId.toString());
-      var connectivityResult = await (Connectivity().checkConnectivity());
-      if (connectivityResult == ConnectivityResult.none){
+       var result=await Utils.check_connection();
+      if (result == ConnectivityResult.none){
         if (isCacheExist) {
           var cacheData = await APICacheManager().getCacheData("getDailySession"+storeId.toString());
           return jsonDecode(cacheData.syncData);
@@ -686,7 +639,7 @@ class Network_Operations{
           Utils.showError(context, "No Offline Data");
         }
       }
-      if(connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi){
+      if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
         Map<String,String> headers = {'Authorization':'Bearer '+token};
         var response=await http.get(Uri.parse(Utils.baseUrl()+"dailysession/getdailysessionno/"+storeId.toString()),headers: headers);
         var data= jsonDecode(response.body);
@@ -717,4 +670,34 @@ class Network_Operations{
     }
     return null;
   }
+
+  static Future<dynamic> getReservationList(BuildContext context,String token,int storeId,String email,DateTime startDate,DateTime endDate)async{
+
+    try{
+      var response;
+      Map<String,String> headers = {'Authorization':'Bearer '+token};
+      if(startDate ==null && endDate==null && email==null)
+        response=await http.get(Uri.parse(Utils.baseUrl()+"reservation/Get?storeId=$storeId"),headers: headers);
+      // else if(startDate ==null && endDate==null && email!=null)
+      //   response=await http.get(Utils.baseUrl()+"reservation/Get?storeId=$storeId&customerEmail=$email",headers: headers);
+      // else
+      //   response=await http.get(Utils.baseUrl()+"reservation/Get?storeId=$storeId&customerEmail=$email&startDate=$startDate&endDate=$endDate",headers: headers);
+      var data= jsonDecode(response.body);
+      print(data);
+      if(response.statusCode==200){
+        List list = [];
+        if(data!=[])
+          list=List.from(data.reversed);
+        return list;
+      }
+      else{
+        Utils.showError(context, "Please Try Again");
+        return null;
+      }
+    }catch(e){
+      Utils.showError(context, "Data Not Found Or Error Found");
+    }
+    return null;
+  }
+
 }

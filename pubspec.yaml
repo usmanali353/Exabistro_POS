@@ -33,30 +33,36 @@ dependencies:
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
-  shared_preferences: ^0.5.6+1
-  font_awesome_flutter: ^8.5.0
-  flushbar: ^1.10.4
+  shared_preferences: ^2.0.9
+  font_awesome_flutter: ^9.2.0
+  another_flushbar: ^1.10.26
   flutter_counter:
   http:
-  badges: ^1.1.1
-  sqflite: ^2.0.0+3
+  sqflite: ^2.0.0+4
   #progress_dialog: ^1.2.0
   numberpicker: ^1.2.1
-  buttons_tabbar: ^1.0.0+1
+  buttons_tabbar: ^1.3.2
   cached_network_image:
-  data_connection_checker: ^0.3.4
+  internet_connection_checker: ^0.0.1+3
  # bordered_text:
   #rating_dialog: 1.0.0
-  overlay_support: ^1.0.5
   flutter_gifimage:
   #time_range: ^0.5.0
-  filter_list: ^0.0.5
-  flutter_spinkit: ^4.1.2
   intl:
   api_cache_manager: ^1.0.2
-  connectivity: ^3.0.6
   printing: ^5.6.3
+  connectivity_plus: ^2.1.0
+  esc_pos_printer: ^4.1.0
+  esc_pos_bluetooth: ^0.4.1
+  simple_speed_dial: ^0.1.3
+  flutter_usb_write:
+    git:
+      url: https://github.com/oscarfv/flutter_usb_write.git
+      ref: master
 
+
+
+  #quick_usb: ^0.3.0
 dev_dependencies:
   flutter_test:
     sdk: flutter

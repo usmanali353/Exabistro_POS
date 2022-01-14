@@ -56,7 +56,7 @@ class PaidTabsWidgetState extends State<PaidTabsScreen> with SingleTickerProvide
               ),
             ],
             iconTheme: IconThemeData(
-                color: Colors.white
+                color: blueColor
             ),
             title: Text("Orders", style: TextStyle(color: yellowColor, fontWeight: FontWeight.bold, fontSize: 30),),
             centerTitle: true,

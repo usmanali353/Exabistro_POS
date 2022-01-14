@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui';
 import 'package:exabistro_pos/Screens/LoadingScreen.dart';
 import 'package:exabistro_pos/components/constants.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../Utils/Utils.dart';
+import 'RolesBaseStoreSelection.dart';
 
 
 class LoginScreen extends StatefulWidget {
@@ -19,6 +21,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool isVisible= true;
   bool isLogin = false;
   bool isLoading=false;
+  List rolesAndStores =[],restaurantList=[];
   @override
   void initState(){
     SystemChrome.setPreferredOrientations([
@@ -32,10 +35,25 @@ class _LoginScreenState extends State<LoginScreen> {
           SharedPreferences.getInstance().then((instance) {
             var token = instance.getString("token");
             if(token.isNotEmpty){
-            setState(() {
-            email.text = instance.getString("email");
-            password.text = instance.getString('password');
+              var claims = Utils.parseJwt(token);
+              if(DateTime.fromMillisecondsSinceEpoch(int.parse(claims['exp'].toString()+"000")).isBefore(DateTime.now())){
+                Utils.showError(context, "Token Expire Please Login Again");
+              }else{
+                setState(() {
+                  email.text = instance.getString("email");
+                  password.text = instance.getString('password');
+                  List decoded= jsonDecode(instance.getString("roles"));
+                  for(int i=0;i<decoded.length;i++){
+                    rolesAndStores.add(decoded[i]);
+                    restaurantList.add(decoded[i]['restaurant']);
+                  }
+                  Navigator.pushAndRemoveUntil(context,
+                      MaterialPageRoute(builder: (context) =>
+                          RoleBaseStoreSelection(rolesAndStores)), (
+                          Route<dynamic> route) => false);
                 });
+              }
+
             }
           });
 
@@ -187,30 +205,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         InkWell(
                           onTap: (){
                             if(email.text==null||email.text.isEmpty){
-                              Scaffold.of(context).showSnackBar(SnackBar(
-                                backgroundColor: Colors.red,
-                                content: Text("Email is Required"),
-                              ));
+                              Utils.showError(context,"Email is Required");
                             }else if(!Utils.validateEmail(email.text)){
-                              Scaffold.of(context).showSnackBar(SnackBar(
-                                backgroundColor: Colors.red,
-                                content: Text("Email Format is Invalid"),
-                              ));
+                              Utils.showError(context, "Email Format is Invalid");
                             }
                             else if(password.text==null||password.text.isEmpty){
-                              Scaffold.of(context).showSnackBar(SnackBar(
-                                backgroundColor: Colors.red,
-                                content: Text("Password is Required"),
-                              ));
+                              Utils.showError(context, "Password is Required");
                             }else if(!Utils.validateStructure(password.text)){
-                              Scaffold.of(context).showSnackBar(SnackBar(
-                                backgroundColor: Colors.red,
-                                content: Text("Password must contain atleast one lower case,Upper case and special characters"),
-                              ));
+                              Utils.showError(context, "Password must contain atleast one lower case,Upper case and special characters");
                             }else{
-                              // setState(() {
-                              //   isLoading=true;
-                              // });
+                              setState(() {
+                                isLoading=true;
+                              });
                               Network_Operations.signIn(context, email.text, password.text).then((value){
                                 setState(() {
                                   isLoading=false;

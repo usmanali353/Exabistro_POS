@@ -2,9 +2,11 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:api_cache_manager/models/cache_db_model.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:connectivity/connectivity.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:exabistro_pos/Screens/LoadingScreen.dart';
 import 'package:exabistro_pos/Screens/LoginScreen.dart';
+import 'package:exabistro_pos/Screens/Orders/DeliveredScreenForTablet.dart';
+import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/PaidOrdersList.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/components/constants.dart';
 import 'package:exabistro_pos/model/Additionals.dart';
@@ -30,6 +32,8 @@ import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import 'OrdersHistoryTab/Components/PaidTabsComponents.dart';
+
 class POSMainScreen extends StatefulWidget {
   dynamic store;
   @override
@@ -53,7 +57,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
   Order finalOrder;
   List<Orderitem> orderitem = [];
   List<Orderitemstopping> itemToppingList = [];
-  List<Map> orderitem1 = [];
   List<Tax> orderTaxes=[],typeBasedTaxes=[];
   dynamic ordersList;
   List<dynamic> toppingList = [], orderItems = [],tables=[];
@@ -67,6 +70,8 @@ class _POSMainScreenState extends State<POSMainScreen> {
   var selectedOrderType,selectedOrderTypeId,selectedWaiter,selectedWaiterId,selectedTable,selectedTableId;
   TextEditingController timePickerField,customerName,customerPhone,customerEmail,customerAddress,discountValue;
   String token;
+  final formKey= GlobalKey<FormState>();
+  Timer t;
   @override
   void initState() {
     timePickerField=TextEditingController();
@@ -94,6 +99,24 @@ class _POSMainScreenState extends State<POSMainScreen> {
           if(availableTables!=null&&availableTables.length>0){
             this.tables=availableTables;
           }
+
+         t= Timer.periodic(Duration(minutes: 1), (timer) {
+            var reservationData = {
+              "Date":DateTime.now().toString().substring(0,10),
+              "StartTime":DateTime.now().toString().substring(10,16),
+              "EndTime": DateTime.now().add(Duration(hours: 1)).toString().substring(10,16),
+              "storeId":widget.store["id"]
+            };
+            Network_Operations.getAvailableTable(this.context, prefs.getString("token"), reservationData).then((availableTables){
+              setState(() {
+                  print("Called After 1 Minute");
+                if(availableTables!=null&&availableTables.length>0){
+                  this.tables=availableTables;
+                }
+              });
+            });
+            // do something or call a function
+          });
         });
       });
       Network_Operations.getDailySessionByStoreId(context, prefs.getString("token"),widget.store["id"]).then((dailySession){
@@ -103,6 +126,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
       });
       Network_Operations.getCategory(context,prefs.getString("token"),widget.store["id"],"")
           .then((sub) {
+            if(sub!=null)
         setState(() {
           if (sub != null && sub.length > 0) {
             for(int i = 0;i<sub.length;i++){
@@ -129,7 +153,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                     this.userId=prefs.getString("userId");
                   });
                   Network_Operations.getAllDeals(
-                      context, prefs.getString("token"), widget.store["id"])
+                      context, prefs.getString("token"), widget.store["id"],endDate: DateTime.now(),startDate: DateTime.now().subtract(Duration(days: 365)))
                       .then((dealsList) {
                     setState(() {
                       if (dealsList.length > 0) {
@@ -158,6 +182,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                 });
               });
             });
+
           } else {
             isLoading = false;
             Utils.showError(context, "No Categories Found");
@@ -168,8 +193,14 @@ class _POSMainScreenState extends State<POSMainScreen> {
 
 
   }
+  @override
+  void dispose() {
+    t?.cancel();
+    super.dispose();
+  }
+
   buildInvoice()async{
-    print("OrdersList "+ordersList.toString());
+   // print("OrdersList "+jsonDecode(ordersList));
     final titles = <String>[
       'Order Number:',
       'Order Date:',
@@ -177,10 +208,10 @@ class _POSMainScreenState extends State<POSMainScreen> {
       'Items Qty:'
     ];
     final data = <String>[
-      ordersList["id"].toString(),
+      jsonDecode(ordersList)["result"]["id"].toString(),
      DateFormat.yMd().format(DateTime.now()).toString(),
-    ordersList["result"]["orderType"]==1?"Dine-In":ordersList["result"]["orderType"]==2?"Take-Away":ordersList["result"]["orderType"]==3?"Home Delivery":"None",
-      ordersList["result"]["orderItems"].length.toString(),
+      jsonDecode(ordersList)["result"]["orderType"]==1?"Dine-In":jsonDecode(ordersList)["result"]["orderType"]==2?"Take-Away":jsonDecode(ordersList)["result"]["orderType"]==3?"Home Delivery":"None",
+      jsonDecode(ordersList)["result"]["orderItems"].length.toString(),
     ];
     var invoiceData=cartList.map((cartItems){
       return [
@@ -429,13 +460,42 @@ class _POSMainScreenState extends State<POSMainScreen> {
         : Scaffold(
             appBar: AppBar(
               actions: [
-                IconButton(
-                  icon:  FaIcon(FontAwesomeIcons.signOutAlt, color: blueColor, size: 25,),
-                  onPressed: (){
-                    SharedPreferences.getInstance().then((value) {
-                      value.remove("token");
-                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>LoginScreen()), (route) => false);
-                    } );
+                PopupMenuButton<String>(
+                  onSelected: (selectedMenuItem){
+                    switch (selectedMenuItem) {
+                      case 'Order History':
+                        Navigator.push(context, MaterialPageRoute(builder: (context) =>DeliveredScreenForTablet(widget.store)));
+                        break;
+                      case 'Today Orders':
+                        if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
+                          Navigator.push(context, MaterialPageRoute(builder: (context) =>PaidOrdersScreenForTab(widget.store)));
+                        }else {
+                          Navigator.push(context, MaterialPageRoute(builder: (context) =>PaidTabsScreen(storeId:widget.store)));
+                        }
+                        break;
+                      case 'Log Out':
+                        SharedPreferences.getInstance().then((value) {
+                          value.remove("token");
+                          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>LoginScreen()), (route) => false);
+                        });
+                        break;
+                    }
+                  },
+                  itemBuilder: (BuildContext context) {
+                    return {'Today Orders', 'Order History','Log Out'}.map((String choice) {
+                      return PopupMenuItem<String>(
+                        value: choice,
+                        child: Row(
+                          children: [
+                            Padding(
+                              padding: EdgeInsets.only(right:8.0),
+                              child:choice=="Log Out"? FaIcon(FontAwesomeIcons.signOutAlt,color: yellowColor,):choice=="Order History"?FaIcon(FontAwesomeIcons.history,color: yellowColor):Icon(Icons.fastfood,color: yellowColor),
+                            ),
+                            Text(choice)
+                          ],
+                        ),
+                      );
+                    }).toList();
                   },
                 ),
               ],
@@ -448,7 +508,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
               ),
               centerTitle: true,
               backgroundColor: BackgroundColor,
-              automaticallyImplyLeading: false,
+              automaticallyImplyLeading: true,
             ),
             body: Container(
                 height: MediaQuery.of(context).size.height,
@@ -466,11 +526,11 @@ class _POSMainScreenState extends State<POSMainScreen> {
                       Expanded(
                           flex: 3,
                           child: Container(
-                            color: Colors.white,
+                            color: Colors.white.withOpacity(0.1),
                             child: Column(
                               children: [
                                 Visibility(
-                                  visible: tables!=null&&tables.length>0,
+                                  visible: widget.store["dineIn"]!=null&&widget.store["dineIn"]&&tables!=null&&tables.length>0,
                                   child: Container(
                                     width: MediaQuery.of(context).size.width,
                                     height: 63,
@@ -481,22 +541,78 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         itemBuilder: (context, index){
                                       return Padding(
                                         padding: const EdgeInsets.all(8.0),
-                                        child: Card(
-                                          elevation: 6,
-                                          child: Container(
-                                            width: 120,
-                                            height: 55,
-                                            decoration: BoxDecoration(
-                                              color: yellowColor,
-                                              borderRadius: BorderRadius.circular(4),
-                                            ),
-                                            child:Center(
-                                              child: Text(
-                                                tables[index]["name"],
-                                                style: TextStyle(
-                                                    fontSize: 18,
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold),
+                                        child: InkWell(
+                                          onTap: (){
+                                            setState(() {
+                                              overallTotalPriceWithTax=0.0;
+                                              totalTax=0.0;
+                                              typeBasedTaxes.clear();
+                                              taxesList.clear();
+                                              orderItems.clear();
+                                              discountValue.clear();
+                                              priceWithDiscount=0.0;
+                                              deductedPrice=0.0;
+                                              selectedDiscountType=null;
+                                              selectedTable=tables[index]["name"];
+                                              selectedTableId=tables[index]["id"];
+                                              print("Table Id "+selectedTableId.toString());
+                                              customerName.clear();
+                                              customerPhone.clear();
+                                              overallTotalPriceWithTax=overallTotalPrice;
+                                              if(orderTaxes!=null&&orderTaxes.length>0){
+                                                var tempTaxList = orderTaxes.where((element) => element.dineIn);
+                                                if(tempTaxList!=null&&tempTaxList.length>0){
+                                                  for(Tax t in tempTaxList.toList()){
+                                                    setState(() {
+                                                      if(t.percentage!=null&&t.percentage!=0.0){
+                                                        var percentTax= overallTotalPrice/100*t.percentage;
+                                                        print(percentTax);
+                                                        totalTax=totalTax+percentTax;
+                                                        overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
+                                                      }
+                                                      if(t.price!=null&&t.price!=0.0){
+                                                        overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
+                                                        totalTax=totalTax+t.price;
+                                                      }
+                                                      typeBasedTaxes.add(t);
+
+                                                      taxesList.add({
+                                                        "TaxId": t.id
+                                                      });
+                                                    });
+                                                  }
+                                                }
+                                              }
+                                              showDialog(context: context, builder:(BuildContext context){
+                                                return Dialog(
+                                                    backgroundColor: Colors.transparent,
+                                                    // insetPadding: EdgeInsets.all(16),
+                                                    child: Container(
+                                                        height:450,
+                                                        width: MediaQuery.of(context).size.width/2,
+                                                        child: orderPopUpHorizontalDineIn()
+                                                    )
+                                                );
+                                              });
+                                            });
+                                          },
+                                          child: Card(
+                                            elevation: 6,
+                                            child: Container(
+                                              width: 120,
+                                              height: 55,
+                                              decoration: BoxDecoration(
+                                                color: yellowColor,
+                                                borderRadius: BorderRadius.circular(4),
+                                              ),
+                                              child:Center(
+                                                child: Text(
+                                                  tables[index]["name"],
+                                                  style: TextStyle(
+                                                      fontSize: 18,
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.bold),
+                                                ),
                                               ),
                                             ),
                                           ),
@@ -507,7 +623,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 ),
                                 Container(
                                   width: MediaQuery.of(context).size.width,
-                                  height: 60,
+                                  height: 50,
                                   color: yellowColor,
                                   child: Center(
                                     child: Text(
@@ -522,7 +638,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 Container(
                                   height: 140,
                                   width: MediaQuery.of(context).size.width,
-                                  color: Colors.white,
+                                  color: Colors.white.withOpacity(0.1),
                                   child: ListView.builder(
                                       scrollDirection: Axis.horizontal,
                                       itemCount: subCategories.length,
@@ -694,7 +810,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                       Expanded(
                           flex: 2,
                           child: Container(
-                            color: Colors.white,
+                            color: Colors.white.withOpacity(0.1),
                             child: Column(
                               children: [
                                 Container(
@@ -721,7 +837,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 Container(
                                   color: Colors.white,
                                   width: MediaQuery.of(context).size.width,
-                                  height: 230,
+                                 // height: 230,
                                   child: Column(
                                     children: [
                                       Column(
@@ -782,122 +898,24 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                           ),
                                         ],
                                       ),
-                                      Container(
-                                        width: MediaQuery.of(context).size.width,
-                                        height: 60,
-                                        color: yellowColor,
-                                        child: Center(
-                                          child: Text(
-                                            "Place Your Order",
-                                            style: TextStyle(
-                                                fontSize: 22,
-                                                color: Colors.white,
-                                                fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                      ),
+                                      // Container(
+                                      //   width: MediaQuery.of(context).size.width,
+                                      //   height: 60,
+                                      //   color: yellowColor,
+                                      //   child: Center(
+                                      //     child: Text(
+                                      //       "Place Your Order",
+                                      //       style: TextStyle(
+                                      //           fontSize: 22,
+                                      //           color: Colors.white,
+                                      //           fontWeight: FontWeight.bold),
+                                      //     ),
+                                      //   ),
+                                      // ),
                                       Row(
                                         //mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                                         children: [
-                                          Expanded(
-                                            child: InkWell(
-                                              onTap: () {
-                                                setState(() {
-                                                  overallTotalPriceWithTax=0.0;
-                                                  totalTax=0.0;
-                                                  typeBasedTaxes.clear();
-                                                  taxesList.clear();
-                                                  orderItems.clear();
-                                                  discountValue.clear();
-                                                  priceWithDiscount=0.0;
-                                                  deductedPrice=0.0;
-                                                  selectedDiscountType=null;
-                                                  selectedTable=null;
-                                                  selectedTableId=null;
-                                                  customerName.clear();
-                                                  customerPhone.clear();
-                                                  overallTotalPriceWithTax=overallTotalPrice;
-                                                  if(orderTaxes!=null&&orderTaxes.length>0){
-                                                    var tempTaxList = orderTaxes.where((element) => element.dineIn);
-                                                    if(tempTaxList!=null&&tempTaxList.length>0){
-                                                      for(Tax t in tempTaxList.toList()){
-                                                        setState(() {
-                                                          if(t.percentage!=null&&t.percentage!=0.0){
-                                                            var percentTax= overallTotalPrice/100*t.percentage;
-                                                            print(percentTax);
-                                                            totalTax=totalTax+percentTax;
-                                                            overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
-                                                          }
-                                                          if(t.price!=null&&t.price!=0.0){
-                                                            overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
-                                                            totalTax=totalTax+t.price;
-                                                          }
-                                                          typeBasedTaxes.add(t);
-
-                                                          taxesList.add({
-                                                            "TaxId": t.id
-                                                          });
-                                                        });
-                                                      }
-                                                    }
-                                                  }
-
-                                                });
-
-                                                SharedPreferences.getInstance().then((prefs){
-                                                  var reservationData = {
-                                                    "Date":DateTime.now().toString().substring(0,10),
-                                                    "StartTime":DateTime.now().toString().substring(10,16),
-                                                    "EndTime": DateTime.now().add(Duration(hours: 1)).toString().substring(10,16),
-                                                    "storeId":widget.store["id"]
-                                                  };
-                                                  print(reservationData);
-                                                 Network_Operations.getAvailableTable(context,prefs.getString("token"), reservationData).then((availableTables){
-                                                   if(availableTables!=null&&availableTables.length>0){
-                                                     setState(() {
-                                                       tables.clear();
-                                                       this.tables=availableTables;
-                                                     });
-                                                     showDialog(context: context, builder:(BuildContext context){
-                                                       return Dialog(
-                                                           backgroundColor: Colors.transparent,
-                                                           // insetPadding: EdgeInsets.all(16),
-                                                           child: Container(
-                                                               height:450,
-                                                               width: MediaQuery.of(context).size.width/2,
-                                                               child: orderPopUpHorizontalDineIn()
-                                                           )
-                                                       );
-                                                     });
-                                                   }else{
-                                                     Utils.showError(this.context,"No Table is Free for DineIn");
-                                                   }
-                                                 });
-                                                });
-                                                },
-                                              child: Card(
-                                                elevation:5,
-                                                child: Container(
-                                                  width: 160,
-                                                  height: 70,
-                                                  decoration: BoxDecoration(
-                                                    color: yellowColor,
-                                                    borderRadius: BorderRadius.circular(4)
-                                                  ),
-                                                  child: Center(
-                                                    child: Text(
-                                                      "Dine-In",
-                                                      style: TextStyle(
-                                                          fontSize: 25,
-                                                          color: Colors.white,
-                                                          fontWeight: FontWeight.bold),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          Expanded(
+                                          widget.store["takeAway"]!=null&&widget.store["takeAway"]? Expanded(
                                             child: InkWell(
                                                   onTap: () async{
                                                     setState(() {
@@ -985,18 +1003,19 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                   ),
                                                   child: Center(
                                                     child: Text(
-                                                      "Take-Away",
+                                                      "TakeAway",
                                                       style: TextStyle(
                                                           fontSize: 25,
                                                           color: Colors.white,
+
                                                           fontWeight: FontWeight.bold),
                                                     ),
                                                   ),
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                          Expanded(
+                                          ):Container(),
+                                          widget.store["delivery"]!=null&&widget.store["delivery"]?Expanded(
                                             child: InkWell(
                                                   onTap: () async{
                                                     setState(() {
@@ -1095,7 +1114,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                 ),
                                               ),
                                             ),
-                                          ),
+                                          ):Container(),
                                         ],
                                       ),
 
@@ -1258,7 +1277,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
   }
 
   Widget cartListLayout() {
-    return ListView.builder(
+    return cartList.isNotEmpty? ListView.builder(
         padding: EdgeInsets.all(4),
         scrollDirection: Axis.vertical,
         itemCount: cartList == null ? 0 : cartList.length,
@@ -1501,7 +1520,19 @@ class _POSMainScreenState extends State<POSMainScreen> {
               ),
             ),
           );
-        });
+        }):Center(
+      child: Container(
+        width: 300,
+        height: 300,
+        decoration: BoxDecoration(
+          //color: Colors.white60,
+            image: DecorationImage(
+              fit: BoxFit.cover,
+              image: AssetImage('assets/emptycart.png'),
+            )
+        ),
+      ),
+    );
   }
 
   //Popup's
@@ -2244,7 +2275,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         "CreatedOn":DateTime.now()
                                       };
                                       debugPrint(jsonEncode(order,toEncodable: Utils.myEncode));
-                                      var result= await Utils.check_connection();
+                                      var result=await Utils.check_connection();
                                       if(result == ConnectivityResult.none){
                                         var offlineOrderList=[];
                                         //final body = jsonEncode(order,toEncodable: Utils.myEncode);
@@ -2290,6 +2321,9 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             });
                                             Network_Operations.placeOrder(context, prefs.getString("token"), order).then((orderPlaced){
                                               if(orderPlaced!=null){
+                                                setState(() {
+                                                  this.ordersList=orderPlaced;
+                                                });
                                                 orderItems.clear();
                                                 sqlite_helper().getcart1().then((value) {
                                                   setState(() {
@@ -2314,12 +2348,13 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                   };
                                                   Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
                                                     if(isPaid){
+                                                      buildInvoice();
                                                       Utils.showSuccess(this.context,"Payment Successful");
                                                     }else{
                                                       Utils.showError(this.context,"Problem in Making Payment");
                                                     }
                                                   });
-                                                  buildInvoice();
+
                                                 }
                                                 Utils.showSuccess(this.context,"Order Placed successfully");
                                               }else{
@@ -2453,43 +2488,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                   //     ),
                                   //   ),
                                   // ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(8.0),
-                                      child: TextFormField(
-                                        controller: customerName,
-                                        decoration: InputDecoration(
-                                          border: OutlineInputBorder(),
-                                          hintText: "Customer Name*",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: TextFormField(
-                                        controller: timePickerField,
-                                        decoration: InputDecoration(
-                                            labelText: "Select Picking Time*",
-                                            border: OutlineInputBorder(),
-                                            hintText: "Select Picking Time*",
-                                          labelStyle: TextStyle(color: yellowColor, fontWeight: FontWeight.bold)
-                                        ),
-                                        onTap: ()async{
-                                          FocusScope.of(context).requestFocus(new FocusNode());
-                                          var time = await showTimePicker(
-                                              context: context,
-                                              initialTime: TimeOfDay.now()
-                                          );
-                                          innersetState(() {
-                                            timePickerField.text=time.hour.toString()+":"+time.minute.toString()+":00";
-                                            pickingTime=time;
-                                          });
-                                        },
-                                      ),
-                                    ),
-                                  ),
+
                                 ],
                               ),
                               Row(
@@ -2497,6 +2496,16 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                   Expanded(
                                     child: Column(
                                       children: [
+                                        Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: TextFormField(
+                                            controller: customerName,
+                                            decoration: InputDecoration(
+                                              border: OutlineInputBorder(),
+                                              hintText: "Customer Name*",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ),
                                         Padding(
                                           padding: const EdgeInsets.all(8.0),
                                           child: TextFormField(
@@ -2673,7 +2682,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                   context)
                                                   .size
                                                   .width,
-                                              height: 125,
+                                              height: 165,
                                               decoration: BoxDecoration(
                                                 border: Border.all(color: yellowColor),
                                                 //borderRadius: BorderRadius.circular(8)
@@ -2782,7 +2791,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 padding: const EdgeInsets.all(8.0),
                                 child: InkWell(
                                   onTap: ()async{
-                                    if(customerName.text!=null&&customerName.text.isNotEmpty&&customerPhone.text.isNotEmpty&&timePickerField.text.isNotEmpty){
+                                    if(customerName.text!=null&&customerName.text.isNotEmpty&&customerPhone.text.isNotEmpty){
                                       for(int i=0;i<cartList.length;i++){
                                         orderItems.add({
                                           "dealid":cartList[i].dealId,
@@ -2815,19 +2824,18 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         "CardNumber": null,
                                         "CVV": null,
                                         "ExpiryDate": null,
-                                        "EstimatedTakeAwayTime":pickingTime!=null?DateFormat("hh:mm:ss").format(DateTime(DateTime.now().year,DateTime.now().month,DateTime.now().day,pickingTime.hour,pickingTime.minute)).toString():null,
+                                        //"EstimatedTakeAwayTime":pickingTime!=null?DateFormat("hh:mm:ss").format(DateTime(DateTime.now().year,DateTime.now().month,DateTime.now().day,pickingTime.hour,pickingTime.minute)).toString():null,
                                         "OrderTaxes":taxesList,
                                         "VoucherCode": "",
                                         "OrderStatus":7,
                                         "customerName":customerName.text,
-                                        
                                         "CustomerContactNo":customerPhone.text,
                                         "employeeId": int.parse(userId),
                                         "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false,
                                         "CreatedOn":DateTime.now(),
                                         "discountedPrice":deductedPrice,
                                       };
-                                      var result= await Utils.check_connection();
+                                      var result=await Utils.check_connection();
                                       if(result == ConnectivityResult.none){
                                         var offlineOrderList=[];
                                         //final body = jsonEncode(order,toEncodable: Utils.myEncode);
@@ -2873,6 +2881,9 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             });
                                             Network_Operations.placeOrder(context, prefs.getString("token"), order).then((orderPlaced){
                                               if(orderPlaced!=null){
+                                                setState(() {
+                                                  this.ordersList=orderPlaced;
+                                                });
                                                 orderItems.clear();
                                                 sqlite_helper().getcart1().then((value) {
                                                   setState(() {
@@ -2991,107 +3002,20 @@ class _POSMainScreenState extends State<POSMainScreen> {
                           Column(
                             children: [
                               Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  // Expanded(
-                                  //   child: Padding(
-                                  //     padding: const EdgeInsets.all(8.0),
-                                  //     child: DropdownButtonFormField<String>(
-                                  //       decoration: InputDecoration(
-                                  //         labelText: "Select Type",
-                                  //         alignLabelWithHint: true,
-                                  //         labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                  //         enabledBorder: OutlineInputBorder(
-                                  //         ),
-                                  //         focusedBorder:  OutlineInputBorder(
-                                  //           borderSide: BorderSide(color:yellowColor),
-                                  //         ),
-                                  //       ),
-                                  //
-                                  //       value: selectedType,
-                                  //       onChanged: (Value) {
-                                  //         innersetState(() {
-                                  //           selectedType = Value;
-                                  //         });
-                                  //       },
-                                  //       items: types.map((value) {
-                                  //         return  DropdownMenuItem<String>(
-                                  //           value: value,
-                                  //           child: Row(
-                                  //             children: <Widget>[
-                                  //               Text(
-                                  //                 value,
-                                  //                 style:  TextStyle(color: yellowColor,fontSize: 13),
-                                  //               ),
-                                  //               //user.icon,
-                                  //               //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                  //             ],
-                                  //           ),
-                                  //         );
-                                  //       }).toList(),
-                                  //     ),
-                                  //   ),
-                                  // ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(12.0),
-                                      child: DropdownButtonFormField<String>(
-                                        decoration: InputDecoration(
-                                          hintText: "Select Table *",
-                                          labelText: "Select Table *",
-                                          labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                          enabledBorder: OutlineInputBorder(
-                                          ),
-                                          focusedBorder:  OutlineInputBorder(
-                                            borderSide: BorderSide(color:yellowColor),
-                                          ),
-                                        ),
-
-                                        value: selectedTable,
-                                        onChanged: (Value) {
-                                          innersetState(() {
-                                            selectedTable=Value;
-                                            selectedTableId=tables[tables.indexOf(tables.where((element) =>element["name"]==selectedTable).toList()[0])]["id"];
-                                          });
-                                        },
-                                        items: tables.map((value) {
-                                          return  DropdownMenuItem<String>(
-                                            value: value["name"],
-                                            child: Row(
-                                              children: <Widget>[
-                                                Text(
-                                                  value["name"],
-                                                  style:  TextStyle(color: yellowColor,fontSize: 13),
-                                                ),
-                                                //user.icon,
-                                                //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                              ],
-                                            ),
-                                          );
-                                        }).toList(),
-                                      ),
-                                    ),
-                                  ),
-                                  Expanded(
-                                    child: Padding(
-                                      padding: EdgeInsets.all(8.0),
-                                      child: TextFormField(
-                                        controller: customerName,
-                                        decoration: InputDecoration(
-                                          border: OutlineInputBorder(),
-                                          hintText: "Customer Name *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-
-                              Row(
                                 children: [
                                   Expanded(
                                     child: Column(
                                       children: [
+                                        Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: TextFormField(
+                                            controller: customerName,
+                                            decoration: InputDecoration(
+                                              border: OutlineInputBorder(),
+                                              hintText: "Customer Name *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ),
                                         Padding(
                                           padding: const EdgeInsets.all(8.0),
                                           child: TextFormField(
@@ -3268,7 +3192,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                   context)
                                                   .size
                                                   .width,
-                                              height: 125,
+                                              height: 175,
                                               decoration: BoxDecoration(
                                                 border: Border.all(color: yellowColor),
                                                 //borderRadius: BorderRadius.circular(8)
@@ -3377,7 +3301,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 padding: const EdgeInsets.all(8.0),
                                 child: InkWell(
                                   onTap: ()async{
-                                    if(customerName.text!=null&&customerName.text.isNotEmpty&&selectedTableId!=null&&customerPhone.text.isNotEmpty){
                                       for(int i=0;i<cartList.length;i++){
                                         orderItems.add({
                                           "dealid":cartList[i].dealId,
@@ -3422,7 +3345,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         "CreatedOn":DateTime.now(),
                                       };
                                       debugPrint(jsonEncode(order,toEncodable: Utils.myEncode));
-                                      var result= await Utils.check_connection();
+                                      var result = await Utils.check_connection();
                                       if(result == ConnectivityResult.none){
                                         var offlineOrderList=[];
                                         //final body = jsonEncode(order,toEncodable: Utils.myEncode);
@@ -3473,6 +3396,9 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                             });
                                             Network_Operations.placeOrder(context, prefs.getString("token"), order).then((orderPlaced){
                                               if(orderPlaced!=null){
+                                                setState(() {
+                                                  this.ordersList=orderPlaced;
+                                                });
                                                 var reservationData = {
                                                   "Date":DateTime.now().toString().substring(0,10),
                                                   "StartTime":DateTime.now().toString().substring(10,16),
@@ -3526,9 +3452,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                         }
 
                                       }
-                                    }else{
-                                      Utils.showError(this.context,"Provide all Required Information");
-                                    }
+
                                   },
                                   child: Card(
                                     elevation:8,
@@ -3595,19 +3519,21 @@ class _POSMainScreenState extends State<POSMainScreen> {
           selectedSizeObj=product.productSizes[0];
           SharedPreferences.getInstance().then((prefs){
             Network_Operations.getAdditionals(context, prefs.getString("token"), product.id, product.productSizes[0]["size"]["id"]).then((value){
-              innersetState(() {
-                additionals=value;
-                if(additionals.length>0){
-                  innersetState(() {
-                    isvisible=true;
-                    productPopupHeight=650.0;
-                  });
-                }else
-                  innersetState(() {
-                    isvisible=false;
-                    productPopupHeight=330.0;
-                  });
-              });
+                innersetState(() {
+                  additionals=value;
+                  if(additionals.length>0){
+                    innersetState(() {
+                      isvisible=true;
+                      productPopupHeight=650.0;
+                    });
+                  }else
+                    innersetState(() {
+                      isvisible=false;
+                      productPopupHeight=330.0;
+                    });
+                });
+
+
             });
           });
           innersetState(() {
@@ -3650,7 +3576,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                 builder: (BuildContext context) {
                   return  NumberPickerDialog.integer(
                     initialIntegerValue: quantity,
-                    minValue: 0,
+                    minValue: 1,
                     maxValue: 10,
 
                     title: new Text("Select Quantity"),
@@ -3701,23 +3627,50 @@ class _POSMainScreenState extends State<POSMainScreen> {
                       )
                   ),
                 child:Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        IconButton(
-                          icon: Icon(
-                            Icons.clear,
-                            size: 40,
-                            color: Colors.red,
-                          ),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                          },
-                        )
-                      ],
-                    ),
+                   Container(
+                     width: MediaQuery.of(context).size.width,
+                     height: 50,
+                     color: yellowColor,
+                     child:  Padding(
+                       padding: const EdgeInsets.only(bottom: 10),
+                       child: Row(
+                         crossAxisAlignment: CrossAxisAlignment.end,
+                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                         children: [
+                           IconButton(
+                             icon: Icon(
+                               Icons.clear,
+                               size: 40,
+                               color: yellowColor,
+                             ),
+                             // onPressed: () {
+                             //   Navigator.of(context).pop();
+                             // },
+                           ),
+                           Text(product.name,
+                             style: TextStyle(
+                                 color: Colors.white,
+                                 fontWeight: FontWeight.bold,
+                                 fontSize: 25
+                             ),
+                           ),
+                           IconButton(
+                             icon: Icon(
+                               Icons.clear,
+                               size: 40,
+                               color: Colors.red,
+                             ),
+                             onPressed: () {
+                               Navigator.of(context).pop();
+                             },
+                           ),
+
+                         ],
+                       ),
+                     ),
+                   ),
                     Padding(
                       padding: const EdgeInsets.only(top:16.0,left:16,right:16),
                       child: DropdownButtonFormField<dynamic>(
