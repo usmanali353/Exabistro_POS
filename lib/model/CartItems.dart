@@ -9,6 +9,7 @@ class CartItems{
   int isDeal;
   String topping;
   int storeId;
+  String dealProducts;
   CartItems({
     this.id,
     this.productId,
@@ -22,6 +23,7 @@ class CartItems{
     this.dealId,
     this.topping,
     this.storeId,
+    this.dealProducts
   });
   Map<String,dynamic> toJson()=>{
     "id":id,
@@ -48,6 +50,7 @@ class CartItems{
 
     "storeId":storeId,
 
+    "dealProducts":dealProducts
   };
 
   CartItems.fromJson(Map<dynamic,dynamic> data){
@@ -76,7 +79,7 @@ class CartItems{
 
     storeId=data["storeId"];
 
-
+    dealProducts=data["dealProducts"];
   }
 }
 class CartItemsWithChair{

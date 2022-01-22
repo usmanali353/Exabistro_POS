@@ -1,4 +1,6 @@
 
+import 'dart:convert';
+
 class Toppings{
   int additionalitemid, quantity;
   double price,totalprice;
@@ -30,4 +32,6 @@ class Toppings{
 
     quantity=data['quantity'];
   }
+  static List<Toppings> toppingListFromJson(String str) => List<Toppings>.from(jsonDecode(str).map((x) => Toppings.fromJson(x)));
+
 }

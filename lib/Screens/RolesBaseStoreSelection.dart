@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:exabistro_pos/Screens/LoginScreen.dart';
 import 'package:exabistro_pos/Screens/POSMainScreen.dart';
+import 'package:exabistro_pos/Screens/POSMainScreenUI1.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -38,7 +39,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
       DeviceOrientation.landscapeRight,
       DeviceOrientation.landscapeLeft,
     ]);
-    print(widget.roles[0]['store']);
+    print("store "+widget.roles.toString());
     // WidgetsBinding.instance
     //     .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
 
@@ -50,7 +51,6 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
       // if(widget.roles[i]['roleId'] == 2){
       //   isVisible =true;
       // }
-
     }
 
     Network_Operations.getRoles(context).then((value) {
@@ -86,6 +86,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
               onPressed: (){
                 SharedPreferences.getInstance().then((value) {
                   value.remove("token");
+                  value.remove("roles");
                   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>LoginScreen()), (route) => false);
                 } );
               },
@@ -131,7 +132,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
             itemBuilder: (context, index){
               return InkWell(
                           onTap: () {
-                            Navigator.push(context,MaterialPageRoute(builder:(context)=>POSMainScreen(store: widget.roles[index]['store'],)));
+                            Navigator.push(context,MaterialPageRoute(builder:(context)=>POSMainScreenUI1(store: widget.roles[index]['store'],)));
                           },
                 child: Container(
                   height: 310,
@@ -596,7 +597,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
                 padding: const EdgeInsets.only(top: 70.0, bottom: 70, left: 8, right: 8),
                 child: InkWell(
                   onTap: () {
-                    Navigator.push(context,MaterialPageRoute(builder:(context)=>POSMainScreen(store: widget.roles[index]['store'],)));
+                    Navigator.push(context,MaterialPageRoute(builder:(context)=>POSMainScreenUI1(store: widget.roles[index]['store'],)));
                   },
                   child: Container(
                     height: 310,

@@ -107,7 +107,8 @@ class sqlite_helper{
         "isDeal INTEGER,"
         "dealId INTEGER,"
         "storeId INTEGER,"
-        "topping TEXT"
+        "topping TEXT,"
+        "dealProducts TEXT"
         ")");
     await db.execute("CREATE TABLE Cart1("
         "id INTEGER PRIMARY KEY AUTOINCREMENT,"
@@ -164,7 +165,7 @@ class sqlite_helper{
     for(int i=0;i<result.length;i++){
       cartlist.add(CartItems(id: result[i]['id'],sizeName: result[i]['sizeName'],productId: result[i]['productId'],productName: result[i]['productName'],
       price: result[i]['price'],quantity: result[i]['quantity'],sizeId: result[i]['sizeId'],topping: result[i]['topping'],
-          isDeal: result[i]['isDeal'],dealId: result[i]['dealId'],totalPrice: result[i]['totalPrice'],storeId: result[i]["storeId"]));
+          isDeal: result[i]['isDeal'],dealId: result[i]['dealId'],totalPrice: result[i]['totalPrice'],storeId: result[i]["storeId"],dealProducts: result[i]["dealProducts"]));
     }
     return cartlist;
   }
@@ -215,6 +216,22 @@ class sqlite_helper{
     var dbClient= await db;
     var result = await dbClient.rawQuery('SELECT * FROM Cart');
     return result.toList().length;
+  }
+
+ Future<int> updatePriceAndQuantity(int id,double totalPrice,int quantity)async{
+    var dbClient= await db;
+    int count = await dbClient.rawUpdate(
+        'UPDATE Cart SET totalPrice = ?, quantity = ? WHERE id = ?',
+        [totalPrice,quantity,id]);
+    return count;
+  }
+
+  Future<int> updateTopping(int id,String toppings)async{
+    var dbClient= await db;
+    int count = await dbClient.rawUpdate(
+        'UPDATE Cart SET topping = ? WHERE id = ?',
+        [toppings,id]);
+    return count;
   }
 
 

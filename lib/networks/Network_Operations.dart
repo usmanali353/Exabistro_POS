@@ -42,6 +42,7 @@ class Network_Operations{
             return false;
           }else {
             if (passData.syncData == password) {
+
               SharedPreferences.getInstance().then((prefs) {
                 prefs.setString("token", jsonDecode(cacheData.syncData)['token']);
                 prefs.setString("email", email);
@@ -80,18 +81,19 @@ class Network_Operations{
             restaurantList.add(decoded[i]['restaurant']);
           }
           print(rolesAndStores);
-          var claims = Utils.parseJwt(jsonDecode(response.body)['token']);
-          SharedPreferences.getInstance().then((prefs){
-            prefs.setString("token", jsonDecode(response.body)['token']);
-            prefs.setString("email", email);
-            prefs.setString('userId', claims['nameid']);
-            prefs.setString('nameid', claims['nameid']);
-            prefs.setString("name", claims['unique_name']);
-            prefs.setString('password', password);
-            prefs.setString("roles", jsonEncode(decoded));
-            // prefs.setString('isCustomer', claims['IsCustomerOnly']);
-          });
-          Utils.showSuccess(context, "Login Successful");
+          if(decoded[0]["roleId"]==6||decoded[0]["roleId"]==5||decoded[0]["roleId"]==11){
+            var claims = Utils.parseJwt(jsonDecode(response.body)['token']);
+            SharedPreferences.getInstance().then((prefs){
+              prefs.setString("token", jsonDecode(response.body)['token']);
+              prefs.setString("email", email);
+              prefs.setString('userId', claims['nameid']);
+              prefs.setString('nameid', claims['nameid']);
+              prefs.setString("name", claims['unique_name']);
+              prefs.setString('password', password);
+              prefs.setString("roles", jsonEncode(decoded));
+              // prefs.setString('isCustomer', claims['IsCustomerOnly']);
+            });
+            Utils.showSuccess(context, "Login Successful");
 
             APICacheDBModel cacheDBModel = new APICacheDBModel(
                 key: "response"+email, syncData: response.body);
@@ -100,12 +102,13 @@ class Network_Operations{
                 key: "password"+email, syncData: password);
             await APICacheManager().addCacheData(cacheDBModel1);
 
-              Navigator.pushAndRemoveUntil(context,
-                  //MaterialPageRoute(builder: (context) => DashboardScreen()), (
-                  MaterialPageRoute(builder: (context) => RoleBaseStoreSelection(rolesAndStores)), (
-                      Route<dynamic> route) => false);
-            return true;
-
+            Navigator.pushAndRemoveUntil(context,
+                //MaterialPageRoute(builder: (context) => DashboardScreen()), (
+                MaterialPageRoute(builder: (context) => RoleBaseStoreSelection(rolesAndStores)), (
+                    Route<dynamic> route) => false);
+          }else {
+            Utils.showError(context, "This App is only for Employees");
+          }
         }
         else{
 
@@ -696,6 +699,23 @@ class Network_Operations{
       }
     }catch(e){
       Utils.showError(context, "Data Not Found Or Error Found");
+    }
+    return null;
+  }
+
+  static Future<dynamic> cancelOrder(BuildContext context,String token,int orderId,int statusId)async{
+    try{
+      Map<String,String> header = {'Authorization':'Bearer '+token};
+      var response=await http.get(Uri.parse(Utils.baseUrl()+"orders/DeleteOrderById/"+orderId.toString()+"/"+statusId.toString()),headers: header);
+      var data= jsonDecode(response.body);
+      if(response.statusCode==200){
+        return data;
+      }
+      else{
+        Utils.showError(context, "Please Try Again");
+      }
+    }catch(e){
+      Utils.showError(context, "Error Found: $e");
     }
     return null;
   }

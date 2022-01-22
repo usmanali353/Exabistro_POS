@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:ui';
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/components/constants.dart';
 import 'package:exabistro_pos/model/OrderById.dart';
@@ -89,7 +90,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                 Network_Operations.getAllOrders(context, token,widget.store["id"]).then((value) {
                   setState(() {
                     if(value!=null&&value.length>0){
-                      value=value.reversed.toList();
+                      //value=value.reversed.toList();
                       for(var order in value){
                         String createdOn=DateFormat("yyyy-MM-dd").parse(order["createdOn"]).toString().split(" ")[0].trim();
                         String todayDate=DateTime(DateTime.now().year,DateTime.now().month,DateTime.now().day).toIso8601String().replaceAll("T00:00:00.000","").trim();
@@ -215,9 +216,9 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                             return Dialog(
                                                 backgroundColor: Colors.transparent,
                                                 child: Container(
-                                                    height: 700,
-                                                    width: 400,
-                                                    child: ordersDetailPopupLayout(orderList[index])
+                                                    height: 450,
+                                                    width: 750,
+                                                    child: ordersDetailPopupLayoutHorizontal(orderList[index])
                                                 )
                                             );
 
@@ -448,7 +449,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                           String createdOn=DateFormat("yyyy-MM-dd").parse(order["createdOn"]).toString().split(" ")[0].trim();
                           String todayDate=DateTime(DateTime.now().year,DateTime.now().month,DateTime.now().day).toIso8601String().replaceAll("T00:00:00.000","").trim();
                           print(order["cashPay"]==null);
-                          if(createdOn.contains(todayDate)&&order["cashPay"]!=null&&order["orderStatus"]!=2){
+                          if(createdOn.contains(todayDate)&&order["cashPay"]==null&&order["orderStatus"]!=2){
                             orderList.add(order);
                           }
                         }
@@ -496,10 +497,9 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
             Animation secondaryAnimation) {
           return Center(
             child: Container(
-              width: 350,
-              height:300,
-              padding: EdgeInsets.all(20),
-              color: Colors.black54,
+              width: 450,
+              height:350,
+
               child: DealsDetailsForKitchen(orderId)
 
             ),
@@ -1091,7 +1091,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                               crossAxisAlignment: CrossAxisAlignment.end,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                orders["orderType"]>=5?InkWell(
+                                orders["orderStatus"]>=5?InkWell(
                                   onTap: (){
                                     var payCash ={
                                       "orderid": orders["id"],
@@ -1160,6 +1160,1150 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                       ),
                     ))
             );
+          },
+        )
+    );
+  }
+
+  Widget ordersDetailPopupLayoutHorizontal(dynamic orders) {
+    if(orders["discountedPrice"]!=null&&orders["discountedPrice"]!=0.0){
+      if(orders["orderTaxes"].where((element)=>element["taxName"]=="Discount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Discount").toList().length>0){
+        orders["orderTaxes"].remove(orders["orderTaxes"].last);
+      }
+      orders["orderTaxes"].add({"taxName":"Discount","amount":orders["discountedPrice"]});
+    }
+    return Scaffold(
+        backgroundColor: Colors.white.withOpacity(0.1),
+        body: StatefulBuilder(
+          builder: (context,innerSetstate){
+            if(orders!=null&&orders["customerId"]!=null) {
+              Network_Operations.getCustomerById(
+                  context, token, orders["customerId"]).then((customerInfo) {
+                innerSetstate(() {
+                  customerName=customerInfo["firstName"];
+                  print("Customer Name "+customerName);
+                });
+              });
+            }
+            if(orders!=null&&orders["employeeId"]!=null){
+              Network_Operations.getCustomerById(
+                  context, token, orders["employeeId"]).then((waiterInfo) {
+                innerSetstate(() {
+                  waiterName=waiterInfo["firstName"]+""+waiterInfo["lastName"];
+                  print("employee Name "+waiterName);
+                });
+              });
+            }
+            return Container(
+                height:450,
+                width: 750,
+                decoration: BoxDecoration(
+                    image: DecorationImage(
+                      fit: BoxFit.cover,
+                      image: AssetImage('assets/bb.jpg'),
+                    )
+                ),
+                child: Column(
+                  children: [
+                    Card(
+                      elevation: 4,
+                      child: Container(
+                        width: MediaQuery.of(context).size.width,
+                        height: 50,
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            color: yellowColor
+                        ),
+                        child:  Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              orders["orderType"]==1? FaIcon(FontAwesomeIcons.utensils, color: blueColor, size:30):orders["orderType"]==2?FaIcon(FontAwesomeIcons.shoppingBag, color: blueColor,size:30):FaIcon(FontAwesomeIcons.biking, color: blueColor,size:30),
+                              Row(
+                                children: [
+                                  Text('Order ID: ',
+                                    style: TextStyle(
+                                        fontSize: 35,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white
+                                    ),
+                                  ),
+                                  Text(orders['id']!=null?orders['id'].toString():"",
+                                    style: TextStyle(
+                                        fontSize: 35,
+                                        color: blueColor,
+                                        fontWeight: FontWeight.bold
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              Row(
+                                  children: [
+                                    orders["orderStatus"]==1?InkWell(
+                                      child: FaIcon(FontAwesomeIcons.solidTimesCircle, color: blueColor, size: 30,),
+                                      onTap: (){
+                                        Network_Operations.cancelOrder(context, token, orders['id'], 2).then((value){
+                                          if(value){
+                                            WidgetsBinding.instance
+                                                .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                                            Navigator.pop(context);
+                                            Utils.showSuccess(context, "Order has been Canceled");
+                                          }else{
+                                            Utils.showError(context, "Please Try Again");
+                                          }
+                                        });
+                                      },
+                                    ):Container(),
+                                    orders["orderStatus"]>=5?InkWell(
+                                        onTap: (){
+                                          var payCash ={
+                                            "orderid": orders["id"],
+                                            "CashPay": orders["grossTotal"],
+                                            "Balance": orders["grossTotal"],
+                                            "Comment": null,
+                                            "PaymentType": 1,
+                                            "OrderStatus": 7,
+                                          };
+                                          Network_Operations.payCashOrder(this.context,token, payCash).then((isPaid){
+                                            Navigator.pop(context);
+                                            if(isPaid){
+                                              WidgetsBinding.instance
+                                                  .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                                              Navigator.pop(context);
+                                              Utils.showSuccess(this.context,"Payment Successful");
+                                            }else{
+                                              Navigator.pop(context);
+                                              Utils.showError(this.context,"Problem in Making Payment");
+                                            }
+                                          });
+                                        },
+                                        child: FaIcon(FontAwesomeIcons.cashRegister, color: blueColor, size: 30,)):Container(),
+                                    SizedBox(width: 15,),
+                                    InkWell(
+                                        onTap: (){
+                                          buildInvoice(orders);
+                                        },
+                                        child: FaIcon(FontAwesomeIcons.print, color: blueColor, size: 30,)),
+                                  ],
+                              ),
+
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 3,),
+                    Row(
+                      children: [
+                        Expanded(
+                          flex: 2,
+                          child: Container(
+                            height: 385,
+                            //color: yellowColor,
+                            child: Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(2.0),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        flex:2,
+                                        child: Container(
+                                          width: 90,
+                                          height: 30,
+                                          decoration: BoxDecoration(
+                                            color: yellowColor,
+                                            border: Border.all(color: yellowColor, width: 2),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Center(
+                                            child: AutoSizeText(
+                                              'Items:',
+                                              style: TextStyle(
+                                                  color: BackgroundColor,
+                                                  fontSize: 22,
+                                                  fontWeight: FontWeight.bold
+                                              ),
+                                              maxLines: 1,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: 2,),
+                                      Expanded(
+                                        flex:3,
+                                        child: Container(
+                                          width: 90,
+                                          height: 30,
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: yellowColor, width: 2),
+                                            //color: BackgroundColor,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child:
+                                          Center(
+                                            child: Text(orders['orderItems'].length.toString(),
+                                              style: TextStyle(
+                                                  fontSize: 20,
+                                                  color: PrimaryColor,
+                                                  fontWeight: FontWeight.bold
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(2.0),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        flex:2,
+                                        child: Container(
+                                          width: 90,
+                                          height: 30,
+                                          decoration: BoxDecoration(
+                                            color: yellowColor,
+                                            border: Border.all(color: yellowColor, width: 2),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Center(
+                                            child: AutoSizeText(
+                                              'Total: ',
+                                              style: TextStyle(
+                                                  color: BackgroundColor,
+                                                  fontSize: 22,
+                                                  fontWeight: FontWeight.bold
+                                              ),
+                                              maxLines: 2,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: 2,),
+                                      Expanded(
+                                        flex:3,
+                                        child: Container(
+                                          width: 90,
+                                          height: 30,
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: yellowColor, width: 2),
+                                            //color: BackgroundColor,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child:
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              Text(
+                                                //"Dine-In",
+                                                widget.store["currencyCode"]!=null?widget.store["currencyCode"]+": ":" ",
+                                                style: TextStyle(
+                                                    fontSize: 20,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: blueColor
+                                                ),
+                                              ),
+                                              Text(
+                                                //"Dine-In",
+                                                orders["discountedPrice"]!=null&&orders["discountedPrice"]!=0.0?(orders["grossTotal"]-orders["discountedPrice"]).toStringAsFixed(1):orders["grossTotal"].toStringAsFixed(1),
+                                                style: TextStyle(
+                                                    fontSize: 20,
+                                                    fontWeight: FontWeight.bold,
+                                                    color: blueColor
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          // Center(
+                                          //   child: AutoSizeText(
+                                          //     widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                          //     style: TextStyle(
+                                          //         color: blueColor,
+                                          //         fontSize: 22,
+                                          //         fontWeight: FontWeight.bold
+                                          //     ),
+                                          //     maxLines: 2,
+                                          //   ),
+                                          // ),
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                                // Row(
+                                //   children: [
+                                //     Container(),
+                                //
+                                //     Text('Total: ',
+                                //       style: TextStyle(
+                                //           fontSize: 20,
+                                //           fontWeight: FontWeight.bold,
+                                //           color: yellowColor
+                                //       ),
+                                //     ),
+                                //     Padding(
+                                //       padding: EdgeInsets.only(left: 2.5),
+                                //     ),
+                                //     Row(
+                                //       children: [
+                                //         Text(
+                                //           //"Dine-In",
+                                //           widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                //           style: TextStyle(
+                                //               fontSize: 20,
+                                //               fontWeight: FontWeight.bold,
+                                //               color: PrimaryColor
+                                //           ),
+                                //         ),
+                                //         Text(
+                                //           //"Dine-In",
+                                //           orders['grossTotal'].toStringAsFixed(1),
+                                //           style: TextStyle(
+                                //               fontSize: 20,
+                                //               fontWeight: FontWeight.bold,
+                                //               color: PrimaryColor
+                                //           ),
+                                //         ),
+                                //       ],
+                                //     ),
+                                //   ],
+                                // ),
+                                Padding(
+                                  padding: const EdgeInsets.all(2.0),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        flex:2,
+                                        child: Container(
+                                          width: 90,
+                                          height: 30,
+                                          decoration: BoxDecoration(
+                                            color: yellowColor,
+                                            border: Border.all(color: yellowColor, width: 2),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Center(
+                                            child: AutoSizeText(
+                                              'Status:',
+                                              style: TextStyle(
+                                                  color: BackgroundColor,
+                                                  fontSize: 22,
+                                                  fontWeight: FontWeight.bold
+                                              ),
+                                              maxLines: 1,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: 2,),
+                                      Expanded(
+                                        flex:3,
+                                        child: Container(
+                                          width: 90,
+                                          height: 30,
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: yellowColor, width: 2),
+                                            //color: BackgroundColor,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child:
+                                          Center(
+                                            child: Text( getStatus(orders!=null?orders['orderStatus']:null),
+                                              style: TextStyle(
+                                                  fontSize: 20,
+                                                  color: PrimaryColor,
+                                                  fontWeight: FontWeight.bold
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                                // Padding(
+                                //   padding: const EdgeInsets.all(2.0),
+                                //   child: Row(
+                                //     mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                //     children: [
+                                //       Expanded(
+                                //         flex:2,
+                                //         child: Container(
+                                //           width: 90,
+                                //           height: 30,
+                                //           decoration: BoxDecoration(
+                                //             color: yellowColor,
+                                //             border: Border.all(color: yellowColor, width: 2),
+                                //             borderRadius: BorderRadius.circular(8),
+                                //           ),
+                                //           child: Center(
+                                //             child: AutoSizeText(
+                                //               'Type:',
+                                //               style: TextStyle(
+                                //                   color: BackgroundColor,
+                                //                   fontSize: 22,
+                                //                   fontWeight: FontWeight.bold
+                                //               ),
+                                //               maxLines: 1,
+                                //             ),
+                                //           ),
+                                //         ),
+                                //       ),
+                                //       SizedBox(width: 2,),
+                                //       Expanded(
+                                //         flex:3,
+                                //         child: Container(
+                                //           width: 90,
+                                //           height: 30,
+                                //           decoration: BoxDecoration(
+                                //             border: Border.all(color: yellowColor, width: 2),
+                                //             //color: BackgroundColor,
+                                //             borderRadius: BorderRadius.circular(8),
+                                //           ),
+                                //           child:
+                                //           Center(
+                                //             child: Text( getOrderType(orders['orderType']),
+                                //               style: TextStyle(
+                                //                   fontSize: 20,
+                                //                   color: PrimaryColor,
+                                //                   fontWeight: FontWeight.bold
+                                //               ),
+                                //             ),
+                                //           ),
+                                //         ),
+                                //       )
+                                //     ],
+                                //   ),
+                                // ),
+                                Padding(
+                                  padding: const EdgeInsets.all(2.0),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        flex:2,
+                                        child: Container(
+                                          width: 90,
+                                          height: 30,
+                                          decoration: BoxDecoration(
+                                            color: yellowColor,
+                                            border: Border.all(color: yellowColor, width: 2),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Center(
+                                            child: AutoSizeText(
+                                              'Waiter:',
+                                              style: TextStyle(
+                                                  color: BackgroundColor,
+                                                  fontSize: 22,
+                                                  fontWeight: FontWeight.bold
+                                              ),
+                                              maxLines: 1,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: 2,),
+                                      Expanded(
+                                        flex:3,
+                                        child: Container(
+                                          width: 90,
+                                          height: 30,
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: yellowColor, width: 2),
+                                            //color: BackgroundColor,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child:
+                                          Center(
+                                            child: Text( waiterName,
+                                              style: TextStyle(
+                                                  fontSize: 20,
+                                                  color: PrimaryColor,
+                                                  fontWeight: FontWeight.bold
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                ),
+
+                                Padding(
+                                  padding: const EdgeInsets.all(2.0),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        flex:2,
+                                        child: Container(
+                                          width: 90,
+                                          height: 30,
+                                          decoration: BoxDecoration(
+                                            color: yellowColor,
+                                            border: Border.all(color: yellowColor, width: 2),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Center(
+                                            child: AutoSizeText(
+                                              'Customer:',
+                                              style: TextStyle(
+                                                  color: BackgroundColor,
+                                                  fontSize: 22,
+                                                  fontWeight: FontWeight.bold
+                                              ),
+                                              maxLines: 1,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: 2,),
+                                      Expanded(
+                                        flex:3,
+                                        child: Container(
+                                          width: 90,
+                                          height: 30,
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: yellowColor, width: 2),
+                                            //color: BackgroundColor,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child:
+                                          Center(
+                                            child: Text( orders["visitingCustomer"]!=null?orders["visitingCustomer"]:customerName,
+                                              style: TextStyle(
+                                                  fontSize: 20,
+                                                  color: PrimaryColor,
+                                                  fontWeight: FontWeight.bold
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                                Visibility(
+                                  visible: orders['orderType']==1,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(2.0),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          flex:2,
+                                          child: Container(
+                                            width: 90,
+                                            height: 30,
+                                            decoration: BoxDecoration(
+                                              color: yellowColor,
+                                              border: Border.all(color: yellowColor, width: 2),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Center(
+                                              child: AutoSizeText(
+                                                'Table#:',
+                                                style: TextStyle(
+                                                    color: BackgroundColor,
+                                                    fontSize: 22,
+                                                    fontWeight: FontWeight.bold
+                                                ),
+                                                maxLines: 1,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 2,),
+                                        Expanded(
+                                          flex:3,
+                                          child: Container(
+                                            width: 90,
+                                            height: 30,
+                                            decoration: BoxDecoration(
+                                              border: Border.all(color: yellowColor, width: 2),
+                                              //color: BackgroundColor,
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child:
+                                            Center(
+                                              child: Text(orders['tableId']!=null?getTableName(orders['tableId']).toString():" N/A ",
+                                                style: TextStyle(
+                                                    fontSize: 20,
+                                                    color: PrimaryColor,
+                                                    fontWeight: FontWeight.bold
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 3,),
+                                Expanded(
+                                  child: Column(
+                                    children: [
+                                      Container(
+                                        width: MediaQuery.of(context).size.width,
+                                        height: 50,
+                                        color: yellowColor,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                            MainAxisAlignment
+                                                .spaceBetween,
+                                            children: [
+                                              Text(
+                                                "SubTotal: ",
+                                                style: TextStyle(
+                                                    fontSize:
+                                                    20,
+                                                    color:
+                                                    Colors.white,
+                                                    fontWeight:
+                                                    FontWeight
+                                                        .bold),
+                                              ),
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                                    style: TextStyle(
+                                                        fontSize:
+                                                        20,
+                                                        color:
+                                                        Colors.white,
+                                                        fontWeight:
+                                                        FontWeight.bold),
+                                                  ),
+                                                  SizedBox(
+                                                    width: 2,
+                                                  ),
+                                                  Text(
+                                                    orders["netTotal"].toStringAsFixed(1),
+                                                    //overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
+                                                    style: TextStyle(
+                                                        fontSize:
+                                                        20,
+                                                        color:
+                                                        blueColor,
+                                                        fontWeight:
+                                                        FontWeight.bold),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                      Expanded(
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(2.0),
+                                          child: Container(
+                                              width: MediaQuery.of(
+                                                  context)
+                                                  .size
+                                                  .width,
+
+                                              decoration: BoxDecoration(
+                                                border: Border.all(color: yellowColor),
+                                                //borderRadius: BorderRadius.circular(8)
+                                              ),
+                                              child: ListView.builder(
+                                                  itemCount:orders["orderTaxes"]!=null? orders["orderTaxes"].length:0,
+
+                                                  itemBuilder: (context, index){
+                                                    return  Padding(
+                                                      padding:
+                                                      const EdgeInsets
+                                                          .all(8.0),
+                                                      child: Row(
+                                                        mainAxisAlignment:
+                                                        MainAxisAlignment
+                                                            .spaceBetween,
+                                                        children: [
+                                                          Text(
+                                                            orders["orderTaxes"][index]["taxName"],
+                                                            //orders["orderTaxes"][index].percentage!=null&&orders["orderTaxes"][index].percentage!=0.0?orders["orderTaxes"][index]["taxName"]+" (${typeBasedTaxes[index].percentage.toStringAsFixed(1)})":typeBasedTaxes[index].name,
+                                                            style: TextStyle(
+                                                                fontSize:
+                                                                16,
+                                                                color:
+                                                                yellowColor,
+                                                                fontWeight:
+                                                                FontWeight
+                                                                    .bold),
+                                                          ),
+                                                          Row(
+                                                            children: [
+                                                              Text(
+                                                                widget.store["currencyCode"]+" "+
+                                                                    orders["orderTaxes"][index]["amount"].toStringAsFixed(1),
+                                                                //typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"]+": "+(overallTotalPriceWithTax/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1),
+                                                                style: TextStyle(
+                                                                    fontSize:
+                                                                    16,
+                                                                    color:
+                                                                    blueColor,
+                                                                    fontWeight:
+                                                                    FontWeight.bold),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    );
+                                                  })
+                                          ),
+                                        ),
+                                      ),
+                                      Container(
+                                        width: MediaQuery.of(context).size.width,
+                                        height: 50,
+                                        color: yellowColor,
+                                        child: Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: Row(
+                                            mainAxisAlignment:
+                                            MainAxisAlignment
+                                                .spaceBetween,
+                                            children: [
+                                              Text(
+                                                "Total: ",
+                                                style: TextStyle(
+                                                    fontSize:
+                                                    20,
+                                                    color:
+                                                    Colors.white,
+                                                    fontWeight:
+                                                    FontWeight
+                                                        .bold),
+                                              ),
+                                              Row(
+                                                children: [
+                                                  Text(
+                                                    widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":"",
+                                                    style: TextStyle(
+                                                        fontSize:
+                                                        20,
+                                                        color:
+                                                        Colors.white,
+                                                        fontWeight:
+                                                        FontWeight.bold),
+                                                  ),
+                                                  SizedBox(
+                                                    width: 2,
+                                                  ),
+                                                  Text(
+                                                    orders["discountedPrice"]!=null&&orders["discountedPrice"]!=0.0?(orders["grossTotal"]-orders["discountedPrice"]).toStringAsFixed(1):orders["grossTotal"].toStringAsFixed(1),
+                                                    //priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(1)+"/-":overallTotalPriceWithTax.toStringAsFixed(1)+"/-",
+                                                    style: TextStyle(
+                                                        fontSize:
+                                                        20,
+                                                        color:
+                                                        blueColor,
+                                                        fontWeight:
+                                                        FontWeight.bold),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                              ],
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 2,
+                          child: Container(
+                            height: 385,
+                            child: ListView.builder(
+                                itemCount: orders == null ? 0:orders['orderItems'].length,
+                                itemBuilder: (context, i){
+                                  topping=[];
+
+                                  for(var items in orders['orderItems'][i]['orderItemsToppings']){
+                                    topping.add(items==[]?"-":items['additionalItem']['stockItemName']+" (${widget.store["currencyCode"]+items["price"].toStringAsFixed(1)})   x${items['quantity'].toString()+"    "+widget.store["currencyCode"]+": "+items["totalPrice"].toStringAsFixed(1)} \n");
+                                  }
+                                  return InkWell(
+                                    onTap: (){
+                                      if(orders['orderItems'][i]['isDeal'] == true){
+                                        print(orders['id']);
+                                        showAlertDialog(context,orders['id']);
+                                      }
+                                    },
+                                    child: Card(
+                                      elevation: 8,
+                                      child: Container(
+                                        width: MediaQuery.of(context).size.width,
+                                        child: Column(
+                                          children: [
+                                            Container(
+                                              width: MediaQuery.of(context).size.width,
+                                              height: 40,
+                                              decoration: BoxDecoration(
+                                                color: yellowColor,
+                                                //border: Border.all(color: yellowColor, width: 2),
+                                                borderRadius: BorderRadius.only(topLeft: Radius.circular(4), topRight:Radius.circular(4)),
+                                              ),
+                                              child: Center(
+                                                child: Text(
+                                                  orders['orderItems']!=null?orders['orderItems'][i]['name']:"",
+                                                  style: TextStyle(
+                                                      color: BackgroundColor,
+                                                      fontWeight: FontWeight.bold,
+                                                      fontSize: 22
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.all(2.0),
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  Expanded(
+                                                    flex:2,
+                                                    child: Container(
+                                                      width: 90,
+                                                      height: 30,
+                                                      decoration: BoxDecoration(
+                                                        //color: yellowColor,
+                                                        border: Border.all(color: yellowColor, width: 2),
+                                                        borderRadius: BorderRadius.circular(8),
+                                                      ),
+                                                      child: Center(
+                                                        child: AutoSizeText(
+                                                          'Unit Price: ',
+                                                          style: TextStyle(
+                                                              color: yellowColor,
+                                                              fontSize: 20,
+                                                              fontWeight: FontWeight.bold
+                                                          ),
+                                                          maxLines: 2,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(width: 2,),
+                                                  Expanded(
+                                                    flex:3,
+                                                    child: Container(
+                                                      width: 90,
+                                                      height: 30,
+                                                      decoration: BoxDecoration(
+                                                        border: Border.all(color: yellowColor, width: 2),
+                                                        //color: BackgroundColor,
+                                                        borderRadius: BorderRadius.circular(8),
+                                                      ),
+                                                      child: Center(
+                                                        child: AutoSizeText(
+                                                          orders["orderItems"][i]["price"].toStringAsFixed(1),
+                                                          //cartList[index].sizeName!=null?cartList[index].sizeName:"N/A",
+                                                          style: TextStyle(
+                                                              color: blueColor,
+                                                              fontSize: 20,
+                                                              fontWeight: FontWeight.bold
+                                                          ),
+                                                          maxLines: 2,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  )
+                                                ],
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.all(2.0),
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  Expanded(
+                                                    flex:2,
+                                                    child: Container(
+                                                      width: 90,
+                                                      height: 30,
+                                                      decoration: BoxDecoration(
+                                                        //color: yellowColor,
+                                                        border: Border.all(color: yellowColor, width: 2),
+                                                        borderRadius: BorderRadius.circular(8),
+                                                      ),
+                                                      child: Center(
+                                                        child: AutoSizeText(
+                                                          'Quantity: ',
+                                                          style: TextStyle(
+                                                              color: yellowColor,
+                                                              fontSize: 20,
+                                                              fontWeight: FontWeight.bold
+                                                          ),
+                                                          maxLines: 2,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(width: 2,),
+                                                  Expanded(
+                                                    flex:3,
+                                                    child: Container(
+                                                      width: 90,
+                                                      height: 30,
+                                                      decoration: BoxDecoration(
+                                                        border: Border.all(color: yellowColor, width: 2),
+                                                        //color: BackgroundColor,
+                                                        borderRadius: BorderRadius.circular(8),
+                                                      ),
+                                                      child: Center(
+                                                        child: AutoSizeText(
+                                                          orders['orderItems'][i]['quantity'].toString(),
+                                                          //cartList[index].sizeName!=null?cartList[index].sizeName:"N/A",
+                                                          style: TextStyle(
+                                                              color: blueColor,
+                                                              fontSize: 20,
+                                                              fontWeight: FontWeight.bold
+                                                          ),
+                                                          maxLines: 2,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  )
+                                                ],
+                                              ),
+                                            ),
+                                            Padding(
+                                              padding: const EdgeInsets.all(2.0),
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  Expanded(
+                                                    flex:2,
+                                                    child: Container(
+                                                      width: 90,
+                                                      height: 30,
+                                                      decoration: BoxDecoration(
+                                                        //color: yellowColor,
+                                                        border: Border.all(color: yellowColor, width: 2),
+                                                        borderRadius: BorderRadius.circular(8),
+                                                      ),
+                                                      child: Center(
+                                                        child: AutoSizeText(
+                                                          'Size: ',
+                                                          style: TextStyle(
+                                                              color: yellowColor,
+                                                              fontSize: 20,
+                                                              fontWeight: FontWeight.bold
+                                                          ),
+                                                          maxLines: 2,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                  SizedBox(width: 2,),
+                                                  Expanded(
+                                                    flex:3,
+                                                    child: Container(
+                                                      width: 90,
+                                                      height: 30,
+                                                      decoration: BoxDecoration(
+                                                        border: Border.all(color: yellowColor, width: 2),
+                                                        //color: BackgroundColor,
+                                                        borderRadius: BorderRadius.circular(8),
+                                                      ),
+                                                      child: Center(
+                                                        child: AutoSizeText(
+                                                          orders['orderItems'][i]['sizeName']!=null?orders['orderItems'][i]['sizeName'].toString():"-",
+                                                          //cartList[index].sizeName!=null?cartList[index].sizeName:"N/A",
+                                                          style: TextStyle(
+                                                              color: blueColor,
+                                                              fontSize: 20,
+                                                              fontWeight: FontWeight.bold
+                                                          ),
+                                                          maxLines: 2,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  )
+                                                ],
+                                              ),
+                                            ),
+                                            Container(
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(2.0),
+                                                child:
+                                                //orders['orderItems'].isNotEmpty&&orders[i].topping!=null?
+                                                topping!=null&&topping.length>0?
+                                                Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    // Expanded(
+                                                    //   flex:2,
+                                                    //   child: Container(
+                                                    //
+                                                    //     decoration: BoxDecoration(
+                                                    //       //color: yellowColor,
+                                                    //       border: Border.all(color: yellowColor, width: 2),
+                                                    //       borderRadius: BorderRadius.circular(8),
+                                                    //     ),
+                                                    //     child: Center(
+                                                    //       child: AutoSizeText(
+                                                    //         'Extras: ',
+                                                    //         style: TextStyle(
+                                                    //             color: yellowColor,
+                                                    //             fontSize: 20,
+                                                    //             fontWeight: FontWeight.bold
+                                                    //         ),
+                                                    //         maxLines: 2,
+                                                    //       ),
+                                                    //     ),
+                                                    //   ),
+                                                    // ),
+                                                    //SizedBox(width: 2,),
+                                                    Expanded(
+                                                      flex:3,
+                                                      child: Container(
+                                                        decoration: BoxDecoration(
+                                                          border: Border.all(color: yellowColor, width: 2),
+                                                          //color: BackgroundColor,
+                                                          borderRadius: BorderRadius.circular(8),
+                                                        ),
+                                                        child: Column(
+                                                          children: [
+                                                            AutoSizeText(
+                                                              'Extras: ',
+                                                              style: TextStyle(
+                                                                  color: yellowColor,
+                                                                  fontSize: 20,
+                                                                  fontWeight: FontWeight.bold
+                                                              ),
+                                                              maxLines: 2,
+                                                            ),
+                                                            Center(
+                                                              child: Text(
+                                                                //'Extra Large',
+                                                                topping != null
+                                                                    ? topping
+                                                                    .toString()
+                                                                    .replaceAll("[", "- ")
+                                                                    .replaceAll(",", "- ")
+                                                                    .replaceAll("]", "")
+                                                                    :"N/A",
+                                                                style: TextStyle(
+                                                                    color: blueColor,
+                                                                    fontSize: 12,
+                                                                    fontWeight: FontWeight.bold
+                                                                ),
+                                                                maxLines: 20,
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        )
+                                                      ),
+                                                    ),
+
+                                                  ],
+                                                )
+                                                    :Container(),
+                                              ),
+                                            ),
+                                            Container(
+                                              width: MediaQuery.of(context).size.width,
+                                              height: 40,
+                                              decoration: BoxDecoration(
+                                                color: yellowColor,
+                                                //border: Border.all(color: yellowColor, width: 2),
+                                                borderRadius: BorderRadius.only(bottomLeft: Radius.circular(4), bottomRight:Radius.circular(4)),
+                                              ),
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(4.0),
+                                                child: Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    Text(
+                                                      'Price: ',
+                                                      style: TextStyle(
+                                                        color: BackgroundColor,
+                                                        fontSize: 25,
+                                                        fontWeight: FontWeight.w800,
+                                                        //fontStyle: FontStyle.italic,
+                                                      ),
+                                                    ),
+                                                    Row(
+                                                      children: [
+                                                        Text(
+                                                          //"Dine-In",
+                                                          widget.store["currencyCode"]!=null?widget.store["currencyCode"]+": ":" ",
+                                                          style: TextStyle(
+                                                              fontSize: 20,
+                                                              fontWeight: FontWeight.bold,
+                                                              color: PrimaryColor
+                                                          ),
+                                                        ),
+                                                        Text(
+                                                          orders['orderItems'][i]['totalPrice']!=null?orders['orderItems'][i]['totalPrice'].toStringAsFixed(1):"-",
+                                                          style: TextStyle(
+                                                            color: blueColor,
+                                                            fontSize: 20,
+                                                            fontWeight: FontWeight.bold,
+                                                            //fontStyle: FontStyle.italic,
+                                                          ),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                }),
+                            //color: blueColor,
+                          ),
+                        ),
+
+                      ],
+                    ),
+
+                    // Row(
+                    //     children: [
+                    //       Expanded(
+                    //         child: Container(
+                    //           color: yellowColor,
+                    //         ),
+                    //       ),
+                    //       Expanded(
+                    //         child: Container(
+                    //           color: blueColor,
+                    //         ),
+                    //       ),
+                    //     ],
+                    // )
+                  ],
+                )
+            );
+
+
+
+            ///
+
+            ///
           },
         )
     );

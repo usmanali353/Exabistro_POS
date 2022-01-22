@@ -1,4 +1,5 @@
 import 'dart:ui';
+import 'package:exabistro_pos/components/constants.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -59,46 +60,45 @@ class _ProductDetailsInDealsState extends State<DealsDetailsForKitchen> {
         ),
         height: MediaQuery.of(context).size.height,
         width: MediaQuery.of(context).size.width,
-        child: new BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 10.0, sigmaY: 10.0),
-          child: new Container(
-              decoration: new BoxDecoration(color: Colors.black.withOpacity(0.3)),
-              child: ListView.builder(
-                padding: EdgeInsets.only(top: 10, bottom: 10),
-                itemCount: productList!=null?productList.length:0,
-                itemBuilder: (context, index) {
-                  return Padding(
-                    padding: const EdgeInsets.all(8.0),
+        child: new Container(
+
+            child: ListView.builder(
+              itemCount: productList!=null?productList.length:0,
+              itemBuilder: (context, index) {
+                return Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Card(
                     child: Container(
                       decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(10),
-                        color: Colors.white12,
+                        borderRadius: BorderRadius.circular(8),
                       ),
 
                       child: ListTile(
                         title: Text(productList[index]['productName']!=null?productList[index]['productName']:"",
                           style: TextStyle(
-                              color: Colors.white
+                              color: yellowColor,
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold
                           ),
                         ),
                         subtitle: Text(productList[index]['sizeName']!=null?"Size:    "+productList[index]['sizeName']:"",
                           style: TextStyle(
-                              color: Colors.white
+                              color: blueColor
                           ),
                         ),
                         trailing: Text(productList[index]['quantity']!=null?"Quantity:  "+productList[index]['quantity'].toString():"",
                           style: TextStyle(
-                              color: Colors.white
+                              color: blueColor
                           ),
                         ),
 
                       ),
                     ),
+                  ),
 
-                  );
-                },
-              )
-          ),
+                );
+              },
+            )
         ),
       ),
     );

@@ -1,10 +1,14 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:ui';
 import 'package:auto_size_text/auto_size_text.dart';
+import 'package:esc_pos_bluetooth/esc_pos_bluetooth.dart';
 import 'package:exabistro_pos/Screens/LoadingScreen.dart';
+import 'package:exabistro_pos/Screens/LoginScreen.dart';
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/KitchenOrdersDetails.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/components/constants.dart';
+import 'package:exabistro_pos/model/Categories.dart';
 import 'package:exabistro_pos/model/OrderById.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
@@ -15,139 +19,185 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import 'package:esc_pos_utils/esc_pos_utils.dart';
+import 'package:flutter_bluetooth_basic/flutter_bluetooth_basic.dart';
 
 
-
-class PaidOrdersScreenForTab extends StatefulWidget {
+class CancelledOrdersScreenForTablet extends StatefulWidget {
   var store;
 
-  PaidOrdersScreenForTab(this.store);
+  CancelledOrdersScreenForTablet(this.store);
 
   @override
   _KitchenTabViewState createState() => _KitchenTabViewState();
 }
 
-class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
+class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with TickerProviderStateMixin {
 
+  AnimationController _controller;
+  int levelClock = 900;
+
+  String userId="";
+  PrinterBluetoothManager printerManager = PrinterBluetoothManager();
+  List<PrinterBluetooth> printer=[];
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
   String token;
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
   // bool isVisible=false;
+  List<Categories> categoryList=[];
   List orderList = [];
   List itemsList=[],toppingName =[];
   List topping = [];
   List<dynamic> foodList = [];
   List<Map<String,dynamic>> foodList1 = [];
-  bool isListVisible = false,isLoad;
+  bool isListVisible = true;
   List allTables=[];
-  bool selectedCategory = false;
+  bool selectedCategory = true;
   List<bool> _selected = [];
-  int quantity=5;
-  bool isLoading=false;
+   PaperSize paper = PaperSize.mm58;
+  BluetoothManager bluetoothManager = BluetoothManager.instance;
+  //List<Categories> allCategories = [];
 
   @override
   void initState() {
 
     WidgetsBinding.instance
         .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+    if (Platform.isAndroid) {
+      bluetoothManager.state.listen((val) {
+        print('state = $val');
+        if (!mounted) return;
+        if (val == 12) {
+          print('on');
+          printerManager.startScan(Duration(seconds: 2));
+          printerManager.scanResults.listen((printers) {
+            setState(() {
+              this.printer=printers;
+            });
+          });
+        } else if (val == 10) {
+          print('off');
+        }
+      });
+    } else {
+      printerManager.startScan(Duration(seconds: 2));
+      printerManager.scanResults.listen((printers) {
+        setState(() {
+          this.printer=printers;
+        });
+      });
+    }
+
+
     SharedPreferences.getInstance().then((value) {
       setState(() {
         this.token = value.getString("token");
+        this.userId = value.getString("nameid");
       });
     });
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.landscapeRight,
       DeviceOrientation.landscapeLeft,
     ]);
+    _controller = AnimationController(
+        vsync: this,
+        duration: Duration(seconds: levelClock,) // gameData.levelClock is a user entered number elsewhere in the applciation
+    );
 
+    _controller.forward();
     // TODO: implement initState
     super.initState();
   }
+
   String getTableName(int id){
     String name;
     if(id!=null&&allTables!=null){
       for(int i=0;i<allTables.length;i++){
         if(allTables[i]['id'] == id) {
+          //setState(() {
           name = allTables[i]['name'];
+          // price = sizes[i].price;
+          // });
+
         }
       }
       return name!=null?name:"-";
     }else
-      return "-";
+      return "empty";
   }
-
   @override
   Widget build(BuildContext context) {
 
     return Scaffold(
-        appBar: widget.store["payOut"]!=null&&widget.store["payOut"]==true&&!isLoading? AppBar(
-          title: Text(
-            'Today Orders',
-            style: TextStyle(
-                color: yellowColor,
-                fontWeight: FontWeight.bold,
-                fontSize: 30),
-          ),
-          centerTitle: true,
-          iconTheme: IconThemeData(
-              color: blueColor
-          ),
-          backgroundColor: BackgroundColor,
-        ):null,
+        // appBar:!isListVisible? AppBar(
+        //   automaticallyImplyLeading: true,
+        //   actions: [
+        //     IconButton(
+        //       icon:  FaIcon(FontAwesomeIcons.signOutAlt, color: blueColor, size: 25,),
+        //       onPressed: (){
+        //         SharedPreferences.getInstance().then((value) {
+        //           value.remove("token");
+        //           Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>LoginScreen()), (route) => false);
+        //         } );
+        //       },
+        //     ),
+        //   ],
+        //   title: Text(
+        //     'Orders History',
+        //
+        //     style: TextStyle(
+        //         color: yellowColor,
+        //         fontWeight: FontWeight.bold,
+        //         fontSize: 30),
+        //   ),
+        //   centerTitle: true,
+        //   backgroundColor: BackgroundColor,
+        // ):null,
         body: RefreshIndicator(
           key: _refreshIndicatorKey,
           onRefresh: (){
             return Utils.check_connectivity().then((result){
               if(result){
-                setState(() {
-                  isLoading=true;
-                });
+                print("Height "+MediaQuery.of(context).size.height.toString());
+                print("Width "+MediaQuery.of(context).size.width.toString());
                 orderList.clear();
-                Network_Operations.getAllOrders(context, token,widget.store["id"]).then((value) {
+                Network_Operations.getAllOrdersWithItemsByOrderStatusId(context, token, 2,widget.store["id"]).then((value) {
                   setState(() {
-                    isLoading=false;
-                    if(value!=null&&value.length>0){
-                      //value=value.reversed.toList();
-                      print(value.toString());
-                      for(var order in value){
-                        String createdOn=DateFormat("yyyy-MM-dd").parse(order["createdOn"]).toString().split(" ")[0].trim();
-                        String todayDate=DateTime(DateTime.now().year,DateTime.now().month,DateTime.now().day).toIso8601String().replaceAll("T00:00:00.000","").trim();
-
-                        if(createdOn.contains(todayDate)&&order["cashPay"]!=null&&order["orderStatus"]!=2){
-                          orderList.add(order);
-                        }
-                      }
-                    }
-                    //orderList = value;
+                    orderList = value;
+                    print("Orderlist "+orderList.toString());
+                    print("OrderTaxes"+orderList[0]["orderTaxes"].toString());
                   });
                 });
                 Network_Operations.getTableList(context,token,widget.store["id"])
                     .then((value) {
                   setState(() {
+                    isListVisible=false;
                     this.allTables = value;
-                    print(allTables);
                   });
                 });
               }else{
                 setState(() {
-                  isLoading=false;
+                  isListVisible=false;
                 });
                 Utils.showError(context, "Network Error");
               }
             });
           },
 
-          child: isLoading?LoadingScreen():Container(
+          child:Container(
               height: MediaQuery.of(context).size.height,
               width: MediaQuery.of(context).size.width,
               decoration: BoxDecoration(
                   image: DecorationImage(
                     fit: BoxFit.cover,
-                    //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
                     image: AssetImage('assets/bb.jpg'),
                   )
               ),
               child: new Container(
-                //decoration: new BoxDecoration(color: Colors.black.withOpacity(0.3)),
                   child: Column(
                     children: [
                       Row(
@@ -216,137 +266,106 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
 
                       Expanded(
                         child: Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Container(
-                            height: MediaQuery.of(context).size.height / 1.45,
-                            width: MediaQuery.of(context).size.width,
-                            child:GridView.builder(
-                                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                                    maxCrossAxisExtent: 420,
-                                    // childAspectRatio: MediaQuery.of(context).size.height<900?3:4,
-                                    crossAxisSpacing: 10,
-                                    mainAxisSpacing: 10,
-                                    mainAxisExtent: 100
-                                ),
-                                itemCount: orderList!=null?orderList.length:0,
-                                itemBuilder: (context, index){
-                                  return InkWell(
-                                    onTap: () {
-                                      showDialog(
+                          padding: const EdgeInsets.all(5.0),
+                          child: SizedBox(
+                              height: MediaQuery.of(context).size.height-80,
+                              width: MediaQuery.of(context).size.width,
+                              child: GridView.builder(
+                                  gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                                      maxCrossAxisExtent: 420,
+                                      // childAspectRatio: MediaQuery.of(context).size.height<900?3:4 ,
+                                      crossAxisSpacing: 10,
+                                      mainAxisSpacing: 10,
+                                      mainAxisExtent: 100
+                                  ),
+                                  itemCount: orderList!=null?orderList.length:0,
+                                  itemBuilder: (context, index){
+                                    return InkWell(
+                                      onTap: () {
+                                        showDialog(
+                                          //barrierDismissible: false,
+                                            context: context,
+                                            builder:(BuildContext context){
+                                              return Dialog(
+                                                //backgroundColor: Colors.transparent,
+                                                  child: Container(
+                                                      height:450,
+                                                      width: 750,
+                                                      decoration: BoxDecoration(
+                                                          image: DecorationImage(
+                                                            fit: BoxFit.cover,
+                                                            image: AssetImage('assets/bb.jpg'),
+                                                          )
+                                                      ),
+                                                      child: ordersDetailPopupLayoutHorizontal(orderList[index])
+                                                      //ordersDetailPopupLayout(orderList[index])
+                                                  )
+                                              );
 
-                                          context: context,
-                                          builder:(BuildContext context){
-                                            return Dialog(
-                                                backgroundColor: Colors.transparent,
-                                                child: Container(
-                                                    height: 450,
-                                                    width: 750,
-                                                    child: ordersDetailPopupLayoutHorizontal(orderList[index])
-                                                )
-                                            );
-
-                                          });
-                                    },
-                                    child: Card(
-                                        elevation: 8,
-                                        child: Container(
-                                          height: MediaQuery.of(context).size.height / 4,
-                                          width: 350,
-                                          child: Column(
-                                            children: [
-                                              Card(
-                                                elevation:6,
-                                                color: yellowColor,
-                                                child: Container(
-                                                  width: MediaQuery.of(context).size.width,
-                                                  height: 40,
-                                                  decoration: BoxDecoration(
-                                                      borderRadius: BorderRadius.circular(4),
-                                                      color: yellowColor
-                                                  ),
-                                                  child: Padding(
-                                                    padding: const EdgeInsets.only(right: 6, left: 6),
-                                                    child: Row(
-                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                      children: [
-                                                        Row(
-                                                          children: [
-                                                            Text('Order ID: ',
-                                                              style: TextStyle(
-                                                                  fontSize: 30,
-                                                                  fontWeight: FontWeight.bold,
-                                                                  color: Colors.white
+                                            });
+                                      },
+                                      child: Card(
+                                          elevation: 8,
+                                          child: Container(
+                                            height: MediaQuery.of(context).size.height / 4,
+                                            width: 350,
+                                            child: Column(
+                                              children: [
+                                                Card(
+                                                  elevation:6,
+                                                  color: yellowColor,
+                                                  child: Container(
+                                                    width: MediaQuery.of(context).size.width,
+                                                    height: 40,
+                                                    decoration: BoxDecoration(
+                                                        borderRadius: BorderRadius.circular(4),
+                                                        color: yellowColor
+                                                    ),
+                                                    child: Padding(
+                                                      padding: const EdgeInsets.only(right: 6, left: 6),
+                                                      child: Row(
+                                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                        children: [
+                                                          Row(
+                                                            children: [
+                                                              Text('Order ID: ',
+                                                                style: TextStyle(
+                                                                    fontSize: 30,
+                                                                    fontWeight: FontWeight.bold,
+                                                                    color: Colors.white
+                                                                ),
                                                               ),
-                                                            ),
-                                                            Text(
-                                                              //"01",
-                                                              orderList[index]['id']!=null?orderList[index]['id'].toString():"",
-                                                              style: TextStyle(
-                                                                  fontSize: 30,
-                                                                  color: blueColor,
-                                                                  fontWeight: FontWeight.bold
+                                                              Text(
+                                                                //"01",
+                                                                orderList[index]['id']!=null?orderList[index]['id'].toString():"",
+                                                                style: TextStyle(
+                                                                    fontSize: 30,
+                                                                    color: blueColor,
+                                                                    fontWeight: FontWeight.bold
+                                                                ),
                                                               ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        orderList[index]["orderType"]==1? FaIcon(FontAwesomeIcons.utensils, color: blueColor, size:30):orderList[index]["orderType"]==2?FaIcon(FontAwesomeIcons.shoppingBag, color: blueColor,size:30):FaIcon(FontAwesomeIcons.biking, color: blueColor,size:30)
-                                                      ],
+                                                            ],
+                                                          ),
+                                                          orderList[index]["orderType"]==1? FaIcon(FontAwesomeIcons.utensils, color: blueColor, size:30):orderList[index]["orderType"]==2?FaIcon(FontAwesomeIcons.shoppingBag, color: blueColor,size:30):FaIcon(FontAwesomeIcons.biking, color: blueColor,size:30)
+                                                        ],
+                                                      ),
                                                     ),
                                                   ),
                                                 ),
-                                              ),
-                                              Container(
-                                                width: MediaQuery.of(context).size.width,
-                                                height: 1,
-                                                color: yellowColor,
-                                              ),
-                                              SizedBox(height: 5,),
-                                              Padding(
-                                                padding: const EdgeInsets.all(4),
-                                                child: Row(
-                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                  children: [
-                                                    Row(
-                                                      children: [
-                                                        Text('Total: ',
-                                                          style: TextStyle(
-                                                              fontSize: 20,
-                                                              fontWeight: FontWeight.bold,
-                                                              color: yellowColor
-                                                          ),
-                                                        ),
-                                                        Padding(
-                                                          padding: EdgeInsets.only(left: 2.5),
-                                                        ),
-                                                        Row(
-                                                          children: [
-                                                            Text(
-                                                              //"Dine-In",
-                                                              widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
-                                                              style: TextStyle(
-                                                                  fontSize: 20,
-                                                                  fontWeight: FontWeight.bold,
-                                                                  color: PrimaryColor
-                                                              ),
-                                                            ),
-                                                            Text(
-                                                              //"Dine-In",
-                                                              orderList[index]['grossTotal'].toStringAsFixed(1),
-                                                              style: TextStyle(
-                                                                  fontSize: 20,
-                                                                  fontWeight: FontWeight.bold,
-                                                                  color: PrimaryColor
-                                                              ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ],
-                                                    ),
-                                                    Visibility(
-                                                      visible: orderList[index]['orderType']==1,
-                                                      child: Row(
+                                                Container(
+                                                  width: MediaQuery.of(context).size.width,
+                                                  height: 1,
+                                                  color: yellowColor,
+                                                ),
+                                                SizedBox(height: 5,),
+                                                Padding(
+                                                  padding: const EdgeInsets.all(4),
+                                                  child: Row(
+                                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                    children: [
+                                                      Row(
                                                         children: [
-                                                          Text('Table:',
+                                                          Text('Total: ',
                                                             style: TextStyle(
                                                                 fontSize: 20,
                                                                 fontWeight: FontWeight.bold,
@@ -356,35 +375,72 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                           Padding(
                                                             padding: EdgeInsets.only(left: 2.5),
                                                           ),
-                                                          Text(
-                                                            //"01",
-                                                            orderList[index]['tableId']!=null?getTableName(orderList[index]['tableId']):"",
-                                                            style: TextStyle(
-                                                                fontSize: 20,
-                                                                fontWeight: FontWeight.bold,
-                                                                color: PrimaryColor
-                                                            ),
+                                                          Row(
+                                                            children: [
+                                                              Text(
+                                                                //"Dine-In",
+                                                                widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                                                style: TextStyle(
+                                                                    fontSize: 20,
+                                                                    fontWeight: FontWeight.bold,
+                                                                    color: PrimaryColor
+                                                                ),
+                                                              ),
+                                                              Text(
+                                                                //"Dine-In",
+                                                                orderList[index]['grossTotal'].toStringAsFixed(1),
+                                                                style: TextStyle(
+                                                                    fontSize: 20,
+                                                                    fontWeight: FontWeight.bold,
+                                                                    color: PrimaryColor
+                                                                ),
+                                                              ),
+                                                            ],
                                                           ),
                                                         ],
                                                       ),
-                                                    ),
+                                                      Visibility(
+                                                        visible: orderList[index]['orderType']==1,
+                                                        child: Row(
+                                                          children: [
+                                                            Text('Table: ',
+                                                              style: TextStyle(
+                                                                  fontSize: 20,
+                                                                  fontWeight: FontWeight.bold,
+                                                                  color: yellowColor
+                                                              ),
+                                                            ),
+                                                            Padding(
+                                                              padding: EdgeInsets.only(left: 2.5),
+                                                            ),
+                                                            Text(
+                                                              //"01",
+                                                              orderList[index]['tableId']!=null?getTableName(orderList[index]['tableId']):"",
+                                                              style: TextStyle(
+                                                                  fontSize: 20,
+                                                                  fontWeight: FontWeight.bold,
+                                                                  color: PrimaryColor
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ),
 
-                                                  ],
+                                                    ],
+                                                  ),
+
                                                 ),
-
-                                              ),
-                                            ],
-                                          ),
-                                        )
-                                    ),
-                                  );
-                                }),
+                                              ],
+                                            ),
+                                          )
+                                      ),
+                                    );
+                                  })
                           ),
                         ),
                       )
                     ],
                   )
-
               )
           ),
         )
@@ -404,6 +460,21 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
         status = "Delivery";
       }
       return status;
+    }else{
+      return "";
+    }
+  }
+  String getOrderItemStatus(int id){
+    String itemStatus;
+    if(id!=null){
+      if(id ==0){
+        itemStatus = "Pending";
+      }else if(id ==1){
+        itemStatus = "Preparing";
+      }else if(id ==2){
+        itemStatus = "Ready";
+      }
+      return itemStatus;
     }else{
       return "";
     }
@@ -437,7 +508,6 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
     }
   }
 
-
   Widget _buildChips() {
     List<Widget> chips = new List();
 
@@ -461,6 +531,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
             }
             _selected[i] = selected;
             if(_selected[i]){
+
               Utils.check_connectivity().then((result){
                 if(result){
                   orderList.clear();
@@ -468,22 +539,20 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                     setState(() {
                       if(value!=null&&value.length>0){
                         for(var order in value){
-                          String createdOn=DateFormat("yyyy-MM-dd").parse(order["createdOn"]).toString().split(" ")[0].trim();
-                          String todayDate=DateTime(DateTime.now().year,DateTime.now().month,DateTime.now().day).toIso8601String().replaceAll("T00:00:00.000","").trim();
-                          print(order["cashPay"]!=null);
-                          if(createdOn.contains(todayDate)&&order["cashPay"]!=null&&order["orderStatus"]!=2){
+                          if(order["orderStatus"]==2&&order["tableId"]!=null&&order["tableId"]==allTables[i]["id"]){
                             orderList.add(order);
                           }
                         }
                       }
-
-
                     });
                   });
                 }else{
                   Utils.showError(context, "Network Error");
                 }
               });
+
+
+
             }else{
               WidgetsBinding.instance
                   .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
@@ -511,7 +580,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
         barrierDismissible: true,
         barrierLabel: MaterialLocalizations.of(context)
             .modalBarrierDismissLabel,
-        //barrierColor: Colors.black45,
+        barrierColor: Colors.black45,
 
         transitionDuration: const Duration(milliseconds: 200),
         pageBuilder: (BuildContext buildContext,
@@ -519,11 +588,11 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
             Animation secondaryAnimation) {
           return Center(
             child: Container(
-              width: 450,
-              height:350,
+                width: 450,
+                height:350,
 
-              //color: Colors.black54,
-              child: DealsDetailsForKitchen(orderId)
+
+                child: DealsDetailsForKitchen(orderId)
 
             ),
           );
@@ -532,6 +601,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
 
   }
   String waiterName="-",customerName="-";
+
   Widget ordersDetailPopupLayoutHorizontal(dynamic orders) {
     if(orders["discountedPrice"]!=null&&orders["discountedPrice"]!=0.0){
       if(orders["orderTaxes"].where((element)=>element["taxName"]=="Discount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Discount").toList().length>0){
@@ -1636,6 +1706,12 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
         )
     );
   }
+
+
+
+
+
+
   buildInvoice(dynamic order)async{
     final titles = <String>[
       'Order Number:',
@@ -1650,6 +1726,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
       order["orderItems"].length.toString(),
     ];
     List<OrderItem> orderitems=OrderItem.listOrderitemFromJson(jsonEncode(order["orderItems"]));
+    print("OrderItems Count "+orderitems.length.toString());
     var invoiceData=orderitems.map((cartItems){
       return [
         cartItems.name.toString(),
@@ -1904,4 +1981,6 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
     await Printing.layoutPdf(
         onLayout: (PdfPageFormat format) async => doc.save());
   }
+
 }
+

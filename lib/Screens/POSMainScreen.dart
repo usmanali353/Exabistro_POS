@@ -476,6 +476,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                       case 'Log Out':
                         SharedPreferences.getInstance().then((value) {
                           value.remove("token");
+                          value.remove("roles");
                           Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>LoginScreen()), (route) => false);
                         });
                         break;
@@ -2961,7 +2962,6 @@ class _POSMainScreenState extends State<POSMainScreen> {
       ),
     );
   }
-
   Widget orderPopUpHorizontalDineIn(){
 
     return Scaffold(
@@ -3593,6 +3593,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                     a = _counter[index] * additionals[index].price;
                     print(a.toString());
                     topping.add( Toppings(name: additionals[index].name,quantity: _counter[index],totalprice: a,price: additionals[index].price,additionalitemid: additionals[index].id));
+                    print("Toppings "+topping.length.toString());
                     if(updatedPrice==0.0){
                       if(selectedSizeObj["discountedPrice"]!=0.0){
                         updatedPrice = updatedPrice + selectedSizeObj["discountedPrice"] + a;
