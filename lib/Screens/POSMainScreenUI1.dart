@@ -5233,7 +5233,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                               }
                                                             //  updatedActualPrice=updatedActualPrice+price+a;
                                                             }else {
-                                                                totalprice = (discountedPrice * count ) + a;
+           
                                                                 updatedActualPrice=(price * count ) + a;
                                                             }
                                                           }else{
