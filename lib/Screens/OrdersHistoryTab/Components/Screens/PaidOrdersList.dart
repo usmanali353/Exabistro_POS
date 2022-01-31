@@ -1,20 +1,20 @@
-import 'dart:convert';
 import 'dart:ui';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:exabistro_pos/Screens/LoadingScreen.dart';
+import 'package:exabistro_pos/Screens/Orders/HistoryTabsComponents.dart';
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/KitchenOrdersDetails.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/components/constants.dart';
-import 'package:exabistro_pos/model/OrderById.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
+
+import '../../../LoginScreen.dart';
+import '../../../POSMainScreenUI1.dart';
+import '../PaidTabsComponents.dart';
 
 
 
@@ -29,7 +29,7 @@ class PaidOrdersScreenForTab extends StatefulWidget {
 
 class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
 
-  String token;
+  String token,discountService,waiveOffService,email;
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
   // bool isVisible=false;
   List orderList = [];
@@ -49,9 +49,12 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
 
     WidgetsBinding.instance
         .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
-    SharedPreferences.getInstance().then((value) {
+    SharedPreferences.getInstance().then((prefs) {
       setState(() {
-        this.token = value.getString("token");
+        this.token = prefs.getString("token");
+        this.discountService=prefs.getString("discountService");
+        this.waiveOffService=prefs.getString("waiveOffService");
+        this.email=prefs.getString("email");
       });
     });
     SystemChrome.setPreferredOrientations([
@@ -79,6 +82,144 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
   Widget build(BuildContext context) {
 
     return Scaffold(
+        drawer: widget.store["payOut"]!=null&&widget.store["payOut"]==true?Drawer(
+          child: Container(
+            decoration: BoxDecoration(
+                image: DecorationImage(
+                  fit: BoxFit.cover,
+                  //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
+                  image: AssetImage('assets/bb.jpg'),
+                )),
+            child: ListView(
+              children: [
+                Container(
+                  width: MediaQuery.of(context).size.width,
+                  //height: 170,
+                  decoration: BoxDecoration(
+                    //color: yellowColor
+                    //: Border.all(color: yellowColor)
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 170,
+                        height: 150,
+                        //color: yellowColor,
+                        child: Center(child: Image.asset(
+                          "assets/caspian11.png",
+                          fit: BoxFit.contain,
+                        ),
+                        ),
+                      ),
+                      SizedBox(height: 9,),
+                      Text(
+                        "Exabistro - POS",
+                        //"$name",
+                        style: TextStyle(
+                            color: blueColor,
+                            fontSize: 25,
+                            fontWeight: FontWeight.bold
+                        ),
+                      ),
+                      Text(
+                        email.toString(),
+                        //"$email",
+                        style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+                Divider(color: yellowColor, thickness: 2,),
+                ListTile(
+                  onTap: (){
+                    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>POSMainScreenUI1(store:widget.store)), (route) => false);
+                  },
+                  title: Text(
+                    "Home",
+                    style: TextStyle(
+                        color: blueColor,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold
+                    ),
+                  ),
+                  trailing: Icon(Icons.dashboard,color: yellowColor,),
+                ),
+                Divider(color: yellowColor, thickness: 1,),
+                ListTile(
+                  onTap: (){
+                    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>OrdersHistoryTabsScreen(storeId:widget.store)), (route) => false);
+                  },
+                  title: Text(
+                    "Order History",
+                    style: TextStyle(
+                        color: blueColor,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold
+                    ),
+                  ),
+                  trailing: FaIcon(FontAwesomeIcons.history,color: yellowColor,),
+                ),
+                Divider(color: yellowColor, thickness: 1,),
+                ListTile(
+                  onTap: (){
+                    Network_Operations.getAllDailySessionByStoreId(context, token,widget.store["id"]).then((value){
+                      if(value!=null&&value.length>0){
+                        showDialog(
+                            context: context,
+                            builder:(context){
+                              return Dialog(
+                                backgroundColor: Colors.transparent,
+                                child: Container(
+                                  width: 400,
+                                  height: 130,
+                                  child: Utils.shiftReportDialog(context,value.last),
+                                ),
+                              ) ;
+                            }
+                        );
+
+                      }
+                    });
+                  },
+                  title: Text(
+                    "Shift Report",
+                    style: TextStyle(
+                        color: blueColor,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold
+                    ),
+                  ),
+                  trailing: FaIcon(FontAwesomeIcons.calendar,color: yellowColor,),
+                ),
+                Divider(color: yellowColor, thickness: 1,),
+
+                ListTile(
+                  onTap: (){
+                    SharedPreferences.getInstance().then((value) {
+                      value.remove("token");
+                      value.remove("roles");
+                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>LoginScreen()), (route) => false);
+                    });
+                  },
+                  title: Text(
+                    "Logout",
+                    style: TextStyle(
+                        color: blueColor,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold
+                    ),
+                  ),
+                  trailing: FaIcon(FontAwesomeIcons.signOutAlt,color: yellowColor,),
+                ),
+                Divider(color: yellowColor, thickness: 1,),
+              ],
+            ),
+          ),
+        ):Container(),
         appBar: widget.store["payOut"]!=null&&widget.store["payOut"]==true&&!isLoading? AppBar(
           title: Text(
             'Today Orders',
@@ -607,10 +748,30 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                               ),
                               Row(
                                 children: [
-                                  SizedBox(width: 15,),
+                                waiveOffService!="null"&&waiveOffService=="true"?Padding(
+                                    padding: const EdgeInsets.only(left: 8.0,right:8.0),
+                                    child: InkWell(
+                                        onTap: (){
+                                          Navigator.pop(context);
+                                          showDialog(
+                                              context: context,
+                                              builder:(BuildContext context){
+                                                return Dialog(
+                                                    backgroundColor: Colors.transparent,
+                                                    child: Container(
+                                                        height: 450,
+                                                        width: 400,
+                                                        child: refundOrderItemsPopup(orders["orderItems"],orders["id"])
+                                                    )
+                                                );
+
+                                              });
+                                        },
+                                        child: FaIcon(FontAwesomeIcons.handHoldingUsd, color: blueColor, size: 30,)),
+                                  ):Container(),
                                   InkWell(
                                       onTap: (){
-                                        buildInvoice(orders);
+                                        Utils.buildInvoice(orders,widget.store,customerName);
                                       },
                                       child: FaIcon(FontAwesomeIcons.print, color: blueColor, size: 30,)),
                                 ],
@@ -739,7 +900,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                               ),
                                               Text(
                                                 //"Dine-In",
-                                                orders["discountedPrice"]!=null&&orders["discountedPrice"]!=0.0?(orders["grossTotal"]-orders["discountedPrice"]).toStringAsFixed(1):orders["grossTotal"].toStringAsFixed(1),
+                                                orders["grossTotal"].toStringAsFixed(1),
                                                 style: TextStyle(
                                                     fontSize: 20,
                                                     fontWeight: FontWeight.bold,
@@ -1233,7 +1394,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                     width: 2,
                                                   ),
                                                   Text(
-                                                    orders["discountedPrice"]!=null&&orders["discountedPrice"]!=0.0?(orders["grossTotal"]-orders["discountedPrice"]).toStringAsFixed(1):orders["grossTotal"].toStringAsFixed(1),
+                                                    orders["grossTotal"].toStringAsFixed(1),
                                                     //priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(1)+"/-":overallTotalPriceWithTax.toStringAsFixed(1)+"/-",
                                                     style: TextStyle(
                                                         fontSize:
@@ -1290,16 +1451,24 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                 //border: Border.all(color: yellowColor, width: 2),
                                                 borderRadius: BorderRadius.only(topLeft: Radius.circular(4), topRight:Radius.circular(4)),
                                               ),
-                                              child: Center(
-                                                child: Text(
-                                                  orders['orderItems']!=null?orders['orderItems'][i]['name']:"",
-                                                  style: TextStyle(
-                                                      color: BackgroundColor,
-                                                      fontWeight: FontWeight.bold,
-                                                      fontSize: 22
-                                                  ),
+                                              child: Padding(
+                                                padding: const EdgeInsets.all(8.0),
+                                                child: Row(
+                                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                  children: [
+                                                    FaIcon(FontAwesomeIcons.exchangeAlt, color: yellowColor,),
+                                                    Text(
+                                                      orders['orderItems']!=null?orders['orderItems'][i]['name']:"",
+                                                      style: TextStyle(
+                                                          color: BackgroundColor,
+                                                          fontWeight: FontWeight.bold,
+                                                          fontSize: 22
+                                                      ),
+                                                    ),
+                                                orders['orderItems'][i]["isRefunded"]!=null&&orders['orderItems'][i]["isRefunded"]==true?FaIcon(FontAwesomeIcons.exchangeAlt, color: blueColor,):Container(),
+                                                  ],
                                                 ),
-                                              ),
+                                              )
                                             ),
                                             Padding(
                                               padding: const EdgeInsets.all(2.0),
@@ -1636,272 +1805,127 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
         )
     );
   }
-  buildInvoice(dynamic order)async{
-    final titles = <String>[
-      'Order Number:',
-      'Order Date:',
-      'Order Type:',
-      'Items Qty:'
-    ];
-    final data = <String>[
-      order["id"].toString(),
-      DateFormat.yMd().format(DateTime.now()).toString(),
-      order["orderType"]==1?"Dine-In":order["orderType"]==2?"Take-Away":order["orderType"]==3?"Home Delivery":"None",
-      order["orderItems"].length.toString(),
-    ];
-    List<OrderItem> orderitems=OrderItem.listOrderitemFromJson(jsonEncode(order["orderItems"]));
-    var invoiceData=orderitems.map((cartItems){
-      return [
-        cartItems.name.toString(),
-        cartItems.price.toString(),
-        "x "+cartItems.quantity.toString(),
-        cartItems.totalPrice.toString(),
-      ];
-    }).toList();
-    final doc = pw.Document();
-    doc.addPage(pw.MultiPage(
-      // pageFormat: PdfPageFormat.a4,
-        header: (context){
-          return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.SizedBox(height: 1 * PdfPageFormat.cm),
-                pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(widget.store["name"].toString(),style: pw.TextStyle(fontSize:20,fontWeight: pw.FontWeight.bold)),
-                            pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                            pw.Text(widget.store["address"].toString()),
-                          ]
-                      ),
-                      pw.Container(
-                          width: 50,
-                          height:50,
-                          child: pw.BarcodeWidget(
-                              barcode: pw.Barcode.qrCode(),
-                              data: "http://dev.exabistro.com/#/storeMenu/${widget.store["id"]}"
-                          )
-                      )
 
-                    ]
-                ),
-                pw.SizedBox(height: 1 * PdfPageFormat.cm),
-                pw.Row(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(order["visitingCustomer"]!=null?order["visitingCustomer"]:customerName.toString(),style: pw.TextStyle(fontSize: 18,fontWeight: pw.FontWeight.bold)),
-                            pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                            pw.Text(order["customerContactNo"].toString()),
-                          ]
-                      ),
-                      pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: List.generate(titles.length, (index){
-                            final title = titles[index];
-                            final value = data[index];
-                            return pw.Container(
-                                width: 200,
-                                child: pw.Row(
-                                    children:[
-                                      pw.Expanded(
-                                          child: pw.Text(title,style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-                                      ),
-                                      pw.Text(
-                                          value,
-                                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
-                                      )
-                                    ]
-
-                                )
-                            );
-                          })
-                      ),
-                    ]
-                ),
-                pw.SizedBox(height: 2 * PdfPageFormat.cm),
-              ]
-          );
-        },
-        footer: (context){
-          return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.center,
-              children: [
-                pw.Divider(),
-                pw.SizedBox(
-                    height: 2 * PdfPageFormat.mm
-                ),
-                pw.Row(
-                    mainAxisSize: pw.MainAxisSize.min,
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Text("Address",style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.SizedBox(
-                          width: 2 * PdfPageFormat.mm
-                      ),
-                      pw.Text(widget.store["address"].toString())
-                    ]
-                ),
-                pw.Row(
-                    mainAxisSize: pw.MainAxisSize.min,
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Text("Phone",style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.SizedBox(
-                          width: 2 * PdfPageFormat.mm
-                      ),
-                      pw.Text(widget.store["cellNo"].toString())
-                    ]
-                ),
-              ]
-          );
-        },
-        build: (pw.Context context) {
-          return[
-            pw.Column(
-              children: [
-                pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        "Invoice",
-                        style: pw.TextStyle(fontSize: 24,fontWeight: pw.FontWeight.bold),
-                      ),
-                      pw.SizedBox(
-                          height: 20
-                      ),
-                      pw.Table.fromTextArray(
-                          headers: ["Name","Unit Price","Quantity","Total"],
-                          data:invoiceData,
-                          border: null,
-                          headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                          headerDecoration: pw.BoxDecoration(color: PdfColors.grey300),
-                          cellHeight: 30,
-                          cellAlignments: {
-                            0: pw.Alignment.centerLeft,
-                            1: pw.Alignment.centerLeft,
-                            2: pw.Alignment.centerLeft,
-                            3: pw.Alignment.centerLeft
-                          }
-                      ),
-                      pw.Divider(),
-                      pw.Container(
-                          alignment: pw.Alignment.centerRight,
-                          child: pw.Row(
-                            children: [
-                              pw.Spacer(flex: 6),
-                              pw.Expanded(
-                                flex:4,
-                                child: pw.Column(
-                                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                                    children: [
-                                      pw.Container(
-                                          width: double.infinity,
-                                          child: pw.Row(
-                                              children: [
-                                                pw.Expanded(
-                                                    child: pw.Text("SubTotal",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-                                                ),
-                                                pw.Text(
-                                                    order["netTotal"].toStringAsFixed(1),
-                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
-                                                )
-                                              ]
-                                          )
-                                      ),
-                                      pw.Container(
-                                          width: double.infinity,
-                                          child: pw.Row(
-                                              children: [
-                                                pw.Expanded(
-                                                    child: pw.Text("Tax",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-                                                ),
-                                                pw.Text(
-                                                    (order["grossTotal"]-order["netTotal"]).toStringAsFixed(1),
-                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
-                                                )
-                                              ]
-                                          )
-                                      ),
-                                      pw.Divider(),
-                                      pw.Container(
-                                          width: double.infinity,
-                                          child: pw.Row(
-                                              children: [
-                                                pw.Expanded(
-                                                    child: pw.Text("Total",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-                                                ),
-                                                pw.Text(
-                                                    order["grossTotal"].toStringAsFixed(1),
-                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
-                                                )
-                                              ]
-                                          )
-                                      ),
-                                      order["discountedPrice"]!=null&&order["discountedPrice"]!=0.0?pw.Container(
-                                          width: double.infinity,
-                                          child: pw.Row(
-                                              children: [
-                                                pw.Expanded(
-                                                    child: pw.Text("Discount",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-                                                ),
-                                                pw.Text(
-                                                    order["discountedPrice"].toStringAsFixed(1),
-                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
-                                                )
-                                              ]
-                                          )
-                                      ):pw.Container(),
-                                      pw.SizedBox(
-                                          height: 2 * PdfPageFormat.mm
-                                      ),
-                                      pw.Container(
-                                          height:1,
-                                          color: PdfColors.grey400
-                                      ),
-                                      pw.SizedBox(
-                                          height: 0.5 * PdfPageFormat.mm
-                                      ),
-                                      pw.Container(
-                                          height:1,
-                                          color: PdfColors.grey400
-                                      ),
-                                      order["discountedPrice"]!=null&&order["discountedPrice"]!=0.0?pw.Container(
-                                          width: double.infinity,
-                                          child: pw.Row(
-                                              children: [
-                                                pw.Expanded(
-                                                    child: pw.Text("Total",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-                                                ),
-                                                pw.Text(
-                                                    (order["grossTotal"]-order["discountedPrice"]).toStringAsFixed(1),
-                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
-                                                )
-                                              ]
-                                          )
-                                      ):pw.Container(),
-                                    ]
-                                ),
-                              )
-                            ],
-                          )
-                      )
-                    ]
+  Widget refundOrderItemsPopup(List<dynamic> orderItems,int orderId){
+    List<bool> inputs = new List<bool>();
+    for (int i = 0; i < orderItems.length; i++) {
+      inputs.add(false);
+    }
+    return Scaffold(
+      body: StatefulBuilder(
+        builder: (context,innerSetstate){
+          return Container(
+            width: 400,
+            height: 450,
+            decoration: BoxDecoration(
+                image: DecorationImage(
+                  fit: BoxFit.cover,
+                  image: AssetImage('assets/bb.jpg'),
                 )
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: MediaQuery.of(context).size.width,
+                  height: 40,
+                  color: yellowColor,
+                  child: Center(child: Text("Refund Items",style: TextStyle(fontSize: 25,fontWeight: FontWeight.bold,color: BackgroundColor),)),
+
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ListView.builder(
+                      itemCount: orderItems.length,
+                        itemBuilder: (context,index){
+                          return Card(
+                            elevation: 8,
+                            child: new Container(
+                              decoration: BoxDecoration(
+                                  color: BackgroundColor,
+                                  // borderRadius: BorderRadius.only(
+                                  //   bottomRight: Radius.circular(15),
+                                  //   topLeft: Radius.circular(15),
+                                  // ),
+                                  border: Border.all(color: yellowColor, width: 1)
+                              ),
+                              padding: new EdgeInsets.all(10.0),
+                              child: new Column(
+                                children: <Widget>[
+                                  new CheckboxListTile(
+                                      value: inputs[index],
+                                      title: Row(
+                                        mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          new Text(orderItems[index]["name"]+" "+"(${orderItems[index]["sizeName"]})" ,style: TextStyle(color: yellowColor, fontSize: 17, fontWeight: FontWeight.bold),),
+                                        ],
+                                      ),
+                                      controlAffinity: ListTileControlAffinity.leading,
+                                      onChanged: (bool val) {
+                                          innerSetstate(() {
+                                            if(inputs[index]){
+                                              inputs[index]=false;
+                                            }else {
+                                              inputs[index] = true;
+                                            }
+                                          });
+                                      })
+                                ],
+                              ),
+                            ),
+                          );
+                        }
+                    ),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: InkWell(
+                    onTap: (){
+                      innerSetstate(() {
+                        List<String> orderItemsIds=[];
+                        // Navigator.pop(context);
+                        for(int i=0;i<inputs.length;i++){
+                          if(inputs[i]){
+                            orderItemsIds.add(orderItems[i]["id"].toString());
+                          }
+                        }
+                        print("OrderItems Ids "+orderItemsIds.toString());
+                        Network_Operations.refundOrder(context: this.context,token: token, orderItemsId: orderItemsIds, orderId: orderId).then((value){
+                          Navigator.pop(this.context);
+                          print(value);
+                          if(value){
+                            WidgetsBinding.instance
+                                .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                            Utils.showSuccess(this.context,"Refunded Successfully");
+                          }else{
+                            Utils.showError(this.context,"Unable to Rwfund due to some error");
+                          }
+                        });
+                      });
+
+
+                    },
+                    child: Card(
+                      elevation: 8,
+                      child: Container(
+                        width: 230,
+                        height: 50,
+                        decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(4),
+                            color: yellowColor
+                        ),
+                        child: Center(child: Text("Refund",style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
+                      ),
+                    ),
+                  ),
+                ),
               ],
-
-            )];
-
-        }
-
-    ));
-    await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => doc.save());
+            ),
+          );
+        },
+      ),
+    );
   }
 }

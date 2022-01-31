@@ -4,11 +4,16 @@ import 'package:api_cache_manager/models/cache_db_model.dart';
 import 'package:api_cache_manager/utils/cache_manager.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:esc_pos_printer/esc_pos_printer.dart';
+import 'package:exabistro_pos/components/constants.dart';
 import 'package:exabistro_pos/model/OrderById.dart';
 import 'package:flutter/material.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 class Utils{
    static String baseUrl(){
@@ -572,5 +577,456 @@ class Utils{
      bytes+= ticket.cut();
      //bytes+= ticket.drawer();
      return bytes;
+   }
+
+  static Widget shiftReportDialog(BuildContext context,dynamic shiftData){
+     return Scaffold(
+       body: Center(
+         child: Container(
+           width: 400,
+           height: 130,
+           child: Card(
+             elevation: 8,
+             child: InkWell(
+               child: Container(
+                 width: MediaQuery.of(context).size.width,
+                 //height: 50,
+                 decoration: BoxDecoration(
+                   color: Colors.white,
+                   borderRadius: BorderRadius.circular(4),
+                   //border: Border.all(color: Colors.orange, width: 1)
+                 ),
+                 child: Column(
+                   crossAxisAlignment: CrossAxisAlignment.start,
+                   children: [
+                     Container(
+                       width: MediaQuery.of(context).size.width,
+                       height: 30,
+                       decoration: BoxDecoration(
+                         color: yellowColor,
+                         borderRadius: BorderRadius.circular(4),
+                         //border: Border.all(color: Colors.orange, width: 1)
+                       ),
+                       child: Row(
+                         mainAxisAlignment: MainAxisAlignment.center,
+                         children: [
+                           Text(
+                             'Session#: ',
+                             style: TextStyle(
+                               color: Colors.white,
+                               fontSize: 25,
+                               fontWeight: FontWeight.w700,
+                               //fontStyle: FontStyle.italic,
+                             ),
+                           ),
+                           Text(
+                             //'XXL',
+                             shiftData['sessionNo']!=null?shiftData['sessionNo'].toString():"",
+                             style: TextStyle(
+                               color: blueColor,
+                               fontSize: 25,
+                               fontWeight: FontWeight.w700,
+                               //fontStyle: FontStyle.italic,
+                             ),
+                           ),
+                         ],
+                       ),
+                     ),
+                     Padding(
+                       padding: const EdgeInsets.only(left: 8,top: 2),
+                       child: Row(
+                         children: [
+                           Text(
+                             'Opening Balance: ',
+                             style: TextStyle(
+                               color: yellowColor,
+                               fontSize: 17,
+                               fontWeight: FontWeight.w700,
+                               //fontStyle: FontStyle.italic,
+                             ),
+                           ),
+                           Text(
+                             //'XXL',
+                             shiftData['openingBalance']!=null?shiftData['openingBalance'].toString():"",
+                             style: TextStyle(
+                               color: blueColor,
+                               fontSize: 17,
+                               fontWeight: FontWeight.w600,
+                               //fontStyle: FontStyle.italic,
+                             ),
+                           ),
+                         ],
+                       ),
+                     ),
+                     Padding(
+                       padding: const EdgeInsets.only(left: 8,top: 2),
+                       child: Row(
+                         children: [
+                           Text(
+                             'Closing Balance: ',
+                             style: TextStyle(
+                               color: yellowColor,
+                               fontSize: 17,
+                               fontWeight: FontWeight.w700,
+                               //fontStyle: FontStyle.italic,
+                             ),
+                           ),
+                           Text(
+                             //'XXL',
+                             shiftData['closingBalance']!=null?shiftData['closingBalance'].toString():"",
+                             style: TextStyle(
+                               color: blueColor,
+                               fontSize: 17,
+                               fontWeight: FontWeight.w600,
+                               //fontStyle: FontStyle.italic,
+                             ),
+                           ),
+                         ],
+                       ),
+                     ),
+                     Padding(
+                       padding: const EdgeInsets.only(top: 2,left: 8,bottom: 2),
+                       child: Row(
+                         children: [
+                           Text(
+                             'Time: ',
+                             style: TextStyle(
+                               color: yellowColor,
+                               fontSize: 17,
+                               fontWeight: FontWeight.w700,
+                               //fontStyle: FontStyle.italic,
+                             ),
+                           ),
+                           Text(
+                             //'XXL',
+                             shiftData['createdOn']!=null?shiftData['createdOn'].toString().substring(0,16):"",
+                             style: TextStyle(
+                               color: blueColor,
+                               fontSize: 17,
+                               fontWeight: FontWeight.w600,
+                               //fontStyle: FontStyle.italic,
+                             ),
+                           ),
+                         ],
+                       ),
+                     ),
+                     Padding(
+                       padding: const EdgeInsets.only(top: 2,left: 8),
+                       child: Row(
+                         children: [
+                           Text(
+                             'User: ',
+                             style: TextStyle(
+                               color: yellowColor,
+                               fontSize: 17,
+                               fontWeight: FontWeight.w700,
+                               //fontStyle: FontStyle.italic,
+                             ),
+                           ),
+                           Text(
+                             //'XXL',
+                             shiftData['userName']!=null?shiftData['userName'].toString():"",
+                             style: TextStyle(
+                               color: blueColor,
+                               fontSize: 17,
+                               fontWeight: FontWeight.w600,
+                               //fontStyle: FontStyle.italic,
+                             ),
+                           ),
+                         ],
+                       ),
+                     ),
+                     SizedBox(height: 2,),
+                   ],
+                 ),
+               ),
+             ),
+           ),
+         ),
+       ),
+     );
+   }
+
+  static buildInvoice(dynamic order,var store,String customerName)async{
+     List<List<dynamic>> tableData=[];
+     List<String> topping=[],toppingUnitPrice=[],toppingTotalPrice=[],toppingQuantity=[];
+     for(int i=0;i<order["orderItems"].length;i++){
+       if(order["orderItems"][i]["orderItemsToppings"]!=null&&order["orderItems"][i]["orderItemsToppings"].length>0){
+         for(int j=0;j<order["orderItems"][i]["orderItemsToppings"].length;j++){
+
+           topping.add(order["orderItems"][i]["orderItemsToppings"][j]['additionalItem']['stockItemName']);
+           toppingUnitPrice.add(order["orderItems"][i]["orderItemsToppings"][j]["price"].toStringAsFixed(0));
+           toppingTotalPrice.add(order["orderItems"][i]["orderItemsToppings"][j]["totalPrice"].toStringAsFixed(0));
+           toppingQuantity.add("x"+order["orderItems"][i]["orderItemsToppings"][j]["quantity"].toStringAsFixed(0));
+         }
+       }
+       if(topping.length>0&&toppingTotalPrice.length>0&&toppingUnitPrice.length>0){
+         tableData.add([
+           order["orderItems"][i]["name"]+" "+"(${order["orderItems"][i]["sizeName"]})"+"\n"+topping.toString(),
+           order["orderItems"][i]["price"].toStringAsFixed(1)+"\n"+toppingUnitPrice.toString(),
+           "x "+order["orderItems"][i]["quantity"].toStringAsFixed(0)+"\n"+toppingQuantity.toString(),
+           order["orderItems"][i]["totalPrice"].toStringAsFixed(1)+"\n"+toppingTotalPrice.toString()
+         ]);
+       }else{
+         tableData.add([
+           order["orderItems"][i]["sizeName"]!=null?order["orderItems"][i]["name"]+" "+"(${order["orderItems"][i]["sizeName"]})" : order["orderItems"][i]["name"],
+           order["orderItems"][i]["price"].toStringAsFixed(1),
+           "x "+order["orderItems"][i]["quantity"].toStringAsFixed(0),
+           order["orderItems"][i]["totalPrice"].toStringAsFixed(1)
+         ]);
+       }
+       toppingTotalPrice.clear();
+       toppingUnitPrice.clear();
+       topping.clear();
+       toppingQuantity.clear();
+     }
+     final titles = <String>[
+       'Order Number:',
+       'Order Date:',
+       'Order Type:',
+       'Items Qty:'
+     ];
+     final data = <String>[
+       order["id"].toString(),
+       DateFormat.yMd().format(DateTime.now()).toString(),
+       order["orderType"]==1?"Dine-In":order["orderType"]==2?"Take-Away":order["orderType"]==3?"Home Delivery":"None",
+       order["orderItems"].length.toString(),
+     ];
+
+     final doc = pw.Document();
+     doc.addPage(pw.MultiPage(
+       // pageFormat: PdfPageFormat.a4,
+         header: (context){
+           return pw.Column(
+               crossAxisAlignment: pw.CrossAxisAlignment.start,
+               children: [
+                 pw.SizedBox(height: 1 * PdfPageFormat.cm),
+                 pw.Row(
+                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                     children: [
+                       pw.Column(
+                           crossAxisAlignment: pw.CrossAxisAlignment.start,
+                           children: [
+                             pw.Text(store["name"].toString(),style: pw.TextStyle(fontSize:20,fontWeight: pw.FontWeight.bold)),
+                             pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                             pw.Text(store["address"].toString()),
+                           ]
+                       ),
+                       pw.Container(
+                           width: 50,
+                           height:50,
+                           child: pw.BarcodeWidget(
+                               barcode: pw.Barcode.qrCode(),
+                               data: "http://dev.exabistro.com/#/storeMenu/${store["id"]}"
+                           )
+                       )
+
+                     ]
+                 ),
+                 pw.SizedBox(height: 1 * PdfPageFormat.cm),
+                 pw.Row(
+                     crossAxisAlignment: pw.CrossAxisAlignment.end,
+                     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+                     children: [
+                       pw.Column(
+                           crossAxisAlignment: pw.CrossAxisAlignment.start,
+                           children: [
+                             pw.Text(order["visitingCustomer"]!=null?order["visitingCustomer"]:customerName.toString(),style: pw.TextStyle(fontSize: 18,fontWeight: pw.FontWeight.bold)),
+                             pw.SizedBox(height: 1 * PdfPageFormat.mm),
+                             pw.Text(order["customerContactNo"].toString()),
+                           ]
+                       ),
+                       pw.Column(
+                           crossAxisAlignment: pw.CrossAxisAlignment.start,
+                           children: List.generate(titles.length, (index){
+                             final title = titles[index];
+                             final value = data[index];
+                             return pw.Container(
+                                 width: 200,
+                                 child: pw.Row(
+                                     children:[
+                                       pw.Expanded(
+                                           child: pw.Text(title,style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
+                                       ),
+                                       pw.Text(
+                                           value,
+                                           style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
+                                       )
+                                     ]
+
+                                 )
+                             );
+                           })
+                       ),
+                     ]
+                 ),
+                 pw.SizedBox(height: 2 * PdfPageFormat.cm),
+               ]
+           );
+         },
+         footer: (context){
+           return pw.Column(
+               crossAxisAlignment: pw.CrossAxisAlignment.center,
+               children: [
+                 pw.Divider(),
+                 pw.SizedBox(
+                     height: 2 * PdfPageFormat.mm
+                 ),
+                 pw.Row(
+                     mainAxisSize: pw.MainAxisSize.min,
+                     crossAxisAlignment: pw.CrossAxisAlignment.end,
+                     children: [
+                       pw.Text("Address",style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                       pw.SizedBox(
+                           width: 2 * PdfPageFormat.mm
+                       ),
+                       pw.Text(store["address"].toString())
+                     ]
+                 ),
+                 pw.Row(
+                     mainAxisSize: pw.MainAxisSize.min,
+                     crossAxisAlignment: pw.CrossAxisAlignment.end,
+                     children: [
+                       pw.Text("Phone",style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
+                       pw.SizedBox(
+                           width: 2 * PdfPageFormat.mm
+                       ),
+                       pw.Text(store["cellNo"].toString())
+                     ]
+                 ),
+               ]
+           );
+         },
+         build: (pw.Context context) {
+           return[
+             pw.Column(
+               children: [
+                 pw.Column(
+                     crossAxisAlignment: pw.CrossAxisAlignment.start,
+                     children: [
+                       pw.Text(
+                         "Invoice",
+                         style: pw.TextStyle(fontSize: 24,fontWeight: pw.FontWeight.bold),
+                       ),
+                       pw.SizedBox(
+                           height: 20
+                       ),
+                       pw.Table.fromTextArray(
+                           headers: ["Name","Unit Price","Quantity","Total"],
+                           data:tableData,
+                           border: null,
+                           headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                           headerDecoration: pw.BoxDecoration(color: PdfColors.grey300),
+                           cellHeight: 30,
+                           cellAlignments: {
+                             0: pw.Alignment.centerLeft,
+                             1: pw.Alignment.centerLeft,
+                             2: pw.Alignment.centerLeft,
+                             3: pw.Alignment.centerLeft
+                           }
+                       ),
+                       pw.Divider(),
+                       pw.Container(
+                           alignment: pw.Alignment.centerRight,
+                           child: pw.Row(
+                             children: [
+                               pw.Spacer(flex: 6),
+                               pw.Expanded(
+                                 flex:4,
+                                 child: pw.Column(
+                                     crossAxisAlignment: pw.CrossAxisAlignment.start,
+                                     children: [
+
+                                       pw.Container(
+                                           width: double.infinity,
+                                           child: pw.Row(
+                                               children: [
+                                                 pw.Expanded(
+                                                     child: pw.Text("SubTotal",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
+                                                 ),
+                                                 pw.Text(
+                                                     order["netTotal"].toStringAsFixed(1),
+                                                     style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
+                                                 )
+                                               ]
+                                           )
+                                       ),
+                                       order["discountedPrice"]!=null&&order["discountedPrice"]!=0.0?pw.Container(
+                                           width: double.infinity,
+                                           child: pw.Row(
+                                               children: [
+                                                 pw.Expanded(
+                                                     child: pw.Text("Discount",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
+                                                 ),
+                                                 pw.Text(
+                                                     order["discountedPrice"].toStringAsFixed(1),
+                                                     style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
+                                                 )
+                                               ]
+                                           )
+                                       ):pw.Container(),
+                                       for(int i=0;i<order["orderTaxes"].length;i++)
+                                         if(order["orderTaxes"][i]["taxName"]!="Discount")
+                                       pw.Container(
+                                           width: double.infinity,
+                                           child: pw.Row(
+                                               children: [
+                                                 pw.Expanded(
+                                                     child: pw.Text(order["orderTaxes"][i]["taxName"],style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
+                                                 ),
+                                                 pw.Text(
+                                                     order["orderTaxes"][i]["amount"].toStringAsFixed(1),
+                                                     style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
+                                                 )
+                                               ]
+                                           )
+                                       ),
+                                       pw.Divider(),
+                                       pw.Container(
+                                           width: double.infinity,
+                                           child: pw.Row(
+                                               children: [
+                                                 pw.Expanded(
+                                                     child: pw.Text("Total",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
+                                                 ),
+                                                 pw.Text(
+                                                     order["grossTotal"].toStringAsFixed(1),
+                                                     style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
+                                                 )
+                                               ]
+                                           )
+                                       ),
+
+                                       pw.SizedBox(
+                                           height: 2 * PdfPageFormat.mm
+                                       ),
+                                       pw.Container(
+                                           height:1,
+                                           color: PdfColors.grey400
+                                       ),
+                                       pw.SizedBox(
+                                           height: 0.5 * PdfPageFormat.mm
+                                       ),
+                                       pw.Container(
+                                           height:1,
+                                           color: PdfColors.grey400
+                                       ),
+                                     ]
+                                 ),
+                               )
+                             ],
+                           )
+                       )
+                     ]
+                 )
+               ],
+
+             )];
+
+         }
+
+     ));
+     await Printing.layoutPdf(
+         onLayout: (PdfPageFormat format) async => doc.save());
    }
 }

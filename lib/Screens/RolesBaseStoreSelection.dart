@@ -39,7 +39,6 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
       DeviceOrientation.landscapeRight,
       DeviceOrientation.landscapeLeft,
     ]);
-    print("store "+widget.roles.toString());
     // WidgetsBinding.instance
     //     .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
 
@@ -173,7 +172,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
                                     borderRadius: BorderRadius.only(bottomRight: Radius.circular(35), bottomLeft: Radius.circular(35)),
                                     image: DecorationImage(
                                         fit: BoxFit.cover,
-                                        image: NetworkImage(widget.roles[index]['restaurant']["image"]!=null?widget.roles[index]['restaurant']["image"]:'http://www.4motiondarlington.org/wp-content/uploads/2013/06/No-image-found.jpg',),
+                                        image: NetworkImage(widget.roles[index]['restaurant']!=null&&widget.roles[index]['restaurant']["image"]!=null?widget.roles[index]['restaurant']["image"]:'http://www.4motiondarlington.org/wp-content/uploads/2013/06/No-image-found.jpg',),
                                     )
                                 ),
                                 child: Column(
@@ -638,7 +637,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
                                       borderRadius: BorderRadius.only(bottomRight: Radius.circular(35), bottomLeft: Radius.circular(35)),
                                       image: DecorationImage(
                                         fit: BoxFit.cover,
-                                        image: NetworkImage(widget.roles[index]['restaurant']["image"]!=null?widget.roles[index]['restaurant']["image"]:'http://www.4motiondarlington.org/wp-content/uploads/2013/06/No-image-found.jpg',),
+                                        image: NetworkImage(widget.roles[index]['restaurant']!=null&&widget.roles[index]['restaurant']["image"]!=null?widget.roles[index]['restaurant']["image"]:'http://www.4motiondarlington.org/wp-content/uploads/2013/06/No-image-found.jpg',),
                                       )
                                   ),
                                   child: Column(

@@ -4,6 +4,7 @@ import 'package:api_cache_manager/utils/cache_manager.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:exabistro_pos/model/Additionals.dart';
 import 'package:exabistro_pos/model/Products.dart';
+import 'package:exabistro_pos/model/Stores.dart';
 import 'package:exabistro_pos/model/Tax.dart';
 import 'package:exabistro_pos/networks/sqlite_helper.dart';
 import 'package:http/http.dart' as http;
@@ -35,7 +36,6 @@ class Network_Operations{
             rolesAndStores.add(decoded[i]);
             restaurantList.add(decoded[i]['restaurant']);
           }
-          print(rolesAndStores);
           var claims = Utils.parseJwt(jsonDecode(cacheData.syncData)['token']);
           if(DateTime.fromMillisecondsSinceEpoch(int.parse(claims['exp'].toString()+"000")).isBefore(DateTime.now())){
             Utils.showError(context, "Token Expire Please Login Again");
@@ -51,6 +51,8 @@ class Network_Operations{
                 prefs.setString("name", claims['unique_name']);
                 prefs.setString('password', password);
                 prefs.setString("roles", jsonEncode(decoded));
+                prefs.setString("discountService",jsonDecode(cacheData.syncData)["user"]["discountService"].toString());
+                prefs.setString("waiveOffService", jsonDecode(cacheData.syncData)["user"]["waiveOffService"].toString());
               });
               Utils.showSuccess(context, "Login Successful");
                   Navigator.pushAndRemoveUntil(context,
@@ -91,6 +93,8 @@ class Network_Operations{
               prefs.setString("name", claims['unique_name']);
               prefs.setString('password', password);
               prefs.setString("roles", jsonEncode(decoded));
+              prefs.setString("discountService",jsonDecode(response.body)["user"]["discountService"].toString());
+              prefs.setString("waiveOffService", jsonDecode(response.body)["user"]["waiveOffService"].toString());
               // prefs.setString('isCustomer', claims['IsCustomerOnly']);
             });
             Utils.showSuccess(context, "Login Successful");
@@ -185,7 +189,7 @@ class Network_Operations{
         Utils.showError(context, "You are in Offline mode");
       }
     }catch(e){
-      print(e);
+
     }
     return null;
   }
@@ -207,7 +211,7 @@ class Network_Operations{
         Utils.showError(context, "Please Try Again");
       }
     }catch(e){
-      Utils.showError(context, "Error Found: $e");
+      Utils.showError(context,"Unable to Fetch Orders due to some error Please Contact Support");
     }
     return null;
   }
@@ -255,7 +259,7 @@ class Network_Operations{
       }
     }catch(e){
      // pd.hide();
-      Utils.showError(context, "Data Not Found Or Error Found");
+      Utils.showError(context,"Unable to Fetch Tables due to some error Please Contact Support");
     }
     return null;
   }
@@ -320,17 +324,17 @@ class Network_Operations{
         Map<String,String> headers = {'Authorization':'Bearer '+token};
         //  response=await http.get(Utils.baseUrl()+"deals/GetAll?storeId=$storeId&searchstring=$search",headers: headers);
         if(startDate ==null && endDate==null && startingPrice==null && endingPrice==null && search==null)
-          response=await http.get(Uri.parse(Utils.baseUrl()+"deals/GetAll?storeId=$storeId"),headers: headers);
+          response=await http.get(Uri.parse(Utils.baseUrl()+"deals/GetAllActive?storeId=$storeId"),headers: headers);
         else if(startDate ==null && endDate==null && startingPrice==null && endingPrice==null)
-          response=await http.get(Uri.parse(Utils.baseUrl()+"deals/GetAll?storeId=$storeId&searchstring=$search"),headers: headers);
+          response=await http.get(Uri.parse(Utils.baseUrl()+"deals/GetAllActive?storeId=$storeId&searchstring=$search"),headers: headers);
         else if(startDate !=null && endDate!=null)
-          response=await http.get(Uri.parse(Utils.baseUrl()+"deals/GetAll?storeId=$storeId&startingDate=$startDate&EndingDate=$endDate"),headers: headers);
+          response=await http.get(Uri.parse(Utils.baseUrl()+"deals/GetAllActive?storeId=$storeId&startingDate=$startDate&EndingDate=$endDate"),headers: headers);
         else if(startingPrice !=null && endingPrice!=null)
-          response=await http.get(Uri.parse(Utils.baseUrl()+"deals/GetAll?storeId=$storeId&startingPrice=$startingPrice&endingPrice=$endingPrice"),headers: headers);
+          response=await http.get(Uri.parse(Utils.baseUrl()+"deals/GetAllActive?storeId=$storeId&startingPrice=$startingPrice&endingPrice=$endingPrice"),headers: headers);
         else if(startDate !=null && endDate!=null && startingPrice!=null && endingPrice!=null)
-          response=await http.get(Uri.parse(Utils.baseUrl()+"deals/GetAll?storeId=$storeId&startingPrice=$startingPrice&endingPrice=$endingPrice&startingDate=$startDate&EndingDate=$endDate"),headers: headers);
+          response=await http.get(Uri.parse(Utils.baseUrl()+"deals/GetAllActive?storeId=$storeId&startingPrice=$startingPrice&endingPrice=$endingPrice&startingDate=$startDate&EndingDate=$endDate"),headers: headers);
         else
-          response=await http.get(Uri.parse(Utils.baseUrl()+"deals/GetAll?storeId=$storeId"),headers: headers);
+          response=await http.get(Uri.parse(Utils.baseUrl()+"deals/GetAllActive?storeId=$storeId"),headers: headers);
         var data= jsonDecode(response.body);
         print(data);
         if(response.statusCode==200){
@@ -347,7 +351,7 @@ class Network_Operations{
         Utils.showError(context, "You are in Offline mode");
       }
     }catch(e){
-      Utils.showError(context, "Error Found:");
+      Utils.showError(context,"Unable to Fetch Deals due to some error Please Contact Support");
     }
     return null;
   }
@@ -381,7 +385,7 @@ class Network_Operations{
         }
       }
     }catch(e){
-      Utils.showError(context, e.toString());
+      Utils.showError(context,"Unable to Fetch Additionals due to some error Please Contact Support");
     }
     return null;
   }
@@ -414,7 +418,7 @@ class Network_Operations{
       }
     }catch(e){
       print(e);
-      Utils.showError(context, "Error Found:");
+      Utils.showError(context,"Unable to Fetch Taxes due to some error Please Contact Support");
     }
     return null;
   }
@@ -467,7 +471,7 @@ class Network_Operations{
         return false;
       }
     }catch(e){
-      Utils.showError(context, "Error Found: ");
+      Utils.showError(context,"Unable to place Order due to some error Please Contact Support");
       return false;
     }
     //return null;
@@ -497,7 +501,7 @@ class Network_Operations{
       }
     }catch(e){
       //pd.hide();
-      Utils.showError(context, "Data Not Found Or Error Found");
+      Utils.showError(context,"Unable to Fetch Available Tables due to some error Please Contact Support");
 
       return null;
     }
@@ -521,7 +525,7 @@ class Network_Operations{
       if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
         List list=[];
         Map<String,String> headers = {'Authorization':'Bearer '+token};
-        var response=await http.get(Uri.parse(Utils.baseUrl()+"orders/getallbasicorders/$storeId"),headers: headers);
+        var response=await http.get(Uri.parse(Utils.baseUrl()+"orders/getallbasicorders?storeId=$storeId"),headers: headers);
         var data= jsonDecode(response.body);
         if(response.statusCode==200){
           APICacheDBModel cacheDBModel = new APICacheDBModel(
@@ -541,7 +545,7 @@ class Network_Operations{
         }
       }
     }catch(e){
-      Utils.showError(context, "Error Found: $e");
+      Utils.showError(context,"Unable to Fetch Orders due to some error Please Contact Support");
       return null;
     }
 
@@ -561,7 +565,7 @@ class Network_Operations{
         Utils.showError(context, "Please Try Again");
       }
     }catch(e){
-      Utils.showError(context, "Error Found: $e");
+      Utils.showError(context,"Unable to Filter Orderd by Tables due to some error Please Contact Support");
     }
     return null;
   }
@@ -597,7 +601,7 @@ class Network_Operations{
         Utils.showError(context, "You are in Offline mode");
       }
     }catch(e){
-      Utils.showError(context, "Error Found: $e");
+      Utils.showError(context,"Unable to Fetch info due to some error Please Contact Support");
     }
     return null;
   }
@@ -668,7 +672,7 @@ class Network_Operations{
         Utils.showError(context, "Token Expire Please Login Again");
         // Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => LoginScreen()), (route) => false);
       }else {
-        Utils.showError(context, "Error Found: $e");
+        Utils.showError(context,"Unable to Fetch Current Shift due to some error Please Contact Support");
       }
     }
     return null;
@@ -715,9 +719,99 @@ class Network_Operations{
         Utils.showError(context, "Please Try Again");
       }
     }catch(e){
+      Utils.showError(context,"Unable to Cancel Order due to some error Please Contact Support");
+    }
+    return null;
+  }
+
+  static Future<List<dynamic>> getOrdersBySession(BuildContext context,String token,int sessionId)async{
+    try{
+      Map<String,String> headers = {'Authorization':'Bearer '+token};
+      var response=await http.get(Uri.parse(Utils.baseUrl()+"orders/getbasicordersbysessionid/"+sessionId.toString()),headers: headers);
+      var data= jsonDecode(response.body);
+      if(response.statusCode==200){
+        return data;
+      }
+      else{
+        Utils.showError(context, "Please Try Again");
+      }
+    }catch(e){
+      print(e);
       Utils.showError(context, "Error Found: $e");
     }
     return null;
   }
 
+  static Future<dynamic> getAllDailySessionByStoreId(BuildContext context,String token,int storeId)async{
+    try{
+      var isCacheExist = await APICacheManager().isAPICacheKeyExist("getAllDailySession"+storeId.toString());
+      var connectivityResult = await (Connectivity().checkConnectivity());
+      if (connectivityResult == ConnectivityResult.none){
+        if (isCacheExist) {
+          var cacheData = await APICacheManager().getCacheData("getAllDailySession"+storeId.toString());
+          return Store.StoreFromJson(cacheData.syncData);
+
+        }else{
+          Utils.showError(context, "No Offline Data");
+        }
+      }
+      if(connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi){
+        Map<String,String> headers = {'Authorization':'Bearer '+token};
+        var response=await http.get(Uri.parse(Utils.baseUrl()+"dailysession/GetAll/"+storeId.toString()),headers: headers);
+        var data= jsonDecode(response.body);
+        print(response.statusCode);
+        print(response.body.toString());
+        if(response.statusCode==200){
+          print("abc"+data.toString());
+          APICacheDBModel cacheDBModel = new APICacheDBModel(
+              key: "getAllDailySession"+storeId.toString(), syncData: response.body);
+          await APICacheManager().addCacheData(cacheDBModel);
+          return data;
+        }
+        // else if(response.statusCode == 401){
+        //   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => LoginScreen()), (route) => false);
+        // }
+        else{
+          Utils.showError(context, "Please Try Again");
+        }
+      }
+    }catch(e){
+      var claims= Utils.parseJwt(token);
+      if(DateTime.fromMillisecondsSinceEpoch(int.parse(claims['exp'].toString()+"000")).isBefore(DateTime.now())){
+        Utils.showError(context, "Token Expire Please Login Again");
+        // Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => LoginScreen()), (route) => false);
+      }else {
+        Utils.showError(context, "Error Found: $e");
+      }
+    }
+    return null;
+  }
+
+  static Future<dynamic> refundOrder({BuildContext context, String token, List<String> orderItemsId, int orderId}) async {
+    try{
+      Map<String,String> headers = {'Content-Type':'application/json','Authorization':'Bearer '+token};
+
+      var body=jsonEncode({
+        "OrderItemsId": orderItemsId,
+        "OrderId":orderId
+
+      }
+      );
+      var response=await http.post(Uri.parse(Utils.baseUrl()+"orders/RefundedOrder"),headers: headers,body: body);
+      if(response.statusCode==200){
+        return true;
+      }
+      else{
+        if(response.body!=null){
+          print("response "+response.body.toString());
+        }
+        Utils.showError(context, "Please Try Again");
+        return false;
+      }
+    }catch(e){
+      print("Exception "+e);
+      Utils.showError(context, "Unable to refund order");
+      return false;
+    }
+  }
 }

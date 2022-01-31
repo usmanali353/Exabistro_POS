@@ -4,7 +4,6 @@ import 'package:api_cache_manager/models/cache_db_model.dart';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:exabistro_pos/Screens/LoginScreen.dart';
-import 'package:exabistro_pos/Screens/Orders/DeliveredScreenForTablet.dart';
 import 'package:exabistro_pos/Screens/Orders/HistoryTabsComponents.dart';
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/PaidTabsComponents.dart';
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/PaidOrdersList.dart';
@@ -27,7 +26,6 @@ import 'package:flutter_counter/flutter_counter.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
-import 'package:numberpicker/numberpicker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -69,7 +67,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
   APICacheDBModel offlineData;
   var selectedOrderType,selectedOrderTypeId,selectedWaiter,selectedWaiterId,selectedTable,selectedTableId;
   TextEditingController timePickerField,customerName,customerPhone,customerEmail,customerAddress,discountValue;
-  String token;
+  String token,discountService,waiveOffService;
   List<int> cartCounter=[];
   final formKey= GlobalKey<FormState>();
   Timer t;
@@ -89,6 +87,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
   SharedPreferences.getInstance().then((prefs){
     setState(() {
       this.token=prefs.getString("token");
+      this.discountService=prefs.getString("discountService");
+      this.waiveOffService=prefs.getString("waiveOffService");
     });
     var reservationData = {
       "Date":DateTime.now().toString().substring(0,10),
@@ -109,7 +109,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
             "EndTime": DateTime.now().subtract(Duration(hours: 3)).toString().substring(10,16),
             "storeId":widget.store["id"]
           };
-          Network_Operations.getAvailableTable(this.context, prefs.getString("token"), reservationData).then((availableTables){
+          Network_Operations.getAvailableTable(context, prefs.getString("token"), reservationData).then((availableTables){
             setState(() {
               print("Called After 1 Minute");
               if(availableTables!=null&&availableTables.length>0){
@@ -124,6 +124,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
     Network_Operations.getDailySessionByStoreId(context, prefs.getString("token"),widget.store["id"]).then((dailySession){
       setState(() {
         currentDailySession=dailySession;
+        print("Current Daily Session"+currentDailySession.toString());
       });
     });
     Network_Operations.getCategory(context,prefs.getString("token"),widget.store["id"],"")
@@ -201,259 +202,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
   });
     super.initState();
   }
-  buildInvoice()async{
-    // print("OrdersList "+jsonDecode(ordersList));
-    final titles = <String>[
-      'Order Number:',
-      'Order Date:',
-      'Order Type:',
-      'Items Qty:'
-    ];
-    final data = <String>[
-      jsonDecode(ordersList)["result"]["id"].toString(),
-      DateFormat.yMd().format(DateTime.now()).toString(),
-      jsonDecode(ordersList)["result"]["orderType"]==1?"Dine-In":jsonDecode(ordersList)["result"]["orderType"]==2?"Take-Away":jsonDecode(ordersList)["result"]["orderType"]==3?"Home Delivery":"None",
-      jsonDecode(ordersList)["result"]["orderItems"].length.toString(),
-    ];
-    var invoiceData=cartList.map((cartItems){
-      return [
-        cartItems.productName,
-        cartItems.price.toString(),
-        "x "+cartItems.quantity.toString(),
-        cartItems.totalPrice.toString(),
-      ];
-    }).toList();
-    final doc = pw.Document();
-    doc.addPage(pw.MultiPage(
-      // pageFormat: PdfPageFormat.a4,
-        header: (context){
-          return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.SizedBox(height: 1 * PdfPageFormat.cm),
-                pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(widget.store["name"].toString(),style: pw.TextStyle(fontSize:20,fontWeight: pw.FontWeight.bold)),
-                            pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                            pw.Text(widget.store["address"].toString()),
-                          ]
-                      ),
-                      pw.Container(
-                          width: 50,
-                          height:50,
-                          child: pw.BarcodeWidget(
-                              barcode: pw.Barcode.qrCode(),
-                              data: "http://dev.exabistro.com/#/storeMenu/${widget.store["id"]}"
-                          )
-                      )
-                    ]
-                ),
-                pw.SizedBox(height: 1 * PdfPageFormat.cm),
-                pw.Row(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(customerName.text.toString(),style: pw.TextStyle(fontSize: 18,fontWeight: pw.FontWeight.bold)),
-                            pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                            pw.Text(customerPhone.text.toString()),
-                          ]
-                      ),
-                      pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: List.generate(titles.length, (index){
-                            final title = titles[index];
-                            final value = data[index];
-                            return pw.Container(
-                                width: 200,
-                                child: pw.Row(
-                                    children:[
-                                      pw.Expanded(
-                                          child: pw.Text(title,style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-                                      ),
-                                      pw.Text(
-                                          value,
-                                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
-                                      )
-                                    ]
 
-                                )
-                            );
-                          })
-                      ),
-                    ]
-                ),
-                pw.SizedBox(height: 2 * PdfPageFormat.cm),
-              ]
-          );
-        },
-        footer: (context){
-          return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.center,
-              children: [
-                pw.Divider(),
-                pw.SizedBox(
-                    height: 2 * PdfPageFormat.mm
-                ),
-                pw.Row(
-                    mainAxisSize: pw.MainAxisSize.min,
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Text("Address",style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.SizedBox(
-                          width: 2 * PdfPageFormat.mm
-                      ),
-                      pw.Text(widget.store["address"].toString())
-                    ]
-                ),
-                pw.Row(
-                    mainAxisSize: pw.MainAxisSize.min,
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Text("Phone",style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.SizedBox(
-                          width: 2 * PdfPageFormat.mm
-                      ),
-                      pw.Text(widget.store["cellNo"].toString())
-                    ]
-                ),
-              ]
-          );
-        },
-        build: (pw.Context context) {
-          return[
-            pw.Column(
-              children: [
-                pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        "Invoice",
-                        style: pw.TextStyle(fontSize: 24,fontWeight: pw.FontWeight.bold),
-                      ),
-                      pw.SizedBox(
-                          height: 20
-                      ),
-                      pw.Table.fromTextArray(
-                          headers: ["Name","Unit Price","Quantity","Total"],
-                          data:invoiceData,
-                          border: null,
-                          headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                          headerDecoration: pw.BoxDecoration(color: PdfColors.grey300),
-                          cellHeight: 30,
-                          cellAlignments: {
-                            0: pw.Alignment.centerLeft,
-                            1: pw.Alignment.centerLeft,
-                            2: pw.Alignment.centerLeft,
-                            3: pw.Alignment.centerLeft
-                          }
-                      ),
-                      pw.Divider(),
-                      pw.Container(
-                          alignment: pw.Alignment.centerRight,
-                          child: pw.Row(
-                            children: [
-                              pw.Spacer(flex: 6),
-                              pw.Expanded(
-                                flex:4,
-                                child: pw.Column(
-                                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                                    children: [
-                                      pw.Container(
-                                          width: double.infinity,
-                                          child: pw.Row(
-                                              children: [
-                                                pw.Expanded(
-                                                    child: pw.Text("SubTotal",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-                                                ),
-                                                pw.Text(
-                                                    overallTotalPrice.toString(),
-                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
-                                                )
-                                              ]
-                                          )
-                                      ),
-                                      pw.Container(
-                                          width: double.infinity,
-                                          child: pw.Row(
-                                              children: [
-                                                pw.Expanded(
-                                                    child: pw.Text("Tax",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-                                                ),
-                                                pw.Text(
-                                                    totalTax.toString(),
-                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
-                                                )
-                                              ]
-                                          )
-                                      ),
-                                      deductedPrice!=0.0?pw.Container(
-                                          width: double.infinity,
-                                          child: pw.Row(
-                                              children: [
-                                                pw.Expanded(
-                                                    child: pw.Text("Discount",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-                                                ),
-                                                pw.Text(
-                                                    deductedPrice.toStringAsFixed(1),
-                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
-                                                )
-                                              ]
-                                          )
-                                      ):pw.Container(),
-                                      pw.Divider(),
-                                      pw.Container(
-                                          width: double.infinity,
-                                          child: pw.Row(
-                                              children: [
-                                                pw.Expanded(
-                                                    child: pw.Text("Total",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-                                                ),
-                                                pw.Text(
-                                                    deductedPrice!=0.0?priceWithDiscount.toStringAsFixed(1):overallTotalPriceWithTax.toString(),
-                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
-                                                )
-                                              ]
-                                          )
-                                      ),
-                                      pw.SizedBox(
-                                          height: 2 * PdfPageFormat.mm
-                                      ),
-                                      pw.Container(
-                                          height:1,
-                                          color: PdfColors.grey400
-                                      ),
-                                      pw.SizedBox(
-                                          height: 0.5 * PdfPageFormat.mm
-                                      ),
-                                      pw.Container(
-                                          height:1,
-                                          color: PdfColors.grey400
-                                      ),
-                                    ]
-                                ),
-                              )
-                            ],
-                          )
-                      )
-                    ]
-                )
-              ],
-
-            )];
-
-        }
-
-    ));
-    await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => doc.save());
-  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -513,9 +262,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
              ListTile(
                onTap: (){
                  if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
-                   Navigator.push(context, MaterialPageRoute(builder: (context) =>PaidOrdersScreenForTab(widget.store)));
+                   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>PaidOrdersScreenForTab(widget.store)), (route) => false);
                  }else {
-                   Navigator.push(context, MaterialPageRoute(builder: (context) =>PaidTabsScreen(storeId:widget.store)));
+                   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>PaidTabsScreen(storeId:widget.store)), (route) => false);
                  }
                },
                title: Text(
@@ -531,7 +280,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
              Divider(color: yellowColor, thickness: 1,),
              ListTile(
                onTap: (){
-                 Navigator.push(context, MaterialPageRoute(builder: (context) =>OrdersHistoryTabsScreen(storeId:widget.store)));
+                 Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>OrdersHistoryTabsScreen(storeId:widget.store)), (route) => false);
                },
                title: Text(
                  "Order History",
@@ -542,6 +291,40 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                  ),
                ),
                trailing: FaIcon(FontAwesomeIcons.history,color: yellowColor,),
+             ),
+             Divider(color: yellowColor, thickness: 1,),
+             ListTile(
+               onTap: (){
+                 this.isLoading=true;
+                 Network_Operations.getAllDailySessionByStoreId(context, token,widget.store["id"]).then((value){
+                   this.isLoading=false;
+                   if(value!=null&&value.length>0){
+                     showDialog(
+                         context: context,
+                         builder:(context){
+                           return Dialog(
+                             backgroundColor: Colors.transparent,
+                             child: Container(
+                               width: 400,
+                               height: 130,
+                               child: Utils.shiftReportDialog(context,value.last),
+                             ),
+                           ) ;
+                         }
+                     );
+
+                   }
+                 });
+               },
+               title: Text(
+                 "Shift Report",
+                 style: TextStyle(
+                     color: blueColor,
+                     fontSize: 22,
+                     fontWeight: FontWeight.bold
+                 ),
+               ),
+               trailing: FaIcon(FontAwesomeIcons.calendar,color: yellowColor,),
              ),
              Divider(color: yellowColor, thickness: 1,),
              ListTile(
@@ -744,12 +527,14 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                 child: Center(
                                                   child: AutoSizeText(
                                                     products[index].name!=null?products[index].name:"",
+                                                      textAlign: TextAlign.center,
                                                     style: TextStyle(
+
                                                       color: BackgroundColor,
                                                         fontSize: 16,
                                                       fontWeight: FontWeight.bold
                                                     ),
-                                                    maxLines: 1,
+                                                    maxLines: 2,
                                                   ),
                                                 ),
                                               ),
@@ -982,124 +767,148 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                               ),
                                             ),
                                           ),
-
                                           Padding(
                                             padding: const EdgeInsets.all(2.0),
-                                            child: InkWell(
-                                              onTap: (){
-                                                showDialog<int>(
-                                                    context: context,
-                                                    builder: (BuildContext context) {
-                                                      return  NumberPickerDialog.integer(
-                                                        initialIntegerValue: cartList[index].quantity,
-                                                        minValue: 1,
-                                                        maxValue: 10,
-                                                        step: 1,
-                                                        title: new Text("Select Quantity"),
-                                                      );
-                                                    }
-                                                ).then((int value){
-                                                  setState(() {
-
-                                                  });
-                                                });
-                                              },
-                                              child: Row(
-                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                children: [
-                                                  Expanded(
-                                                    flex:2,
-                                                    child: Container(
-                                                      width: 90,
-                                                      height: 40,
-                                                      decoration: BoxDecoration(
-                                                        //color: yellowColor,
-                                                        border: Border.all(color: yellowColor, width: 2),
-                                                        borderRadius: BorderRadius.circular(8),
-                                                      ),
-                                                      child: Center(
-                                                        child: AutoSizeText(
-                                                          'Quantity: ',
-                                                          style: TextStyle(
-                                                              color: yellowColor,
-                                                              fontSize: 22,
-                                                              fontWeight: FontWeight.bold
-                                                          ),
-                                                          maxLines: 2,
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Expanded(
+                                                  flex:2,
+                                                  child: Container(
+                                                    width: 90,
+                                                    height: 40,
+                                                    decoration: BoxDecoration(
+                                                      //color: yellowColor,
+                                                      border: Border.all(color: yellowColor, width: 2),
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                    child: Center(
+                                                      child: AutoSizeText(
+                                                        'Unit Price: ',
+                                                        style: TextStyle(
+                                                            color: yellowColor,
+                                                            fontSize: 22,
+                                                            fontWeight: FontWeight.bold
                                                         ),
+                                                        maxLines: 1,
                                                       ),
                                                     ),
                                                   ),
-                                                  SizedBox(width: 2,),
-                                                  Expanded(
-                                                    flex:3,
-                                                    child: Container(
-                                                      width: 90,
-                                                      height: 40,
-                                                      decoration: BoxDecoration(
-                                                        border: Border.all(color: yellowColor, width: 2),
-                                                        //color: BackgroundColor,
-                                                        borderRadius: BorderRadius.circular(8),
-                                                      ),
-                                                      child: Center(
-                                                        child: Counter(
-                                                          minValue: 1,
-                                                          maxValue: 10,
-
-                                                          initialValue: cartCounter.isEmpty?1:cartCounter[index],
-                                                          decimalPlaces: 0,
-                                                          color: yellowColor,
-                                                          onChanged: (value){
-                                                            setState(() {
-                                                              cartCounter[index]=value;
-                                                              print("Quantity at Current Index "+cartCounter[index].toString());
-                                                              var priceOfTopping=0.0;
-                                                              if(cartList[index].topping!=null){
-                                                                List<Toppings> topping= Toppings.toppingListFromJson(cartList[index].topping);
-                                                                if(topping!=null){
-                                                                  for(Toppings t in topping) {
-                                                                    setState(() {
-                                                                      priceOfTopping =
-                                                                          priceOfTopping +
-                                                                              t.totalprice;
-                                                                    });
-                                                                  }
-                                                                  print("Price of Topping "+priceOfTopping.toString());
-                                                                }
-                                                              }
-                                                              if(value !=null) {
-                                                                sqlite_helper().updatePriceAndQuantity(cartList[index].id, (cartList[index].price*cartCounter[index])+priceOfTopping, cartCounter[index]).then((updatedItemsCount){
-                                                                  if(updatedItemsCount!=null&&updatedItemsCount>0){
-                                                                    sqlite_helper().getcart1().then((value) {
-                                                                      setState(() {
-                                                                        cartCounter.clear();
-                                                                        cartList.clear();
-                                                                        cartList = value;
-                                                                        if (cartList.length > 0) {
-                                                                          for(CartItems item in cartList){
-                                                                            cartCounter.add(item.quantity);
-                                                                          }
-                                                                        }
-                                                                      });
-                                                                    });
-                                                                    sqlite_helper().gettotal().then((value){
-                                                                      setState(() {
-                                                                        overallTotalPrice=value[0]["SUM(totalPrice)"];
-                                                                      });
-                                                                    });
-                                                                  }else{
-                                                                    Utils.showError(context,"Unable to Update");
-                                                                  }
-                                                                });
-                                                              }
-                                                            });
-                                                          },
+                                                ),
+                                                SizedBox(width: 2,),
+                                                Expanded(
+                                                  flex:3,
+                                                  child: Container(
+                                                    width: 90,
+                                                    height: 40,
+                                                    decoration: BoxDecoration(
+                                                      border: Border.all(color: yellowColor, width: 2),
+                                                      //color: BackgroundColor,
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                    child: Center(
+                                                      child: Text(widget.store["currencyCode"]+": "+cartList[index].price.toStringAsFixed(1),style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),)
+                                                    ),
+                                                  ),
+                                                )
+                                              ],
+                                            ),
+                                          ),
+                                          Padding(
+                                            padding: const EdgeInsets.all(2.0),
+                                            child: Row(
+                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                              children: [
+                                                Expanded(
+                                                  flex:2,
+                                                  child: Container(
+                                                    width: 90,
+                                                    height: 40,
+                                                    decoration: BoxDecoration(
+                                                      //color: yellowColor,
+                                                      border: Border.all(color: yellowColor, width: 2),
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                    child: Center(
+                                                      child: AutoSizeText(
+                                                        'Quantity: ',
+                                                        style: TextStyle(
+                                                            color: yellowColor,
+                                                            fontSize: 22,
+                                                            fontWeight: FontWeight.bold
                                                         ),
+                                                        maxLines: 1,
                                                       ),
                                                     ),
-                                                  )
-                                                ],
-                                              ),
+                                                  ),
+                                                ),
+                                                SizedBox(width: 2,),
+                                                Expanded(
+                                                  flex:3,
+                                                  child: Container(
+                                                    width: 90,
+                                                    height: 40,
+                                                    decoration: BoxDecoration(
+                                                      border: Border.all(color: yellowColor, width: 2),
+                                                      //color: BackgroundColor,
+                                                      borderRadius: BorderRadius.circular(8),
+                                                    ),
+                                                    child: Center(
+                                                      child: Counter(
+                                                        minValue: 1,
+                                                        maxValue: 10,
+
+                                                        initialValue: cartCounter.isEmpty?1:cartCounter[index],
+                                                        decimalPlaces: 0,
+                                                        color: yellowColor,
+                                                        onChanged: (value){
+                                                          setState(() {
+                                                            cartCounter[index]=value;
+                                                            var priceOfTopping=0.0;
+                                                            if(cartList[index].topping!=null){
+                                                              List<Toppings> topping= Toppings.toppingListFromJson(cartList[index].topping);
+                                                              if(topping!=null){
+                                                                for(Toppings t in topping) {
+                                                                  setState(() {
+                                                                    priceOfTopping =
+                                                                        priceOfTopping +
+                                                                            t.totalprice;
+                                                                  });
+                                                                }
+                                                              }
+                                                            }
+                                                            if(value !=null) {
+                                                              sqlite_helper().updatePriceAndQuantity(cartList[index].id, (cartList[index].price*cartCounter[index])+priceOfTopping, cartCounter[index]).then((updatedItemsCount){
+                                                                if(updatedItemsCount!=null&&updatedItemsCount>0){
+                                                                  sqlite_helper().getcart1().then((value) {
+                                                                    setState(() {
+                                                                      cartCounter.clear();
+                                                                      cartList.clear();
+                                                                      cartList = value;
+                                                                      if (cartList.length > 0) {
+                                                                        for(CartItems item in cartList){
+                                                                          cartCounter.add(item.quantity);
+                                                                        }
+                                                                      }
+                                                                    });
+                                                                  });
+                                                                  sqlite_helper().gettotal().then((value){
+                                                                    setState(() {
+                                                                      overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                                                    });
+                                                                  });
+                                                                }else{
+                                                                  Utils.showError(context,"Unable to Update");
+                                                                }
+                                                              });
+                                                            }
+                                                          });
+                                                        },
+                                                      ),
+                                                    ),
+                                                  ),
+                                                )
+                                              ],
                                             ),
                                           ),
 
@@ -1112,7 +921,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                   flex:2,
                                                   child: Container(
                                                     width: 90,
-                                                    height: 30,
+                                                    height: 40,
                                                     decoration: BoxDecoration(
                                                       //color: yellowColor,
                                                       border: Border.all(color: yellowColor, width: 2),
@@ -1136,7 +945,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                   flex:3,
                                                   child: Container(
                                                     width: 90,
-                                                    height: 30,
+                                                    height: 40,
                                                     decoration: BoxDecoration(
                                                       border: Border.all(color: yellowColor, width: 2),
                                                       //color: BackgroundColor,
@@ -1449,17 +1258,33 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                 }
                                                 print("Price with tax "+overallTotalPriceWithTax.toString());
                                               }
-                                              showDialog(context: context, builder:(BuildContext context){
-                                                return Dialog(
-                                                    backgroundColor: Colors.transparent,
-                                                    // insetPadding: EdgeInsets.all(16),
-                                                    child: Container(
-                                                        height:450,
-                                                        width: MediaQuery.of(context).size.width/2,
-                                                        child: orderPopUpHorizontalDineIn()
-                                                    )
-                                                );
-                                              });
+                                              if(discountService!="null"&&discountService=="true"){
+                                                showDialog(context: context, builder:(BuildContext context){
+                                                  return Dialog(
+                                                      backgroundColor: Colors.transparent,
+                                                      // insetPadding: EdgeInsets.all(16),
+                                                      child: Container(
+                                                          height:450,
+                                                          width: MediaQuery.of(context).size.width/2,
+                                                          child: orderPopUpHorizontalDineIn()
+                                                      )
+                                                  );
+                                                });
+                                              }
+                                              else{
+                                                showDialog(context: context, builder:(BuildContext context){
+                                                  return Dialog(
+                                                      backgroundColor: Colors.transparent,
+                                                      // insetPadding: EdgeInsets.all(16),
+                                                      child: Container(
+                                                          height:300,
+                                                          width: MediaQuery.of(context).size.width/2,
+                                                          child: orderPopupHorizontalDineInWithOutDiscount()
+                                                      )
+                                                  );
+                                                });
+                                              }
+
                                             });
                                           },
                                           child: Container(
@@ -1518,11 +1343,13 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                     setState(() {
                                       if(t.percentage!=null&&t.percentage!=0.0){
                                         var percentTax= overallTotalPrice/100*t.percentage;
-                                        print("Percent Tax "+percentTax.toString());
+                                        totalTax=totalTax+percentTax;
                                         overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
+
                                       }
                                       if(t.price!=null&&t.price!=0.0){
                                         overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
+                                        totalTax=totalTax+t.price;
                                       }
                                       typeBasedTaxes.add(t);
 
@@ -1547,9 +1374,39 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                 showAlertDialog(
                                     context, offlineData);
                               }else{
+                                if(discountService!="null"&&discountService=="true"){
+                                  showDialog(context: context, builder:(BuildContext context){
+                                    return Dialog(
+                                        backgroundColor: Colors.transparent,
+                                        // insetPadding: EdgeInsets.all(16),
+                                        child: Container(
+                                            height:450,
+                                            width: MediaQuery.of(context).size.width/2,
+                                            child: orderPopupHorizontalTakeAway()
+                                        )
+                                    );
+                                  });
+                                }
+                                else{
+                                  showDialog(context: context, builder:(BuildContext context){
+                                    return Dialog(
+                                        backgroundColor: Colors.transparent,
+                                        // insetPadding: EdgeInsets.all(16),
+                                        child: Container(
+                                            height:300,
+                                            width: MediaQuery.of(context).size.width/2,
+                                            child: orderPopupHorizontalTakeAwayWithOutDiscount()
+                                        )
+                                    );
+                                  });
+                                }
+                              }
+                            }else{
+                              if(discountService!="null"&&discountService=="true"){
                                 showDialog(context: context, builder:(BuildContext context){
                                   return Dialog(
                                       backgroundColor: Colors.transparent,
+                                      // insetPadding: EdgeInsets.all(16),
                                       child: Container(
                                           height:450,
                                           width: MediaQuery.of(context).size.width/2,
@@ -1558,17 +1415,19 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                   );
                                 });
                               }
-                            }else{
-                              showDialog(context: context, builder:(BuildContext context){
-                                return Dialog(
-                                    backgroundColor: Colors.transparent,
-                                    child: Container(
-                                        height:450,
-                                        width: MediaQuery.of(context).size.width/2,
-                                        child: orderPopupHorizontalTakeAway()
-                                    )
-                                );
-                              });
+                              else{
+                                showDialog(context: context, builder:(BuildContext context){
+                                  return Dialog(
+                                      backgroundColor: Colors.transparent,
+                                      // insetPadding: EdgeInsets.all(16),
+                                      child: Container(
+                                          height:300,
+                                          width: MediaQuery.of(context).size.width/2,
+                                          child: orderPopupHorizontalTakeAwayWithOutDiscount()
+                                      )
+                                  );
+                                });
+                              }
                             }
                           },
                           child: Container(
@@ -1619,10 +1478,11 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                     setState(() {
                                       if(t.percentage!=null&&t.percentage!=0.0){
                                         var percentTax= overallTotalPrice/100*t.percentage;
-                                        print(percentTax);
+                                        totalTax=totalTax+percentTax;
                                         overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
                                       }
                                       if(t.price!=null&&t.price!=0.0){
+                                        totalTax=totalTax+t.price;
                                         overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
                                       }
                                       typeBasedTaxes.add(t);
@@ -1648,9 +1508,39 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                 showAlertDialog(
                                     context, offlineData);
                               }else{
+                                if(discountService!="null"&&discountService=="true"){
+                                  showDialog(context: context, builder:(BuildContext context){
+                                    return Dialog(
+                                        backgroundColor: Colors.transparent,
+                                        // insetPadding: EdgeInsets.all(16),
+                                        child: Container(
+                                            height:450,
+                                            width: MediaQuery.of(context).size.width/2,
+                                            child: orderPopupHorizontalDelivery()
+                                        )
+                                    );
+                                  });
+                                }
+                                else{
+                                  showDialog(context: context, builder:(BuildContext context){
+                                    return Dialog(
+                                        backgroundColor: Colors.transparent,
+                                        // insetPadding: EdgeInsets.all(16),
+                                        child: Container(
+                                            height:370,
+                                            width: MediaQuery.of(context).size.width/2,
+                                            child: orderPopupHorizontalDeliveryWithoutDiscount()
+                                        )
+                                    );
+                                  });
+                                }
+                              }
+                            }else{
+                              if(discountService!="null"&&discountService=="true"){
                                 showDialog(context: context, builder:(BuildContext context){
                                   return Dialog(
                                       backgroundColor: Colors.transparent,
+                                      // insetPadding: EdgeInsets.all(16),
                                       child: Container(
                                           height:450,
                                           width: MediaQuery.of(context).size.width/2,
@@ -1659,17 +1549,19 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                   );
                                 });
                               }
-                            }else{
-                              showDialog(context: context, builder:(BuildContext context){
-                                return Dialog(
-                                    backgroundColor: Colors.transparent,
-                                    child: Container(
-                                        height:450,
-                                        width: MediaQuery.of(context).size.width/2,
-                                        child: orderPopupHorizontalDelivery()
-                                    )
-                                );
-                              });
+                              else{
+                                showDialog(context: context, builder:(BuildContext context){
+                                  return Dialog(
+                                      backgroundColor: Colors.transparent,
+                                      // insetPadding: EdgeInsets.all(16),
+                                      child: Container(
+                                          height:300,
+                                          width: MediaQuery.of(context).size.width/2,
+                                          child: orderPopupHorizontalDeliveryWithoutDiscount()
+                                      )
+                                  );
+                                });
+                              }
                             }
                           },
                           child: Container(
@@ -1705,6 +1597,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
   //Popup's
   Widget dealsPopupLayout(dynamic deal) {
     var count = 1;
+    debugPrint(deal["productDeals"][0][["product"]].toString());
     var price = 0.0,actualPrice=0.0;
     var updatedPrice = 0.0,updatedActualPrice=0.0;
     List<String> dealProducts = [];
@@ -2126,28 +2019,33 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             onChanged: (Value) {
                                               innersetState(() {
                                                 selectedDiscountType = Value;
-                                                priceWithDiscount=overallTotalPriceWithTax;
+                                                priceWithDiscount=overallTotalPrice;
                                                 deductedPrice=0.0;
                                                 if(typeBasedTaxes.last.name=="Discount"){
-                                                  priceWithDiscount=overallTotalPriceWithTax;
+                                                  priceWithDiscount=overallTotalPrice;
                                                   typeBasedTaxes.remove(typeBasedTaxes.last);
                                                 }
                                                 if(discountValue.text.isNotEmpty){
                                                   if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(discountValue.text));
+                                                    var tempPercentage=(overallTotalPrice/100*double.parse(discountValue.text));
                                                     setState(() {
                                                       deductedPrice=tempPercentage;
                                                     });
-                                                    priceWithDiscount=priceWithDiscount-tempPercentage;
+                                                    priceWithDiscount=priceWithDiscount-tempPercentage+totalTax;
+                                                    print("percent discount "+priceWithDiscount.toString());
                                                     typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(discountValue.text)));
                                                   }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
                                                     setState(() {
                                                       deductedPrice=double.parse(discountValue.text);
                                                     });
-                                                    var tempSum=overallTotalPriceWithTax-double.parse(discountValue.text);
-                                                    priceWithDiscount=tempSum;
+                                                    var tempSum=overallTotalPrice-double.parse(discountValue.text);
+                                                    priceWithDiscount=tempSum+totalTax;
                                                     typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(discountValue.text)));
                                                   }
+                                                }else{
+                                                  innersetState(() {
+                                                    priceWithDiscount=overallTotalPriceWithTax;
+                                                  });
                                                 }
                                               });
                                             },
@@ -2174,27 +2072,33 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             controller: discountValue,
                                             onChanged: (value){
                                               innersetState(() {
-                                                priceWithDiscount=overallTotalPriceWithTax;
+                                                print("Total Tax "+totalTax.toString());
+                                                priceWithDiscount=overallTotalPrice;
                                                 if(typeBasedTaxes.last.name=="Discount"){
                                                   //priceWithDiscount=overallTotalPriceWithTax;
                                                   typeBasedTaxes.remove(typeBasedTaxes.last);
                                                 }
                                                 if(value.isNotEmpty){
                                                   if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
-                                                    priceWithDiscount=priceWithDiscount-tempPercentage;
+                                                    var tempPercentage=(overallTotalPrice/100*double.parse(value));
+                                                    priceWithDiscount=(priceWithDiscount-tempPercentage)+totalTax;
                                                     setState(() {
                                                       deductedPrice=tempPercentage;
                                                     });
                                                     typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(value)));
                                                   }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
-                                                    var tempSum=overallTotalPriceWithTax-double.parse(value);
+                                                    var tempSum=overallTotalPrice-double.parse(value);
                                                     setState(() {
                                                       deductedPrice=double.parse(discountValue.text);
                                                     });
-                                                    priceWithDiscount=tempSum;
+                                                    priceWithDiscount=tempSum+totalTax;
+
                                                     typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(value)));
                                                   }
+                                                }else{
+                                                  innersetState(() {
+                                                    priceWithDiscount=overallTotalPriceWithTax;
+                                                  });
                                                 }
 
                                               });
@@ -2302,7 +2206,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                       Row(
                                                         children: [
                                                           Text(
-                                                            typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"]+": "+(overallTotalPriceWithTax/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1),style: TextStyle(
+                                                            typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1),style: TextStyle(
                                                               fontSize:
                                                               16,
                                                               color:
@@ -2509,7 +2413,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                 };
                                                 Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
                                                   if(isPaid){
-                                                    buildInvoice();
+                                                    
                                                     Utils.showSuccess(this.context,"Payment Successful");
                                                   }else{
                                                     Utils.showError(this.context,"Problem in Making Payment");
@@ -2556,6 +2460,450 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                             ],
                           ),
                         ],
+                      ),
+                    ),
+                  ],
+                )
+            ),
+          );
+        },
+      ),
+    );
+  }
+  Widget orderPopupHorizontalDeliveryWithoutDiscount(){
+
+    return Scaffold(
+      resizeToAvoidBottomInset: false,
+      backgroundColor: Colors.white.withOpacity(0.1),
+      body: StatefulBuilder(
+        builder: (context,innersetState){
+          return Center(
+            child: Container(
+                height:370,
+                width: MediaQuery.of(context).size.width/2,
+                decoration: BoxDecoration(
+                    image: DecorationImage(
+                      fit: BoxFit.cover,
+                      //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
+                      image: AssetImage('assets/bb.jpg'),
+                    )
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: MediaQuery.of(context).size.width,
+                      height: 40,
+                      color: yellowColor,
+                      child: Center(
+                        child: Text(
+                          "Place Order For Delivery",
+                          style: TextStyle(
+                              fontSize: 25,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          Column(
+                            children: [
+                              SizedBox(height: 10,),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: TextFormField(
+                                            controller: customerName,
+                                            decoration: InputDecoration(
+                                              border: OutlineInputBorder(),
+                                              hintText: "Customer Name*",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: TextFormField(
+                                            controller: customerPhone,
+                                            decoration: InputDecoration(
+                                              border: OutlineInputBorder(),
+                                              hintText: "Customer Phone# *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: TextFormField(
+                                            controller: customerPhone,
+                                            decoration: InputDecoration(
+                                              border: OutlineInputBorder(),
+                                              hintText: "Customer Address *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(height: 30,),
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                          width: MediaQuery.of(context).size.width,
+                                          height: 50,
+                                          color: yellowColor,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                  .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  "SubTotal: ",
+                                                  style: TextStyle(
+                                                      fontSize:
+                                                      20,
+                                                      color:
+                                                      Colors.white,
+                                                      fontWeight:
+                                                      FontWeight
+                                                          .bold),
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          Colors.white,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                    SizedBox(
+                                                      width: 2,
+                                                    ),
+                                                    Text(
+                                                      overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          blueColor,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(2.0),
+                                          child: Container(
+                                              width: MediaQuery.of(
+                                                  context)
+                                                  .size
+                                                  .width,
+                                              height: 115,
+                                              decoration: BoxDecoration(
+                                                border: Border.all(color: yellowColor),
+                                                //borderRadius: BorderRadius.circular(8)
+                                              ),
+
+                                              child: ListView.builder(itemCount: typeBasedTaxes.length,itemBuilder: (context, index){
+                                                return  Padding(
+                                                  padding:
+                                                  const EdgeInsets
+                                                      .all(8.0),
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                    children: [
+                                                      Text(
+                                                        typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?typeBasedTaxes[index].name+" (${typeBasedTaxes[index].percentage.toStringAsFixed(1)})":typeBasedTaxes[index].name,
+                                                        style: TextStyle(
+                                                            fontSize:
+                                                            16,
+                                                            color:
+                                                            yellowColor,
+                                                            fontWeight:
+                                                            FontWeight
+                                                                .bold),
+                                                      ),
+                                                      Row(
+                                                        children: [
+                                                          Text((){
+                                                            if(typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0){
+                                                              return widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1);
+                                                            }else if(typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1){
+                                                              return widget.store["currencyCode"]+": "+(typeBasedTaxes[index].percentage/100*overallTotalPrice).toStringAsFixed(1);
+                                                            }
+                                                            else
+                                                              return widget.store["currencyCode"]+": "+(typeBasedTaxes[index].percentage/100*overallTotalPrice).toStringAsFixed(1);
+                                                          }()
+                                                            // typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"]+": "+(typeBasedTaxes[index].percentage/100*overallTotalPrice).toStringAsFixed(1):widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1)
+                                                            ,style: TextStyle(
+                                                                fontSize:
+                                                                16,
+                                                                color:
+                                                                blueColor,
+                                                                fontWeight:
+                                                                FontWeight.bold),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              })
+                                          ),
+                                        ),
+                                        Container(
+                                          width: MediaQuery.of(context).size.width,
+                                          height: 50,
+                                          color: yellowColor,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                  .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  "Total: ",
+                                                  style: TextStyle(
+                                                      fontSize:
+                                                      20,
+                                                      color:
+                                                      Colors.white,
+                                                      fontWeight:
+                                                      FontWeight
+                                                          .bold),
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":"",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          Colors.white,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                    SizedBox(
+                                                      width: 2,
+                                                    ),
+                                                    Text(
+                                                      priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(1)+"/-":overallTotalPriceWithTax.toStringAsFixed(1)+"/-",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          blueColor,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: InkWell(
+                        onTap: ()async{
+                          if(customerName.text!=null&&customerName.text.isNotEmpty&&customerAddress.text!=null&&customerAddress.text.isNotEmpty&&customerPhone.text.isNotEmpty){
+                            for(int i=0;i<cartList.length;i++){
+                              orderItems.add({
+                                "dealid":cartList[i].dealId,
+                                "name":cartList[i].productName,
+                                "price":cartList[i].price,
+                                "quantity":cartList[i].quantity,
+                                "totalprice":cartList[i].totalPrice,
+                                "havetopping":cartList[i].topping=="null"||cartList[i].topping==null || cartList[i].topping== "[]" ?false:jsonDecode(cartList[i].topping).length>0?true:false,
+                                "sizeid":cartList[i].sizeId,
+                                "IsDeal": cartList[i].isDeal==0?false:true,
+                                "productid":cartList[i].productId,
+                                "orderitemstoppings":cartList[i].topping==null||cartList[i].topping == "[]"?[]:jsonDecode(cartList[i].topping),
+                              });
+                            }
+                            dynamic order = {
+                              "DailySessionNo": currentDailySession!=null?currentDailySession:7,
+                              "storeId":widget.store["id"],
+                              "DeviceToken":null,
+                              "ordertype":3,
+                              "NetTotal":overallTotalPrice,
+                              //  "grosstotal":widget.netTotal,
+                              "comment":null,
+                              "TableId":null,
+                              "DeliveryAddress" : customerAddress.text,
+                              "DeliveryLongitude" : null,
+                              "DeliveryLatitude" : null,
+                              "PaymentType" : 1,
+                              "orderitems":orderItems,
+                              "CardNumber": null,
+                              "CVV": null,
+                              "ExpiryDate": null,
+                              "OrderTaxes":taxesList,
+                              "VoucherCode": "",
+                              "OrderStatus":7,
+                              "customerName":customerName.text,
+                              "discountedPrice":deductedPrice,
+                              "CustomerContactNo":customerPhone.text,
+                              "employeeId": int.parse(userId),
+                              "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false,
+                              "CreatedOn":DateTime.now()
+                            };
+                            debugPrint(jsonEncode(order,toEncodable: Utils.myEncode));
+                            var result=await Utils.check_connection();
+                            if(result == ConnectivityResult.none){
+                              var offlineOrderList=[];
+                              //final body = jsonEncode(order,toEncodable: Utils.myEncode);
+                              var exists = await Utils.checkOfflineDataExists("addOrderStaff");
+                              if(exists){
+                                print("in if");
+                                offlineData = await Utils.getOfflineData("addOrderStaff");
+                                //print(offlineData.syncData);
+
+                                for(int i=0;i<jsonDecode(offlineData.syncData).length;i++){
+                                  print(jsonDecode(offlineData.syncData)[i]);
+                                  offlineOrderList.add(jsonDecode(offlineData.syncData)[i]);
+                                }
+                                offlineOrderList.add(order);
+                              }else
+                                offlineOrderList.add(order);
+
+                              //offlineOrderList.add(body);
+                              await Utils.addOfflineData("addOrderStaff",jsonEncode(offlineOrderList,toEncodable: Utils.myEncode));
+                              offlineData = await Utils.getOfflineData("addOrderStaff");
+                              sqlite_helper().deletecart();
+                              orderItems.clear();
+                              sqlite_helper().getcart1().then((value) {
+                                setState(() {
+                                  cartList.clear();
+                                  cartCounter.clear();
+                                  cartList = value;
+                                  if (cartList.length > 0) {
+                                    for(CartItems item in cartList){
+                                      cartCounter.add(item.quantity);
+                                    }
+                                  }
+                                  isLoading=false;
+                                });
+                              });
+                              sqlite_helper().gettotal().then((value){
+                                setState(() {
+                                  overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                });
+                              });
+                              Navigator.of(context).pop();
+                              Utils.showSuccess(this.context, "Your Order Stored Offline");
+                            }
+                            else if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
+                              SharedPreferences.getInstance().then((prefs){
+                                setState(() {
+                                  isLoading=true;
+                                  Navigator.of(context).pop(context);
+                                });
+                                Network_Operations.placeOrder(context, prefs.getString("token"), order).then((orderPlaced){
+                                  if(orderPlaced!=null){
+                                    setState(() {
+                                      this.ordersList=orderPlaced;
+                                    });
+                                    orderItems.clear();
+                                    sqlite_helper().getcart1().then((value) {
+                                      setState(() {
+                                        cartCounter.clear();
+                                        cartList.clear();
+                                        cartList = value;
+                                        if (cartList.length > 0) {
+                                          for(CartItems item in cartList){
+                                            cartCounter.add(item.quantity);
+                                          }
+                                        }
+                                        isLoading=false;
+                                      });
+                                    });
+                                    sqlite_helper().gettotal().then((value){
+                                      setState(() {
+                                        overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                      });
+                                    });
+                                    if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
+                                      var payCash ={
+                                        "orderid": jsonDecode(orderPlaced)["id"],
+                                        "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                                        "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                                        "Comment": null,
+                                        "PaymentType": 1,
+                                        "OrderStatus": 7,
+                                      };
+                                      Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
+                                        if(isPaid){
+                                          
+                                          Utils.showSuccess(this.context,"Payment Successful");
+                                        }else{
+                                          Utils.showError(this.context,"Problem in Making Payment");
+                                        }
+                                      });
+
+                                    }
+                                    Utils.showSuccess(this.context,"Order Placed successfully");
+                                  }else{
+                                    setState(() {
+                                      isLoading=false;
+                                    });
+                                    Utils.showError(this.context,"Unable to Place Order");
+                                  }
+                                });
+                              });
+                            }
+                          }else{
+                            Utils.showError(this.context,"Provide all Required Information");
+                          }
+                        },
+                        child: Card(
+                          elevation:8,
+                          child: Container(
+                            width: 400,
+                            height: 60,
+                            decoration: BoxDecoration(
+                                color: yellowColor,
+                                borderRadius: BorderRadius.circular(4)
+                            ),
+                            child: Center(
+                              child: Text(
+                                "Submit Order",
+                                style: TextStyle(
+                                    fontSize: 25,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -2695,29 +3043,32 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             onChanged: (Value) {
                                               innersetState(() {
                                                 selectedDiscountType = Value;
-                                                priceWithDiscount=overallTotalPriceWithTax;
+                                               // priceWithDiscount=overallTotalPrice;
                                                 deductedPrice=0.0;
                                                 if(typeBasedTaxes.last.name=="Discount"){
-                                                  priceWithDiscount=overallTotalPriceWithTax;
+                                                  priceWithDiscount=overallTotalPrice;
                                                   typeBasedTaxes.remove(typeBasedTaxes.last);
                                                 }
                                                 if(discountValue.text.isNotEmpty){
                                                   if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(discountValue.text));
+                                                    var tempPercentage=(overallTotalPrice/100*double.parse(discountValue.text));
                                                     setState(() {
                                                       deductedPrice=tempPercentage;
                                                     });
-                                                    priceWithDiscount=priceWithDiscount-tempPercentage;
+                                                    priceWithDiscount=priceWithDiscount-tempPercentage+totalTax;
                                                     typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(discountValue.text)));
                                                   }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
                                                     setState(() {
                                                       deductedPrice=double.parse(discountValue.text);
                                                     });
-                                                    var tempSum=overallTotalPriceWithTax-double.parse(discountValue.text);
-                                                    priceWithDiscount=tempSum;
-                                                    print("cash Discounted "+priceWithDiscount.toString());
+                                                    var tempSum=overallTotalPrice-double.parse(discountValue.text);
+                                                    priceWithDiscount=tempSum+totalTax;
                                                     typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(discountValue.text)));
                                                   }
+                                                }else{
+                                                  innersetState(() {
+                                                    priceWithDiscount=overallTotalPriceWithTax;
+                                                  });
                                                 }
                                               });
                                             },
@@ -2744,28 +3095,33 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             controller: discountValue,
                                             onChanged: (value){
                                               innersetState(() {
-                                                priceWithDiscount=overallTotalPriceWithTax;
+                                                print("Total Tax "+totalTax.toString());
+                                                priceWithDiscount=overallTotalPrice;
                                                 if(typeBasedTaxes.last.name=="Discount"){
                                                   //priceWithDiscount=overallTotalPriceWithTax;
                                                   typeBasedTaxes.remove(typeBasedTaxes.last);
                                                 }
                                                 if(value.isNotEmpty){
                                                   if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
-                                                    priceWithDiscount=priceWithDiscount-tempPercentage;
+                                                    var tempPercentage=(overallTotalPrice/100*double.parse(value));
+                                                    priceWithDiscount=priceWithDiscount-tempPercentage+totalTax;
                                                     setState(() {
                                                       deductedPrice=tempPercentage;
                                                     });
                                                     typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(value)));
                                                   }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
-                                                    var tempSum=overallTotalPriceWithTax-double.parse(value);
+                                                    var tempSum=overallTotalPrice-double.parse(value);
                                                     setState(() {
                                                       deductedPrice=double.parse(discountValue.text);
                                                     });
-                                                    priceWithDiscount=tempSum;
-                                                    print("cash Discounted "+priceWithDiscount.toString());
+                                                    priceWithDiscount=tempSum+totalTax;
+
                                                     typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(value)));
                                                   }
+                                                }else{
+                                                  innersetState(() {
+                                                    priceWithDiscount=overallTotalPriceWithTax;
+                                                  });
                                                 }
 
                                               });
@@ -2878,6 +3234,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                             }else if(typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1){
                                                               return widget.store["currencyCode"]+": "+(typeBasedTaxes[index].percentage/100*overallTotalPrice).toStringAsFixed(1);
                                                             }
+                                                            else
                                                             return widget.store["currencyCode"]+": "+(typeBasedTaxes[index].percentage/100*overallTotalPrice).toStringAsFixed(1);
                                                          }()
                                                            // typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"]+": "+(typeBasedTaxes[index].percentage/100*overallTotalPrice).toStringAsFixed(1):widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1)
@@ -3093,7 +3450,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                     Utils.showError(this.context,"Problem in Making Payment");
                                                   }
                                                 });
-                                                buildInvoice();
+                                                
                                               }
                                               Utils.showSuccess(this.context,"Order Placed successfully");
                                             }else{
@@ -3138,6 +3495,881 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
       ),
     );
   }
+  Widget orderPopupHorizontalTakeAwayWithOutDiscount(){
+    return Scaffold(
+      backgroundColor: Colors.white.withOpacity(0.1),
+      body: StatefulBuilder(
+        builder: (context,innersetState){
+          return Center(
+            child: Container(
+                height:300,
+                width: MediaQuery.of(context).size.width/2,
+                decoration: BoxDecoration(
+                    image: DecorationImage(
+                      fit: BoxFit.cover,
+                      //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
+                      image: AssetImage('assets/bb.jpg'),
+                    )
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: MediaQuery.of(context).size.width,
+                      height: 40,
+                      color: yellowColor,
+                      child: Center(
+                        child: Text(
+                          "Place Order For Take-Away",
+                          style: TextStyle(
+                              fontSize: 25,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          Column(
+                            children: [
+                             SizedBox(height: 10,),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: TextFormField(
+                                            controller: customerName,
+                                            decoration: InputDecoration(
+                                              border: OutlineInputBorder(),
+                                              hintText: "Customer Name*",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: TextFormField(
+                                            controller: customerPhone,
+                                            decoration: InputDecoration(
+                                              border: OutlineInputBorder(),
+                                              hintText: "Customer Phone# *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: InkWell(
+                                            onTap: ()async{
+
+                                              for(int i=0;i<cartList.length;i++){
+                                                orderItems.add({
+                                                  "dealid":cartList[i].dealId,
+                                                  "name":cartList[i].productName,
+                                                  "price":cartList[i].price,
+                                                  "quantity":cartList[i].quantity,
+                                                  "totalprice":cartList[i].totalPrice,
+                                                  "havetopping":cartList[i].topping=="null"||cartList[i].topping==null || cartList[i].topping== "[]" ?false:jsonDecode(cartList[i].topping).length>0?true:false,
+                                                  "sizeid":cartList[i].sizeId,
+                                                  "IsDeal": cartList[i].isDeal==0?false:true,
+                                                  "productid":cartList[i].productId,
+                                                  "orderitemstoppings":cartList[i].topping==null||cartList[i].topping == "[]"?[]:jsonDecode(cartList[i].topping),
+                                                });
+                                              }
+                                              print(taxesList);
+                                              dynamic order = {
+                                                "DailySessionNo": currentDailySession!=null?currentDailySession:7,
+                                                "storeId":widget.store["id"],
+                                                "DeviceToken":null,
+                                                "ordertype":2,
+                                                "NetTotal":overallTotalPrice,
+                                                //  "grosstotal":widget.netTotal,
+                                                "comment":null,
+                                                "TableId":null,
+                                                "DeliveryAddress" : null,
+                                                "DeliveryLongitude" : null,
+                                                "DeliveryLatitude" : null,
+                                                "PaymentType" : 1,
+                                                "orderitems":orderItems,
+                                                "CardNumber": null,
+                                                "CVV": null,
+                                                "ExpiryDate": null,
+                                                "OrderTaxes":taxesList,
+                                                "VoucherCode": "",
+                                                "OrderStatus":7,
+                                                "customerName":customerName.text,
+                                                "CustomerContactNo":customerPhone.text,
+                                                "employeeId": int.parse(userId),
+                                                "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false,
+                                                "CreatedOn":DateTime.now(),
+                                                "discountedPrice":deductedPrice,
+                                              };
+                                              var result=await Utils.check_connection();
+                                              if(result == ConnectivityResult.none){
+                                                var offlineOrderList=[];
+                                                //final body = jsonEncode(order,toEncodable: Utils.myEncode);
+                                                var exists = await Utils.checkOfflineDataExists("addOrderStaff");
+                                                if(exists){
+                                                  offlineData = await Utils.getOfflineData("addOrderStaff");
+                                                  //print(offlineData.syncData);
+
+                                                  for(int i=0;i<jsonDecode(offlineData.syncData).length;i++){
+                                                    print(jsonDecode(offlineData.syncData)[i]);
+                                                    offlineOrderList.add(jsonDecode(offlineData.syncData)[i]);
+                                                  }
+                                                  offlineOrderList.add(order);
+                                                }else
+                                                  offlineOrderList.add(order);
+
+                                                //offlineOrderList.add(body);
+                                                await Utils.addOfflineData("addOrderStaff",jsonEncode(offlineOrderList,toEncodable: Utils.myEncode));
+                                                offlineData = await Utils.getOfflineData("addOrderStaff");
+                                                sqlite_helper().deletecart();
+                                                orderItems.clear();
+                                                sqlite_helper().getcart1().then((value) {
+                                                  setState(() {
+                                                    cartCounter.clear();
+                                                    cartList.clear();
+                                                    cartList = value;
+                                                    if (cartList.length > 0) {
+                                                      for(CartItems item in cartList){
+                                                        cartCounter.add(item.quantity);
+                                                      }
+                                                    }
+                                                    isLoading=false;
+                                                  });
+                                                });
+                                                sqlite_helper().gettotal().then((value){
+                                                  setState(() {
+                                                    overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                                  });
+                                                });
+
+                                                Navigator.of(context).pop();
+                                                Utils.showSuccess(this.context, "Your Order Stored Offline");
+                                              }
+                                              else if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
+                                                SharedPreferences.getInstance().then((prefs){
+                                                  setState(() {
+                                                    isLoading=true;
+                                                    Navigator.of(context).pop(context);
+                                                  });
+                                                  Network_Operations.placeOrder(context, prefs.getString("token"), order).then((orderPlaced){
+                                                    if(orderPlaced!=null){
+                                                      setState(() {
+                                                        this.ordersList=orderPlaced;
+                                                      });
+                                                      orderItems.clear();
+                                                      sqlite_helper().getcart1().then((value) {
+                                                        setState(() {
+                                                          cartCounter.clear();
+                                                          cartList.clear();
+                                                          cartList = value;
+                                                          if (cartList.length > 0) {
+                                                            for(CartItems item in cartList){
+                                                              cartCounter.add(item.quantity);
+                                                            }
+                                                          }
+                                                          isLoading=false;
+                                                        });
+                                                      });
+                                                      sqlite_helper().gettotal().then((value){
+                                                        setState(() {
+                                                          overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                                        });
+                                                      });
+                                                      if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
+                                                        var payCash ={
+                                                          "orderid": jsonDecode(orderPlaced)["id"],
+                                                          "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                                                          "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                                                          "Comment": null,
+                                                          "PaymentType": 1,
+                                                          "OrderStatus": 7,
+                                                        };
+                                                        Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
+                                                          if(isPaid){
+                                                            Utils.showSuccess(this.context,"Payment Successful");
+                                                          }else{
+                                                            Utils.showError(this.context,"Problem in Making Payment");
+                                                          }
+                                                        });
+                                                        
+                                                      }
+                                                      Utils.showSuccess(this.context,"Order Placed successfully");
+                                                    }else{
+                                                      Utils.showError(this.context,"Unable to Place Order");
+                                                    }
+                                                  });
+                                                });
+                                              }
+                                            },
+                                            child: Card(
+                                              elevation:8,
+                                              child: Container(
+                                                width: 400,
+                                                height: 60,
+                                                decoration: BoxDecoration(
+                                                    color: yellowColor,
+                                                    borderRadius: BorderRadius.circular(4)
+                                                ),
+                                                child: Center(
+                                                  child: Text(
+                                                    "Submit Order",
+                                                    style: TextStyle(
+                                                        fontSize: 25,
+                                                        color: Colors.white,
+                                                        fontWeight: FontWeight.bold),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(height: 30,),
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                          width: MediaQuery.of(context).size.width,
+                                          height: 50,
+                                          color: yellowColor,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                  .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  "SubTotal: ",
+                                                  style: TextStyle(
+                                                      fontSize:
+                                                      20,
+                                                      color:
+                                                      Colors.white,
+                                                      fontWeight:
+                                                      FontWeight
+                                                          .bold),
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          Colors.white,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                    SizedBox(
+                                                      width: 2,
+                                                    ),
+                                                    Text(
+                                                      overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          blueColor,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(2.0),
+                                          child: Container(
+                                              width: MediaQuery.of(
+                                                  context)
+                                                  .size
+                                                  .width,
+                                              height: 115,
+                                              decoration: BoxDecoration(
+                                                border: Border.all(color: yellowColor),
+                                                //borderRadius: BorderRadius.circular(8)
+                                              ),
+
+                                              child: ListView.builder(itemCount: typeBasedTaxes.length,itemBuilder: (context, index){
+                                                return  Padding(
+                                                  padding:
+                                                  const EdgeInsets
+                                                      .all(8.0),
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                    children: [
+                                                      Text(
+                                                        typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?typeBasedTaxes[index].name+" (${typeBasedTaxes[index].percentage.toStringAsFixed(1)})":typeBasedTaxes[index].name,
+                                                        style: TextStyle(
+                                                            fontSize:
+                                                            16,
+                                                            color:
+                                                            yellowColor,
+                                                            fontWeight:
+                                                            FontWeight
+                                                                .bold),
+                                                      ),
+                                                      Row(
+                                                        children: [
+                                                          Text((){
+                                                            if(typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0){
+                                                              return widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1);
+                                                            }else if(typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1){
+                                                              return widget.store["currencyCode"]+": "+(typeBasedTaxes[index].percentage/100*overallTotalPrice).toStringAsFixed(1);
+                                                            }
+                                                            else
+                                                              return widget.store["currencyCode"]+": "+(typeBasedTaxes[index].percentage/100*overallTotalPrice).toStringAsFixed(1);
+                                                          }()
+                                                            // typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"]+": "+(typeBasedTaxes[index].percentage/100*overallTotalPrice).toStringAsFixed(1):widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1)
+                                                            ,style: TextStyle(
+                                                                fontSize:
+                                                                16,
+                                                                color:
+                                                                blueColor,
+                                                                fontWeight:
+                                                                FontWeight.bold),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              })
+                                          ),
+                                        ),
+                                        Container(
+                                          width: MediaQuery.of(context).size.width,
+                                          height: 50,
+                                          color: yellowColor,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                  .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  "Total: ",
+                                                  style: TextStyle(
+                                                      fontSize:
+                                                      20,
+                                                      color:
+                                                      Colors.white,
+                                                      fontWeight:
+                                                      FontWeight
+                                                          .bold),
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":"",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          Colors.white,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                    SizedBox(
+                                                      width: 2,
+                                                    ),
+                                                    Text(
+                                                      priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(1)+"/-":overallTotalPriceWithTax.toStringAsFixed(1)+"/-",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          blueColor,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                )
+            ),
+          );
+        },
+      ),
+    );
+  }
+  Widget orderPopupHorizontalDineInWithOutDiscount(){
+    return Scaffold(
+      backgroundColor: Colors.white.withOpacity(0.1),
+      body: StatefulBuilder(
+        builder: (context,innersetState){
+          return Center(
+            child: Container(
+                height:300,
+                width: MediaQuery.of(context).size.width/2,
+                decoration: BoxDecoration(
+                    image: DecorationImage(
+                      fit: BoxFit.cover,
+                      //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
+                      image: AssetImage('assets/bb.jpg'),
+                    )
+                ),
+                child: Column(
+                  children: [
+                    Container(
+                      width: MediaQuery.of(context).size.width,
+                      height: 40,
+                      color: yellowColor,
+                      child: Center(
+                        child: Text(
+                          "Place Order For Dine-In",
+                          style: TextStyle(
+                              fontSize: 25,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: ListView(
+                        children: [
+                          Column(
+                            children: [
+                              SizedBox(height: 10,),
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Padding(
+                                          padding: EdgeInsets.all(8.0),
+                                          child: TextFormField(
+                                            controller: customerName,
+                                            decoration: InputDecoration(
+                                              border: OutlineInputBorder(),
+                                              hintText: "Customer Name*",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: TextFormField(
+                                            controller: customerPhone,
+                                            decoration: InputDecoration(
+                                              border: OutlineInputBorder(),
+                                              hintText: "Customer Phone# *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(8.0),
+                                          child: InkWell(
+                                            onTap: ()async{
+                                              for(int i=0;i<cartList.length;i++){
+                                                orderItems.add({
+                                                  "dealid":cartList[i].dealId,
+                                                  "name":cartList[i].productName,
+                                                  "price":cartList[i].price,
+                                                  "quantity":cartList[i].quantity,
+                                                  "totalprice":cartList[i].totalPrice,
+                                                  "havetopping":cartList[i].topping=="null"||cartList[i].topping==null || cartList[i].topping== "[]" ?false:jsonDecode(cartList[i].topping).length>0?true:false,
+                                                  "sizeid":cartList[i].sizeId,
+                                                  "IsDeal": cartList[i].isDeal==0?false:true,
+                                                  "productid":cartList[i].productId,
+                                                  "orderitemstoppings":cartList[i].topping==null||cartList[i].topping == "[]"?[]:jsonDecode(cartList[i].topping),
+                                                });
+                                              }
+
+                                              dynamic order = {
+                                                "DineInEndTime":DateFormat("HH:mm:ss").format(DateTime.now().add(Duration(hours: 1))),
+                                                "DailySessionNo": currentDailySession!=null?currentDailySession:7,
+                                                "TableId":selectedTableId!=null?selectedTableId:null,
+                                                "storeId":widget.store["id"],
+                                                "DeviceToken":null,
+                                                "ordertype":1,
+                                                "NetTotal":overallTotalPrice,
+                                                //  "grosstotal":widget.netTotal,
+                                                "comment":null,
+                                                "DeliveryAddress" : null,
+                                                "DeliveryLongitude" : null,
+                                                "DeliveryLatitude" : null,
+                                                "PaymentType" : 1,
+                                                "orderitems":orderItems,
+                                                "CardNumber": null,
+                                                "CVV": null,
+                                                "ExpiryDate": null,
+                                                "OrderTaxes":taxesList,
+                                                "VoucherCode": "",
+                                                "OrderStatus":1,
+                                                "discountedPrice":deductedPrice,
+                                                "customerName":customerName.text,
+                                                "CustomerContactNo":customerPhone.text,
+                                                "employeeId": int.parse(userId),
+                                                "IsCashPaid":selectedType=="Create Order"?false:selectedType=="Payment"?true:false,
+                                                "CreatedOn":DateTime.now(),
+                                              };
+                                              debugPrint(jsonEncode(order,toEncodable: Utils.myEncode));
+                                              var result = await Utils.check_connection();
+                                              if(result == ConnectivityResult.none){
+                                                var offlineOrderList=[];
+                                                //final body = jsonEncode(order,toEncodable: Utils.myEncode);
+                                                var exists = await Utils.checkOfflineDataExists("addOrderStaff");
+                                                if(exists){
+                                                  print("in if");
+                                                  offlineData = await Utils.getOfflineData("addOrderStaff");
+                                                  //print(offlineData.syncData);
+
+                                                  for(int i=0;i<jsonDecode(offlineData.syncData).length;i++){
+                                                    print(jsonDecode(offlineData.syncData)[i]);
+                                                    offlineOrderList.add(jsonDecode(offlineData.syncData)[i]);
+                                                  }
+                                                  offlineOrderList.add(order);
+                                                }else
+                                                  offlineOrderList.add(order);
+
+                                                //offlineOrderList.add(body);
+                                                await Utils.addOfflineData("addOrderStaff",jsonEncode(offlineOrderList,toEncodable: Utils.myEncode));
+                                                offlineData = await Utils.getOfflineData("addOrderStaff");
+                                                sqlite_helper().deletecart();
+                                                orderItems.clear();
+                                                sqlite_helper().getcart1().then((value) {
+                                                  setState(() {
+                                                    cartCounter.clear();
+                                                    cartList.clear();
+                                                    cartList = value;
+                                                    if (cartList.length > 0) {
+                                                      for(CartItems item in cartList){
+                                                        cartCounter.add(item.quantity);
+                                                      }
+                                                    }
+                                                    isLoading=false;
+                                                  });
+                                                });
+                                                sqlite_helper().gettotal().then((value){
+                                                  setState(() {
+                                                    overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                                  });
+                                                });
+                                                Navigator.of(context).pop();
+                                                Utils.showSuccess(this.context, "Your Order Stored Offline");
+                                              }
+                                              else if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
+                                                var exists = await Utils.checkOfflineDataExists("addOrderStaff");
+                                                if(exists){
+                                                  offlineData = await Utils.getOfflineData("addOrderStaff");
+                                                  showAlertDialog(context,offlineData);
+                                                }else{
+                                                  SharedPreferences.getInstance().then((prefs){
+                                                    setState(() {
+                                                      isLoading=true;
+                                                      Navigator.of(context).pop(context);
+                                                    });
+                                                    Network_Operations.placeOrder(context, prefs.getString("token"), order).then((orderPlaced){
+                                                      if(orderPlaced!=null){
+                                                        setState(() {
+                                                          this.ordersList=orderPlaced;
+                                                        });
+                                                        var reservationData = {
+                                                          "Date":DateTime.now().toString().substring(0,10),
+                                                          "StartTime":DateTime.now().subtract(Duration(hours: 4)).toString().substring(10,16),
+                                                          "EndTime": DateTime.now().subtract(Duration(hours: 3)).toString().substring(10,16),
+                                                          "storeId":widget.store["id"]
+                                                        };
+                                                        Network_Operations.getAvailableTable(context, prefs.getString("token"), reservationData).then((availableTables){
+                                                          setState(() {
+                                                            if(availableTables!=null&&availableTables.length>0){
+                                                              this.tables=availableTables;
+                                                            }
+                                                          });
+                                                        });
+                                                        orderItems.clear();
+                                                        sqlite_helper().getcart1().then((value) {
+                                                          setState(() {
+                                                            cartCounter.clear();
+                                                            cartList.clear();
+                                                            cartList = value;
+                                                            if (cartList.length > 0) {
+                                                              for(CartItems item in cartList){
+                                                                cartCounter.add(item.quantity);
+                                                              }
+                                                            }
+                                                            isLoading=false;
+                                                          });
+                                                        });
+                                                        sqlite_helper().gettotal().then((value){
+                                                          setState(() {
+                                                            overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                                          });
+                                                        });
+                                                        if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
+                                                          var payCash ={
+                                                            "orderid": jsonDecode(orderPlaced)["id"],
+                                                            "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                                                            "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
+                                                            "Comment": null,
+                                                            "PaymentType": 1,
+                                                            "OrderStatus": 7,
+                                                          };
+                                                          Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
+                                                            if(isPaid){
+                                                              Utils.showSuccess(this.context,"Payment Successful");
+                                                            }else{
+                                                              Utils.showError(this.context,"Problem in Making Payment");
+                                                            }
+                                                          });
+                                                          
+                                                        }
+                                                        Utils.showSuccess(this.context,"Order Placed successfully");
+                                                      }else{
+                                                        Utils.showError(this.context,"Unable to Place Order");
+                                                      }
+                                                    });
+                                                  });
+                                                }
+
+                                              }
+
+                                            },
+                                            child: Card(
+                                              elevation:8,
+                                              child: Container(
+                                                width: 400,
+                                                height: 60,
+                                                decoration: BoxDecoration(
+                                                    color: yellowColor,
+                                                    borderRadius: BorderRadius.circular(4)
+                                                ),
+                                                child: Center(
+                                                  child: Text(
+                                                    "Submit Order",
+                                                    style: TextStyle(
+                                                        fontSize: 25,
+                                                        color: Colors.white,
+                                                        fontWeight: FontWeight.bold),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  SizedBox(height: 30,),
+                                  Expanded(
+                                    child: Column(
+                                      children: [
+                                        Container(
+                                          width: MediaQuery.of(context).size.width,
+                                          height: 50,
+                                          color: yellowColor,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                  .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  "SubTotal: ",
+                                                  style: TextStyle(
+                                                      fontSize:
+                                                      20,
+                                                      color:
+                                                      Colors.white,
+                                                      fontWeight:
+                                                      FontWeight
+                                                          .bold),
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          Colors.white,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                    SizedBox(
+                                                      width: 2,
+                                                    ),
+                                                    Text(
+                                                      overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          blueColor,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: const EdgeInsets.all(2.0),
+                                          child: Container(
+                                              width: MediaQuery.of(
+                                                  context)
+                                                  .size
+                                                  .width,
+                                              height: 115,
+                                              decoration: BoxDecoration(
+                                                border: Border.all(color: yellowColor),
+                                                //borderRadius: BorderRadius.circular(8)
+                                              ),
+
+                                              child: ListView.builder(itemCount: typeBasedTaxes.length,itemBuilder: (context, index){
+                                                return  Padding(
+                                                  padding:
+                                                  const EdgeInsets
+                                                      .all(8.0),
+                                                  child: Row(
+                                                    mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                    children: [
+                                                      Text(
+                                                        typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?typeBasedTaxes[index].name+" (${typeBasedTaxes[index].percentage.toStringAsFixed(1)})":typeBasedTaxes[index].name,
+                                                        style: TextStyle(
+                                                            fontSize:
+                                                            16,
+                                                            color:
+                                                            yellowColor,
+                                                            fontWeight:
+                                                            FontWeight
+                                                                .bold),
+                                                      ),
+                                                      Row(
+                                                        children: [
+                                                          Text((){
+                                                            if(typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0){
+                                                              return widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1);
+                                                            }else if(typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1){
+                                                              return widget.store["currencyCode"]+": "+(typeBasedTaxes[index].percentage/100*overallTotalPrice).toStringAsFixed(1);
+                                                            }
+                                                            else
+                                                              return widget.store["currencyCode"]+": "+(typeBasedTaxes[index].percentage/100*overallTotalPrice).toStringAsFixed(1);
+                                                          }()
+                                                            // typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"]+": "+(typeBasedTaxes[index].percentage/100*overallTotalPrice).toStringAsFixed(1):widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1)
+                                                            ,style: TextStyle(
+                                                                fontSize:
+                                                                16,
+                                                                color:
+                                                                blueColor,
+                                                                fontWeight:
+                                                                FontWeight.bold),
+                                                          ),
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  ),
+                                                );
+                                              })
+                                          ),
+                                        ),
+                                        Container(
+                                          width: MediaQuery.of(context).size.width,
+                                          height: 50,
+                                          color: yellowColor,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(8.0),
+                                            child: Row(
+                                              mainAxisAlignment:
+                                              MainAxisAlignment
+                                                  .spaceBetween,
+                                              children: [
+                                                Text(
+                                                  "Total: ",
+                                                  style: TextStyle(
+                                                      fontSize:
+                                                      20,
+                                                      color:
+                                                      Colors.white,
+                                                      fontWeight:
+                                                      FontWeight
+                                                          .bold),
+                                                ),
+                                                Row(
+                                                  children: [
+                                                    Text(
+                                                      widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":"",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          Colors.white,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                    SizedBox(
+                                                      width: 2,
+                                                    ),
+                                                    Text(
+                                                      priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(1)+"/-":overallTotalPriceWithTax.toStringAsFixed(1)+"/-",
+                                                      style: TextStyle(
+                                                          fontSize:
+                                                          20,
+                                                          color:
+                                                          blueColor,
+                                                          fontWeight:
+                                                          FontWeight.bold),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                )
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+
+
   Widget orderPopUpHorizontalDineIn(){
 
     return Scaffold(
@@ -3220,29 +4452,34 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             onChanged: (Value) {
                                               innersetState(() {
                                                 selectedDiscountType = Value;
-                                                priceWithDiscount=overallTotalPriceWithTax;
+                                                priceWithDiscount=overallTotalPrice;
                                                 deductedPrice=0.0;
+
                                                 if(typeBasedTaxes.last.name=="Discount"){
-                                                  priceWithDiscount=overallTotalPriceWithTax;
+                                                  priceWithDiscount=overallTotalPrice;
                                                   typeBasedTaxes.remove(typeBasedTaxes.last);
                                                 }
                                                 if(discountValue.text.isNotEmpty){
                                                   if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(discountValue.text));
+                                                    var tempPercentage=(overallTotalPrice/100*double.parse(discountValue.text));
                                                     setState(() {
                                                       deductedPrice=tempPercentage;
                                                     });
-                                                    priceWithDiscount=priceWithDiscount-tempPercentage;
+                                                    priceWithDiscount=priceWithDiscount-tempPercentage+totalTax;
+                                                    print("percent discount "+priceWithDiscount.toString());
                                                     typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(discountValue.text)));
                                                   }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
                                                     setState(() {
                                                       deductedPrice=double.parse(discountValue.text);
                                                     });
-                                                    var tempSum=overallTotalPriceWithTax-double.parse(discountValue.text);
-                                                    priceWithDiscount=tempSum;
-                                                    print("cash Discounted "+priceWithDiscount.toString());
+                                                    var tempSum=overallTotalPrice-double.parse(discountValue.text);
+                                                    priceWithDiscount=tempSum+totalTax;
                                                     typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(discountValue.text)));
                                                   }
+                                                }else{
+                                                  innersetState(() {
+                                                    priceWithDiscount=overallTotalPriceWithTax;
+                                                  });
                                                 }
                                               });
                                             },
@@ -3269,28 +4506,33 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             controller: discountValue,
                                             onChanged: (value){
                                               innersetState(() {
-                                                priceWithDiscount=overallTotalPriceWithTax;
+                                                print("Total Tax "+totalTax.toString());
+                                                priceWithDiscount=overallTotalPrice;
                                                 if(typeBasedTaxes.last.name=="Discount"){
                                                   //priceWithDiscount=overallTotalPriceWithTax;
                                                   typeBasedTaxes.remove(typeBasedTaxes.last);
                                                 }
                                                 if(value.isNotEmpty){
                                                   if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                                    var tempPercentage=(overallTotalPriceWithTax/100*double.parse(value));
-                                                    priceWithDiscount=priceWithDiscount-tempPercentage;
+                                                    var tempPercentage=(overallTotalPrice/100*double.parse(value));
+                                                    priceWithDiscount=(priceWithDiscount-tempPercentage)+totalTax;
                                                     setState(() {
                                                       deductedPrice=tempPercentage;
                                                     });
                                                     typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(value)));
                                                   }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
-                                                    var tempSum=overallTotalPriceWithTax-double.parse(value);
+                                                    var tempSum=overallTotalPrice-double.parse(value);
                                                     setState(() {
                                                       deductedPrice=double.parse(discountValue.text);
                                                     });
-                                                    priceWithDiscount=tempSum;
-                                                    print("cash Discounted "+priceWithDiscount.toString());
+                                                    priceWithDiscount=tempSum+totalTax;
+
                                                     typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(value)));
                                                   }
+                                                }else{
+                                                  innersetState(() {
+                                                    priceWithDiscount=overallTotalPriceWithTax;
+                                                  });
                                                 }
 
                                               });
@@ -3397,8 +4639,16 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                       ),
                                                       Row(
                                                         children: [
-                                                          Text(
-                                                            typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"]+": "+(overallTotalPriceWithTax/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1),style: TextStyle(
+                                                          Text((){
+                                                            if(typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0){
+                                                              return widget.store["currencyCode"]+": "+typeBasedTaxes[index].price.toStringAsFixed(1);
+                                                            }else if(typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1){
+                                                              return widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1);
+                                                            }else
+                                                              return widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1);
+
+                                                          }(),
+                                                            style: TextStyle(
                                                               fontSize:
                                                               16,
                                                               color:
@@ -3629,7 +4879,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                     Utils.showError(this.context,"Problem in Making Payment");
                                                   }
                                                 });
-                                                buildInvoice();
+                                                
                                               }
                                               Utils.showSuccess(this.context,"Order Placed successfully");
                                             }else{
@@ -3679,34 +4929,30 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
   }
   var productPopupHeight=330.0;
   Widget productsPopupLayout(Products product) {
+    print(product.toJson().toString());
     var count = 1;
     var price=0.0;
     var discountedPrice=0.0;
     var updatedActualPrice=0.0;
     var selectedSizeObj;
-    var updatedPrice=0.0;
+    var totalprice=0.0;
     int selectedSizeId=0;
     String selectedSizeName="";
     List<Additionals> additionals = [];
     List<Toppings> topping = [];
-    int quantity = 1;
-    var a=0.0;
-    double priceWithTopping=0.0;
     bool isvisible = false;
     List<int> _counter = List();
     StreamController _event = StreamController<int>.broadcast();
-    List<bool> inputs = new List<bool>();
-    for (int i = 0; i < 20; i++) {
-      inputs.add(false);
-    }
-
+    selectedSizeId=product.productSizes[0]["size"]["id"];
+    selectedSizeName=product.productSizes[0]["size"]["name"];
+    selectedSizeObj=product.productSizes[0];
+    price=product.productSizes[0]["price"];
+    discountedPrice=product.productSizes[0]["discountedPrice"];
     return Scaffold(
       backgroundColor: Colors.white.withOpacity(0.1),
       body: StatefulBuilder(
         builder: (context, innersetState) {
-          selectedSizeId=product.productSizes[0]["size"]["id"];
-          selectedSizeName=product.productSizes[0]["size"]["name"];
-          selectedSizeObj=product.productSizes[0];
+
           SharedPreferences.getInstance().then((prefs){
              if(additionals==null||additionals.length==0){
                Network_Operations.getAdditionals(context, prefs.getString("token"), product.id, product.productSizes[0]["size"]["id"]).then((value){
@@ -3729,83 +4975,11 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
              }
 
           });
-          innersetState(() {
-            price=product.productSizes[0]["price"];
-            discountedPrice=product.productSizes[0]["discountedPrice"];
-          });
-          void ItemChange(bool val, int index) {
-            innersetState(() {
-              inputs[index] = val;
-              if(!val) {
-                print("Discounted Price ${discountedPrice}");
-                var uncheckedTopping = topping.where((element) =>
-                element.additionalitemid == additionals[index].id);
-                if (uncheckedTopping != null && uncheckedTopping.length > 0) {
-                  if(updatedPrice==0.0){
-                    if(discountedPrice!=0.0){
-                      updatedPrice=updatedPrice+discountedPrice-uncheckedTopping.toList()[0].totalprice;
-                      updatedActualPrice=updatedActualPrice+price-uncheckedTopping.toList()[0].totalprice;
-                    }
-                    updatedPrice=updatedPrice+price-uncheckedTopping.toList()[0].totalprice;
-                  }else{
-                    updatedPrice=updatedPrice-uncheckedTopping.toList()[0].totalprice;
-                  }
-                  topping.remove(uncheckedTopping.toList()[0]);
-
-                }
-              }
-            });
-          }
           void ItemCount(int qty, int index) {
             innersetState(() {
 
               _counter[index] = qty;
               _event.add(_counter[index]);
-            });
-          }
-          int _showDialog(int val, int index ) {
-            showDialog<int>(
-                context: context,
-                builder: (BuildContext context) {
-                  return  NumberPickerDialog.integer(
-                    initialIntegerValue: quantity,
-                    minValue: 1,
-                    maxValue: 10,
-
-                    title: new Text("Select Quantity"),
-                  );
-                }
-            ).then((int value){
-              if(value !=null) {
-                innersetState(() {
-
-                  ItemCount(value, index);
-                  print(value.toString());
-                  var a;
-                  if(inputs[index] ){
-                    a = _counter[index] * additionals[index].price;
-                    print(a.toString());
-                    topping.add( Toppings(name: additionals[index].name,quantity: _counter[index],totalprice: a,price: additionals[index].price,additionalitemid: additionals[index].id));
-                    print("Toppings "+topping.length.toString());
-                    if(updatedPrice==0.0){
-                      if(selectedSizeObj["discountedPrice"]!=0.0){
-                        updatedPrice = updatedPrice + selectedSizeObj["discountedPrice"] + a;
-                        updatedActualPrice=updatedActualPrice+price+a;
-                      }else {
-                        updatedPrice = updatedPrice + price + a;
-                      }
-                    }else{
-                      updatedPrice=updatedPrice+a;
-                      updatedActualPrice=updatedActualPrice+a;
-                    }
-                  }else if(!inputs[index]){
-                    topping.removeAt(index);
-                  }
-                });
-                //setState(() => quantity = value);
-                print(_counter[index].toString());
-                return _counter[index];
-              }
             });
           }
           return Center(
@@ -3886,19 +5060,19 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                               selectedSizeId=selectedSize.toList()[0]["size"]["id"];
                               selectedSizeName=selectedSize.toList()[0]["size"]["name"];
                               selectedSizeObj=selectedSize.toList()[0];
-                              updatedPrice=selectedSize.toList()[0]["price"];
+                              count=1;
                               price=selectedSize.toList()[0]["price"];
                               if(selectedSizeObj["discountedPrice"]!=0.0) {
-                                updatedPrice = selectedSize.toList()[0]["discountedPrice"];
+                                //updatedPrice = selectedSize.toList()[0]["discountedPrice"];
                                 discountedPrice=selectedSize.toList()[0]["discountedPrice"];
-                                updatedActualPrice=selectedSize.toList()[0]["price"];
+                               // updatedActualPrice=selectedSize.toList()[0]["price"];
                               }
-
+                              var totalToppingPrice=0.0;
                               if(selectedSizeId!=0){
                                 SharedPreferences.getInstance().then((prefs){
                                   Network_Operations.getAdditionals(context, prefs.getString("token"), product.id, selectedSizeId).then((value){
                                     innersetState(() {
-                                      var totalToppingPrice=0.0;
+                                     // var totalToppingPrice=0.0;
                                       for(var t in topping){
                                         totalToppingPrice=totalToppingPrice+t.totalprice;
                                       }
@@ -3909,6 +5083,13 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                     });
                                   });
                                 });
+                              }
+                              if(discountedPrice!=0.0){
+                                totalprice = (discountedPrice * count ) + totalToppingPrice;
+                                updatedActualPrice=(price * count ) + totalToppingPrice;
+                              }else{
+                                totalprice = (price * count ) + totalToppingPrice;
+                                updatedActualPrice=(price * count ) + totalToppingPrice;
                               }
                               //updatedPrice=selectedSizeId=selectedSize.toList()[0]["price"];
                               // priority = Value;
@@ -3949,26 +5130,14 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                           decimalPlaces: 0,
                           onChanged: (value){
                             innersetState(() {
+                              var totalToppingPrice=0.0;
                               count=value;
-                              updatedPrice=0.0;
-                              if(topping.length==0) {
-                                if(selectedSizeObj["discountedPrice"]!=0.0){
-                                  updatedPrice = selectedSizeObj["discountedPrice"] * count;
-                                  updatedActualPrice=selectedSizeObj["price"]*count;
-                                }else{
-                                  updatedPrice = price * count;
-                                }
+                              if(discountedPrice!=0.0){
+                                totalprice = (discountedPrice * count ) + totalToppingPrice;
+                                updatedActualPrice=(price * count ) + totalToppingPrice;
                               }else{
-                                var totalToppingPrice=0.0;
-                                for(var t in topping){
-                                  totalToppingPrice=totalToppingPrice+t.totalprice;
-                                }
-                                if(selectedSizeObj["discountedPrice"]!=0.0){
-                                  updatedPrice = discountedPrice * count+totalToppingPrice;
-                                  updatedActualPrice= price * count+totalToppingPrice;
-                                }else {
-                                  updatedPrice = price * count + totalToppingPrice;
-                                }
+                                totalprice = (price * count ) + totalToppingPrice;
+                                updatedActualPrice=(price * count ) + totalToppingPrice;
                               }
                             });
                           },
@@ -3997,109 +5166,94 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                     padding: new EdgeInsets.all(10.0),
                                     child: new Column(
                                       children: <Widget>[
-                                        new CheckboxListTile(
-                                            value: inputs[index],
+                                        new ListTile(
                                             title: Row(
                                               mainAxisAlignment:
                                               MainAxisAlignment.spaceBetween,
                                               children: [
-                                                new Text(additionals[index].name +
-                                                    "  \$" +
-                                                    additionals[index].price.toString(),style: TextStyle(color: yellowColor, fontSize: 17, fontWeight: FontWeight.bold),),
+                                                new Text( (){
+                                                  if(_counter[index]!=null&&_counter[index]!=0&&_counter[index]!=1){
+                                                    return additionals[index].name +" (${widget.store["currencyCode"]+" "+additionals[index].price.toStringAsFixed(1)})  ${widget.store["currencyCode"]} " +(additionals[index].price*_counter[index]).toStringAsFixed(1);
+                                                   }
+                                                  return additionals[index].name +"  ${widget.store["currencyCode"]} "+additionals[index].price.toStringAsFixed(1);
+                                    }()
+                                                  ,style: TextStyle(color: yellowColor, fontSize: 17, fontWeight: FontWeight.bold),),
                                                 Container(
                                                   //color: Colors.black12,
-                                                  height: 30,
+                                                  height: 50,
 
-                                                  child: Row(
-                                                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                                                    children: [
-                                                      Text("x"+_counter[index].toString(),style: TextStyle(color: PrimaryColor, fontSize: 17, fontWeight: FontWeight.bold),),
-                                                      SizedBox(width: 10,),
-                                                      SizedBox(
-                                                        width: 25,
-                                                        height: 25,
-                                                        child: FloatingActionButton(
-                                                          onPressed: () {
-                                                            if(inputs[index]) {
-                                                              _showDialog(quantity, index);
+                                                  child: Counter(
+                                                    initialValue: _counter[index],
+                                                    minValue: 0,
+                                                    maxValue: 10,
+                                                    decimalPlaces:0,
+                                                    color:yellowColor,
+                                                    onChanged: (value){
+                                                      innersetState(() {
+
+                                                        ItemCount(value, index);
+                                                        var a=0.0;
+                                                          //a = _counter[index] * additionals[index].price;
+                                                          if(value!=0){
+                                                              var toppingExists=topping.where((element) => element.additionalitemid==additionals[index].id).toList();
+                                                              if(toppingExists!=null&&toppingExists.length>0){
+                                                                  topping[topping.indexOf(toppingExists[0])].quantity=_counter[index] ;
+                                                                  topping[topping.indexOf(toppingExists[0])].totalprice=_counter[index] *additionals[index].price;
+                                                                 // print("Updated Topping "+topping[topping.indexOf(toppingExists[0])].toJson().toString());
+                                                                  for(Toppings t in topping){
+                                                                     print("Updated Topping "+t.toJson().toString());
+                                                                  }
+                                                              }else{
+                                                                topping.add(Toppings(additionalitemid: additionals[index].id,quantity: _counter[index],price: additionals[index].price,totalprice: _counter[index]*additionals[index].price,name: additionals[index].name));
+                                                                //print("added Topping "+Toppings(additionalitemid: additionals[index].id,quantity: _counter[index],price: additionals[index].price,totalprice: _counter[index]*additionals[index].price).toJson().toString());
+                                                              }
+                                                              print("length of Topping "+topping.length.toString());
+                                                            for(Toppings t in topping){
+                                                              a+=t.totalprice;
                                                             }
-                                                          },
-                                                          elevation: 2,
-                                                          heroTag: "qwe$index",
-                                                          tooltip: 'Add',
-                                                          child: Icon(Icons.add, color: Colors.white,),
-                                                          backgroundColor: yellowColor,
-                                                        ),
-                                                      ),
-                                                    ],
+                                                          }else{
+                                                            _counter[index]=0;
+                                                            topping.removeAt(topping.indexOf(topping.where((element) => element.additionalitemid==additionals[index].id).toList()[0]));
+                                                            for(Toppings t in topping){
+                                                              print("List after removed Topping "+t.toJson().toString());
+                                                            }
+                                                            for(Toppings t in topping){
+                                                              a+=t.totalprice;
+                                                            }
+                                                          }
+                                                          print("Single Topping Price "+a.toString());
+                                                          if(totalprice==0.0){
+                                                            if(selectedSizeObj["discountedPrice"]!=0.0){
+                                                              if(discountedPrice!=0.0){
+                                                                totalprice = (discountedPrice * count ) + a;
+                                                                updatedActualPrice=(price * count ) + a;
+                                                              }else{
+                                                                totalprice = (price * count ) + a;
+                                                                updatedActualPrice=(price * count ) + a;
+                                                              }
+                                                            //  updatedActualPrice=updatedActualPrice+price+a;
+                                                            }else {
+
+                                                            }
+                                                          }else{
+                                                            if(discountedPrice!=0.0){
+                                                              totalprice = (discountedPrice * count ) + a;
+                                                              updatedActualPrice=(price * count ) + a;
+                                                            }else{
+                                                              totalprice = (price * count ) + a;
+                                                              updatedActualPrice=(price * count ) + a;
+                                                            }
+                                                            print("in outer else"+a.toString());
+                                                          }
+
+                                                      }
+                                                      );
+                                                    },
                                                   ),
                                                 )
                                               ],
                                             ),
-                                            controlAffinity: ListTileControlAffinity.leading,
-                                            onChanged: (bool val) {
-                                              ItemChange(val, index);
-                                              print(inputs[index].toString() +
-                                                  index.toString());
-                                              innersetState(() {
-                                                if(!inputs[index]){
-                                                  _counter[index] = 0;
-                                                }
-                                              });
-                                            })
-                                    //     new ListTile(
-                                    //         title: Row(
-                                    //           mainAxisAlignment:
-                                    //           MainAxisAlignment.spaceBetween,
-                                    //           children: [
-                                    //             new Text( (){
-                                    //               if(_counter[index]!=null&&_counter[index]!=0){
-                                    //                 return additionals[index].name +"  ${widget.store["currencyCode"]} " +(additionals[index].price*_counter[index]).toStringAsFixed(1);
-                                    //                }
-                                    //               return additionals[index].name +"  ${widget.store["currencyCode"]} "+additionals[index].price.toStringAsFixed(1);
-                                    // }()
-                                    //               ,style: TextStyle(color: yellowColor, fontSize: 17, fontWeight: FontWeight.bold),),
-                                    //             Container(
-                                    //               //color: Colors.black12,
-                                    //               height: 50,
-                                    //
-                                    //               child: Counter(
-                                    //                 initialValue: _counter[index],
-                                    //                 minValue: 0,
-                                    //                 maxValue: 10,
-                                    //                 decimalPlaces:0,
-                                    //                 color:yellowColor,
-                                    //                 onChanged: (value){
-                                    //                   innersetState(() {
-                                    //
-                                    //                     ItemCount(value, index);
-                                    //
-                                    //
-                                    //                       a = _counter[index] * additionals[index].price;
-                                    //                       print("Single Topping Price "+a.toString());
-                                    //                       if(updatedPrice==0.0){
-                                    //                         if(selectedSizeObj["discountedPrice"]!=0.0){
-                                    //                           updatedPrice = updatedPrice + selectedSizeObj["discountedPrice"] + a;
-                                    //                           //priceWithTopping=updatedPrice + selectedSizeObj["discountedPrice"] + a;
-                                    //                           print("Price with topping "+priceWithTopping.toString());
-                                    //                           updatedActualPrice=updatedActualPrice+price+a;
-                                    //                         }else {
-                                    //                           updatedPrice = updatedPrice + price + a;
-                                    //                         }
-                                    //                       }else{
-                                    //                         updatedPrice=updatedPrice+a;
-                                    //                         //priceWithTopping=updatedPrice + selectedSizeObj["discountedPrice"] + a;
-                                    //                         updatedActualPrice=updatedActualPrice+a;
-                                    //                       }
-                                    //
-                                    //                   }
-                                    //                   );
-                                    //                 },
-                                    //               ),
-                                    //             )
-                                    //           ],
-                                    //         ),
-                                    //         )
+                                            )
                                       ],
                                     ),
                                   ),
@@ -4110,7 +5264,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                       selectedSizeObj["discountedPrice"]==0.0?
                       Center(
                           child: Text(
-                            "Price:  ${updatedPrice==0.0?price.toString():updatedPrice.toString()}",
+                            "Price:  ${totalprice==0.0?price.toString():totalprice.toString()}",
                             style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold, color:blueColor),)
                       ):Center(
                         child: RichText(
@@ -4130,7 +5284,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                       ),
                                     ),
                                     TextSpan(
-                                      text: "  ${updatedPrice==0.0?discountedPrice.toString():updatedPrice.toString()}",
+                                      text: "  ${totalprice==0.0?discountedPrice.toString():totalprice.toString()}",
                                       style: TextStyle(
                                         fontSize: 30,
                                         fontWeight: FontWeight.bold,
@@ -4145,6 +5299,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                       SizedBox(height: 1,),
                       InkWell(
                         onTap: () {
+                          print(selectedSizeName);
+                          print(selectedSizeId);
                           sqlite_helper().checkAlreadyExists(product.id).then((foundProducts){
                             if(foundProducts.length>0){
                               var tempCartItem =CartItems(
@@ -4156,7 +5312,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                   sizeId: selectedSizeId,
                                   sizeName: selectedSizeName,
                                   price: selectedSizeObj["discountedPrice"]==0.0? price:selectedSizeObj["discountedPrice"]!=0.0?selectedSizeObj["discountedPrice"] : price,
-                                  totalPrice:selectedSizeObj["discountedPrice"]==0.0&&updatedPrice == 0.0 ? price:selectedSizeObj["discountedPrice"]!=0.0&&updatedPrice == 0.0?selectedSizeObj["discountedPrice"] : updatedPrice,
+                                  totalPrice:selectedSizeObj["discountedPrice"]==0.0&&totalprice == 0.0 ? price:selectedSizeObj["discountedPrice"]!=0.0&&totalprice == 0.0?selectedSizeObj["discountedPrice"] : totalprice,
                                   quantity: count,
                                   storeId: product.storeId,
                                   topping: topping.length>0?jsonEncode(topping):null
@@ -4183,6 +5339,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                               Navigator.of(context).pop();
                               Utils.showSuccess(context, "Updated to Cart successfully");
                             }else{
+
                               sqlite_helper()
                                   .create_cart(CartItems(
                                   productId: product.id,
@@ -4192,7 +5349,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                   sizeId: selectedSizeId,
                                   sizeName: selectedSizeName,
                                   price: selectedSizeObj["discountedPrice"]==0.0? price:selectedSizeObj["discountedPrice"]!=0.0?selectedSizeObj["discountedPrice"] : price,
-                                  totalPrice:selectedSizeObj["discountedPrice"]==0.0&&updatedPrice == 0.0 ? price:selectedSizeObj["discountedPrice"]!=0.0&&updatedPrice == 0.0?selectedSizeObj["discountedPrice"] : updatedPrice,
+                                  totalPrice:selectedSizeObj["discountedPrice"]==0.0&&totalprice == 0.0 ? price:selectedSizeObj["discountedPrice"]!=0.0&&totalprice == 0.0?selectedSizeObj["discountedPrice"] : totalprice,
                                   quantity: count,
                                   storeId: product.storeId,
                                   topping: topping.length>0?jsonEncode(topping):null))
@@ -4474,4 +5631,6 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
       ),
     );
   }
+
+
 }

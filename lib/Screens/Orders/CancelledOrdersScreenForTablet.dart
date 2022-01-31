@@ -14,11 +14,7 @@ import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:pdf/pdf.dart';
-import 'package:pdf/widgets.dart' as pw;
-import 'package:printing/printing.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter_bluetooth_basic/flutter_bluetooth_basic.dart';
 
@@ -680,7 +676,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                   SizedBox(width: 15,),
                                   InkWell(
                                       onTap: (){
-                                        buildInvoice(orders);
+                                        Utils.buildInvoice(orders,widget.store,customerName);
                                       },
                                       child: FaIcon(FontAwesomeIcons.print, color: blueColor, size: 30,)),
                                 ],
@@ -809,7 +805,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                               ),
                                               Text(
                                                 //"Dine-In",
-                                                orders["discountedPrice"]!=null&&orders["discountedPrice"]!=0.0?(orders["grossTotal"]-orders["discountedPrice"]).toStringAsFixed(1):orders["grossTotal"].toStringAsFixed(1),
+                                                orders["grossTotal"].toStringAsFixed(1),
                                                 style: TextStyle(
                                                     fontSize: 20,
                                                     fontWeight: FontWeight.bold,
@@ -1303,7 +1299,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                                     width: 2,
                                                   ),
                                                   Text(
-                                                    orders["discountedPrice"]!=null&&orders["discountedPrice"]!=0.0?(orders["grossTotal"]-orders["discountedPrice"]).toStringAsFixed(1):orders["grossTotal"].toStringAsFixed(1),
+                                                    orders["grossTotal"].toStringAsFixed(1),
                                                     //priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(1)+"/-":overallTotalPriceWithTax.toStringAsFixed(1)+"/-",
                                                     style: TextStyle(
                                                         fontSize:
@@ -1706,281 +1702,5 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
         )
     );
   }
-
-
-
-
-
-
-  buildInvoice(dynamic order)async{
-    final titles = <String>[
-      'Order Number:',
-      'Order Date:',
-      'Order Type:',
-      'Items Qty:'
-    ];
-    final data = <String>[
-      order["id"].toString(),
-      DateFormat.yMd().format(DateTime.now()).toString(),
-      order["orderType"]==1?"Dine-In":order["orderType"]==2?"Take-Away":order["orderType"]==3?"Home Delivery":"None",
-      order["orderItems"].length.toString(),
-    ];
-    List<OrderItem> orderitems=OrderItem.listOrderitemFromJson(jsonEncode(order["orderItems"]));
-    print("OrderItems Count "+orderitems.length.toString());
-    var invoiceData=orderitems.map((cartItems){
-      return [
-        cartItems.name.toString(),
-        cartItems.price.toString(),
-        "x "+cartItems.quantity.toString(),
-        cartItems.totalPrice.toString(),
-      ];
-    }).toList();
-    final doc = pw.Document();
-    doc.addPage(pw.MultiPage(
-      // pageFormat: PdfPageFormat.a4,
-        header: (context){
-          return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.start,
-              children: [
-                pw.SizedBox(height: 1 * PdfPageFormat.cm),
-                pw.Row(
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(widget.store["name"].toString(),style: pw.TextStyle(fontSize:20,fontWeight: pw.FontWeight.bold)),
-                            pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                            pw.Text(widget.store["address"].toString()),
-                          ]
-                      ),
-                      pw.Container(
-                          width: 50,
-                          height:50,
-                          child: pw.BarcodeWidget(
-                              barcode: pw.Barcode.qrCode(),
-                              data: "http://dev.exabistro.com/#/storeMenu/${widget.store["id"]}"
-                          )
-                      )
-
-                    ]
-                ),
-                pw.SizedBox(height: 1 * PdfPageFormat.cm),
-                pw.Row(
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
-                    children: [
-                      pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: [
-                            pw.Text(order["visitingCustomer"]!=null?order["visitingCustomer"]:customerName.toString(),style: pw.TextStyle(fontSize: 18,fontWeight: pw.FontWeight.bold)),
-                            pw.SizedBox(height: 1 * PdfPageFormat.mm),
-                            pw.Text(order["customerContactNo"].toString()),
-                          ]
-                      ),
-                      pw.Column(
-                          crossAxisAlignment: pw.CrossAxisAlignment.start,
-                          children: List.generate(titles.length, (index){
-                            final title = titles[index];
-                            final value = data[index];
-                            return pw.Container(
-                                width: 200,
-                                child: pw.Row(
-                                    children:[
-                                      pw.Expanded(
-                                          child: pw.Text(title,style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-                                      ),
-                                      pw.Text(
-                                          value,
-                                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
-                                      )
-                                    ]
-
-                                )
-                            );
-                          })
-                      ),
-                    ]
-                ),
-                pw.SizedBox(height: 2 * PdfPageFormat.cm),
-              ]
-          );
-        },
-        footer: (context){
-          return pw.Column(
-              crossAxisAlignment: pw.CrossAxisAlignment.center,
-              children: [
-                pw.Divider(),
-                pw.SizedBox(
-                    height: 2 * PdfPageFormat.mm
-                ),
-                pw.Row(
-                    mainAxisSize: pw.MainAxisSize.min,
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Text("Address",style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.SizedBox(
-                          width: 2 * PdfPageFormat.mm
-                      ),
-                      pw.Text(widget.store["address"].toString())
-                    ]
-                ),
-                pw.Row(
-                    mainAxisSize: pw.MainAxisSize.min,
-                    crossAxisAlignment: pw.CrossAxisAlignment.end,
-                    children: [
-                      pw.Text("Phone",style: pw.TextStyle(fontWeight: pw.FontWeight.bold)),
-                      pw.SizedBox(
-                          width: 2 * PdfPageFormat.mm
-                      ),
-                      pw.Text(widget.store["cellNo"].toString())
-                    ]
-                ),
-              ]
-          );
-        },
-        build: (pw.Context context) {
-          return[
-            pw.Column(
-              children: [
-                pw.Column(
-                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                    children: [
-                      pw.Text(
-                        "Invoice",
-                        style: pw.TextStyle(fontSize: 24,fontWeight: pw.FontWeight.bold),
-                      ),
-                      pw.SizedBox(
-                          height: 20
-                      ),
-                      pw.Table.fromTextArray(
-                          headers: ["Name","Unit Price","Quantity","Total"],
-                          data:invoiceData,
-                          border: null,
-                          headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                          headerDecoration: pw.BoxDecoration(color: PdfColors.grey300),
-                          cellHeight: 30,
-                          cellAlignments: {
-                            0: pw.Alignment.centerLeft,
-                            1: pw.Alignment.centerLeft,
-                            2: pw.Alignment.centerLeft,
-                            3: pw.Alignment.centerLeft
-                          }
-                      ),
-                      pw.Divider(),
-                      pw.Container(
-                          alignment: pw.Alignment.centerRight,
-                          child: pw.Row(
-                            children: [
-                              pw.Spacer(flex: 6),
-                              pw.Expanded(
-                                flex:4,
-                                child: pw.Column(
-                                    crossAxisAlignment: pw.CrossAxisAlignment.start,
-                                    children: [
-                                      pw.Container(
-                                          width: double.infinity,
-                                          child: pw.Row(
-                                              children: [
-                                                pw.Expanded(
-                                                    child: pw.Text("SubTotal",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-                                                ),
-                                                pw.Text(
-                                                    order["netTotal"].toStringAsFixed(1),
-                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
-                                                )
-                                              ]
-                                          )
-                                      ),
-                                      pw.Container(
-                                          width: double.infinity,
-                                          child: pw.Row(
-                                              children: [
-                                                pw.Expanded(
-                                                    child: pw.Text("Tax",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-                                                ),
-                                                pw.Text(
-                                                    (order["grossTotal"]-order["netTotal"]).toStringAsFixed(1),
-                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
-                                                )
-                                              ]
-                                          )
-                                      ),
-                                      pw.Divider(),
-                                      pw.Container(
-                                          width: double.infinity,
-                                          child: pw.Row(
-                                              children: [
-                                                pw.Expanded(
-                                                    child: pw.Text("Total",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-                                                ),
-                                                pw.Text(
-                                                    order["grossTotal"].toStringAsFixed(1),
-                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
-                                                )
-                                              ]
-                                          )
-                                      ),
-                                      order["discountedPrice"]!=null&&order["discountedPrice"]!=0.0?pw.Container(
-                                          width: double.infinity,
-                                          child: pw.Row(
-                                              children: [
-                                                pw.Expanded(
-                                                    child: pw.Text("Discount",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-                                                ),
-                                                pw.Text(
-                                                    order["discountedPrice"].toStringAsFixed(1),
-                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
-                                                )
-                                              ]
-                                          )
-                                      ):pw.Container(),
-                                      pw.SizedBox(
-                                          height: 2 * PdfPageFormat.mm
-                                      ),
-                                      pw.Container(
-                                          height:1,
-                                          color: PdfColors.grey400
-                                      ),
-                                      pw.SizedBox(
-                                          height: 0.5 * PdfPageFormat.mm
-                                      ),
-                                      pw.Container(
-                                          height:1,
-                                          color: PdfColors.grey400
-                                      ),
-                                      order["discountedPrice"]!=null&&order["discountedPrice"]!=0.0?pw.Container(
-                                          width: double.infinity,
-                                          child: pw.Row(
-                                              children: [
-                                                pw.Expanded(
-                                                    child: pw.Text("Total",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-                                                ),
-                                                pw.Text(
-                                                    (order["grossTotal"]-order["discountedPrice"]).toStringAsFixed(1),
-                                                    style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
-                                                )
-                                              ]
-                                          )
-                                      ):pw.Container(),
-                                    ]
-                                ),
-                              )
-                            ],
-                          )
-                      )
-                    ]
-                )
-              ],
-
-            )];
-
-        }
-
-    ));
-    await Printing.layoutPdf(
-        onLayout: (PdfPageFormat format) async => doc.save());
-  }
-
 }
 
