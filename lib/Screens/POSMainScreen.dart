@@ -399,7 +399,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                        child: pw.Text("Discount",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
                                                    ),
                                                    pw.Text(
-                                                       deductedPrice.toStringAsFixed(1),
+                                                       deductedPrice.toStringAsFixed(0),
                                                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
                                                    )
                                                  ]
@@ -414,7 +414,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                        child: pw.Text("Total",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
                                                    ),
                                                    pw.Text(
-                                                      deductedPrice!=0.0?priceWithDiscount.toStringAsFixed(1):overallTotalPriceWithTax.toString(),
+                                                      deductedPrice!=0.0?priceWithDiscount.toStringAsFixed(0):overallTotalPriceWithTax.toString(),
                                                        style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
                                                    )
                                                  ]
@@ -870,7 +870,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                   Row(
                                                     children: [
                                                       Text(
-                                                        widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":"",
+                                                        widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":"",
                                                         style: TextStyle(
                                                             fontSize: 25,
                                                             color: yellowColor,
@@ -882,7 +882,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                         width: 2,
                                                       ),
                                                       Text(
-                                                        overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
+                                                        overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(0)+"/-":"0.0/-",
                                                         style: TextStyle(
                                                             fontSize: 25,
                                                             color: Colors
@@ -1501,10 +1501,10 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                 width: 2,
                               ),
                               Text(
-                                cartList[index].totalPrice != null&&widget.store["currencyCode"]!=null
-                                    ?widget.store["currencyCode"]+": "+cartList[index]
+                                cartList[index].totalPrice != null&&widget.store["currencyCode"].toString()!=null
+                                    ?widget.store["currencyCode"].toString()+": "+cartList[index]
                                         .totalPrice
-                                        .toStringAsFixed(1)
+                                        .toStringAsFixed(0)
                                     : "",
                                 style: TextStyle(
                                     color: PrimaryColor,
@@ -2089,7 +2089,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                 Row(
                                                   children: [
                                                     Text(
-                                                      widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                                      widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
                                                       style: TextStyle(
                                                           fontSize:
                                                           20,
@@ -2102,7 +2102,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                       width: 2,
                                                     ),
                                                     Text(
-                                                      overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
+                                                      overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(0)+"/-":"0.0/-",
                                                       style: TextStyle(
                                                           fontSize:
                                                           20,
@@ -2141,7 +2141,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                         .spaceBetween,
                                                     children: [
                                                       Text(
-                                                        typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?typeBasedTaxes[index].name+" (${typeBasedTaxes[index].percentage.toStringAsFixed(1)})":typeBasedTaxes[index].name,
+                                                        typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?typeBasedTaxes[index].name+" (${typeBasedTaxes[index].percentage.toStringAsFixed(0)})":typeBasedTaxes[index].name,
                                                         style: TextStyle(
                                                             fontSize:
                                                             16,
@@ -2154,7 +2154,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                       Row(
                                                         children: [
                                                           Text(
-                                                            typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"]+": "+(overallTotalPriceWithTax/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1),style: TextStyle(
+                                                            typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"].toString()+" "+typeBasedTaxes[index].price.toStringAsFixed(0):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"].toString()+": "+(overallTotalPriceWithTax/100*typeBasedTaxes[index].percentage).toStringAsFixed(0):widget.store["currencyCode"].toString()+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(0),style: TextStyle(
                                                               fontSize:
                                                               16,
                                                               color:
@@ -2195,7 +2195,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                 Row(
                                                   children: [
                                                     Text(
-                                                      widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":"",
+                                                      widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":"",
                                                       style: TextStyle(
                                                           fontSize:
                                                           20,
@@ -2208,7 +2208,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                       width: 2,
                                                     ),
                                                     Text(
-                                                      priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(1)+"/-":overallTotalPriceWithTax.toStringAsFixed(1)+"/-",
+                                                      priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(0)+"/-":overallTotalPriceWithTax.toStringAsFixed(0)+"/-",
                                                       style: TextStyle(
                                                           fontSize:
                                                           20,
@@ -2648,7 +2648,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                 Row(
                                                   children: [
                                                     Text(
-                                                      widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                                      widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
                                                       style: TextStyle(
                                                           fontSize:
                                                           20,
@@ -2661,7 +2661,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                       width: 2,
                                                     ),
                                                     Text(
-                                                      overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
+                                                      overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(0)+"/-":"0.0/-",
                                                       style: TextStyle(
                                                           fontSize:
                                                           20,
@@ -2700,7 +2700,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                         .spaceBetween,
                                                     children: [
                                                       Text(
-                                                        typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?typeBasedTaxes[index].name+" (${typeBasedTaxes[index].percentage.toStringAsFixed(1)})":typeBasedTaxes[index].name,
+                                                        typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?typeBasedTaxes[index].name+" (${typeBasedTaxes[index].percentage.toStringAsFixed(0)})":typeBasedTaxes[index].name,
                                                         style: TextStyle(
                                                             fontSize:
                                                             16,
@@ -2713,7 +2713,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                       Row(
                                                         children: [
                                                           Text(
-                                                            typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"]+": "+(overallTotalPriceWithTax/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1),style: TextStyle(
+                                                            typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"].toString()+" "+typeBasedTaxes[index].price.toStringAsFixed(0):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"].toString()+": "+(overallTotalPriceWithTax/100*typeBasedTaxes[index].percentage).toStringAsFixed(0):widget.store["currencyCode"].toString()+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(0),style: TextStyle(
                                                               fontSize:
                                                               16,
                                                               color:
@@ -2754,7 +2754,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                 Row(
                                                   children: [
                                                     Text(
-                                                      widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":"",
+                                                      widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":"",
                                                       style: TextStyle(
                                                           fontSize:
                                                           20,
@@ -2767,7 +2767,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                       width: 2,
                                                     ),
                                                     Text(
-                                                      priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(1)+"/-":overallTotalPriceWithTax.toStringAsFixed(1)+"/-",
+                                                      priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(0)+"/-":overallTotalPriceWithTax.toStringAsFixed(0)+"/-",
                                                       style: TextStyle(
                                                           fontSize:
                                                           20,
@@ -3157,7 +3157,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                 Row(
                                                   children: [
                                                     Text(
-                                                      widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                                      widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
                                                       style: TextStyle(
                                                           fontSize:
                                                           20,
@@ -3170,7 +3170,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                       width: 2,
                                                     ),
                                                     Text(
-                                                      overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
+                                                      overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(0)+"/-":"0.0/-",
                                                       style: TextStyle(
                                                           fontSize:
                                                           20,
@@ -3209,7 +3209,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                         .spaceBetween,
                                                     children: [
                                                       Text(
-                                                        typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?typeBasedTaxes[index].name+" (${typeBasedTaxes[index].percentage.toStringAsFixed(1)})":typeBasedTaxes[index].name,
+                                                        typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0?typeBasedTaxes[index].name+" (${typeBasedTaxes[index].percentage.toStringAsFixed(0)})":typeBasedTaxes[index].name,
                                                         style: TextStyle(
                                                             fontSize:
                                                             16,
@@ -3222,7 +3222,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                       Row(
                                                         children: [
                                                           Text(
-                                                            typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"]+": "+(overallTotalPriceWithTax/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1),style: TextStyle(
+                                                            typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"].toString()+" "+typeBasedTaxes[index].price.toStringAsFixed(0):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"].toString()+": "+(overallTotalPriceWithTax/100*typeBasedTaxes[index].percentage).toStringAsFixed(0):widget.store["currencyCode"].toString()+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(0),style: TextStyle(
                                                               fontSize:
                                                               16,
                                                               color:
@@ -3263,7 +3263,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                 Row(
                                                   children: [
                                                     Text(
-                                                      widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":"",
+                                                      widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":"",
                                                       style: TextStyle(
                                                           fontSize:
                                                           20,
@@ -3276,7 +3276,7 @@ class _POSMainScreenState extends State<POSMainScreen> {
                                                       width: 2,
                                                     ),
                                                     Text(
-                                                      priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(1)+"/-":overallTotalPriceWithTax.toStringAsFixed(1)+"/-",
+                                                      priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(0)+"/-":overallTotalPriceWithTax.toStringAsFixed(0)+"/-",
                                                       style: TextStyle(
                                                           fontSize:
                                                           20,

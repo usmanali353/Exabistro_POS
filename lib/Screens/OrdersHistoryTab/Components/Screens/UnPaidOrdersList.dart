@@ -3,7 +3,6 @@ import 'dart:ui';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/components/constants.dart';
-import 'package:exabistro_pos/model/OrderById.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -295,7 +294,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                                           children: [
                                                             Text(
                                                               //"Dine-In",
-                                                              widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                                              widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
                                                               style: TextStyle(
                                                                   fontSize: 20,
                                                                   fontWeight: FontWeight.bold,
@@ -304,7 +303,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                                             ),
                                                             Text(
                                                               //"Dine-In",
-                                                              orderList[index]['grossTotal'].toStringAsFixed(1),
+                                                              orderList[index]['grossTotal'].toStringAsFixed(0),
                                                               style: TextStyle(
                                                                   fontSize: 20,
                                                                   fontWeight: FontWeight.bold,
@@ -750,7 +749,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                             children: [
                                               Text(
                                                 //"Dine-In",
-                                                widget.store["currencyCode"]!=null?widget.store["currencyCode"]+": ":" ",
+                                                widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+": ":" ",
                                                 style: TextStyle(
                                                     fontSize: 20,
                                                     fontWeight: FontWeight.bold,
@@ -759,7 +758,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                               ),
                                               Text(
                                                 //"Dine-In",
-                                                orders["grossTotal"].toStringAsFixed(1),
+                                                orders["grossTotal"].toStringAsFixed(0),
                                                 style: TextStyle(
                                                     fontSize: 20,
                                                     fontWeight: FontWeight.bold,
@@ -770,7 +769,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                           ),
                                           // Center(
                                           //   child: AutoSizeText(
-                                          //     widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                          //     widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
                                           //     style: TextStyle(
                                           //         color: blueColor,
                                           //         fontSize: 22,
@@ -802,7 +801,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                 //       children: [
                                 //         Text(
                                 //           //"Dine-In",
-                                //           widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                //           widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
                                 //           style: TextStyle(
                                 //               fontSize: 20,
                                 //               fontWeight: FontWeight.bold,
@@ -811,7 +810,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                 //         ),
                                 //         Text(
                                 //           //"Dine-In",
-                                //           orders['grossTotal'].toStringAsFixed(1),
+                                //           orders['grossTotal'].toStringAsFixed(0),
                                 //           style: TextStyle(
                                 //               fontSize: 20,
                                 //               fontWeight: FontWeight.bold,
@@ -1125,7 +1124,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                               Row(
                                                 children: [
                                                   Text(
-                                                    widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                                    widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
                                                     style: TextStyle(
                                                         fontSize:
                                                         20,
@@ -1139,7 +1138,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                                   ),
                                                   Text(
                                                       orders["netTotal"].toStringAsFixed(0),
-                                                    //overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
+                                                    //overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(0)+"/-":"0.0/-",
                                                     style: TextStyle(
                                                         fontSize:
                                                         20,
@@ -1182,7 +1181,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                                         children: [
                                                           Text(
                                                             orders["orderTaxes"][index]["taxName"],
-                                                            //orders["orderTaxes"][index].percentage!=null&&orders["orderTaxes"][index].percentage!=0.0?orders["orderTaxes"][index]["taxName"]+" (${typeBasedTaxes[index].percentage.toStringAsFixed(1)})":typeBasedTaxes[index].name,
+                                                            //orders["orderTaxes"][index].percentage!=null&&orders["orderTaxes"][index].percentage!=0.0?orders["orderTaxes"][index]["taxName"]+" (${typeBasedTaxes[index].percentage.toStringAsFixed(0)})":typeBasedTaxes[index].name,
                                                             style: TextStyle(
                                                                 fontSize:
                                                                 16,
@@ -1195,9 +1194,9 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                                           Row(
                                                             children: [
                                                               Text(
-                                                                widget.store["currencyCode"]+" "+
-                                                                    orders["orderTaxes"][index]["amount"].toStringAsFixed(1),
-                                                                //typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"]+": "+(overallTotalPriceWithTax/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1),
+                                                                widget.store["currencyCode"].toString()+" "+
+                                                                    orders["orderTaxes"][index]["amount"].toStringAsFixed(0),
+                                                                //typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"].toString()+" "+typeBasedTaxes[index].price.toStringAsFixed(0):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"].toString()+": "+(overallTotalPriceWithTax/100*typeBasedTaxes[index].percentage).toStringAsFixed(0):widget.store["currencyCode"].toString()+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(0),
                                                                 style: TextStyle(
                                                                     fontSize:
                                                                     16,
@@ -1240,7 +1239,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                               Row(
                                                 children: [
                                                   Text(
-                                                    widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":"",
+                                                    widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":"",
                                                     style: TextStyle(
                                                         fontSize:
                                                         20,
@@ -1254,7 +1253,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                                   ),
                                                   Text(
                                                     orders["grossTotal"].toStringAsFixed(0),
-                                                    //priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(1)+"/-":overallTotalPriceWithTax.toStringAsFixed(1)+"/-",
+                                                    //priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(0)+"/-":overallTotalPriceWithTax.toStringAsFixed(0)+"/-",
                                                     style: TextStyle(
                                                         fontSize:
                                                         20,
@@ -1287,7 +1286,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                   topping=[];
 
                                   for(var items in orders['orderItems'][i]['orderItemsToppings']){
-                                    topping.add(items==[]?"-":items['additionalItem']['stockItemName']+" (${widget.store["currencyCode"]+items["price"].toStringAsFixed(1)})   x${items['quantity'].toString()+"    "+widget.store["currencyCode"]+": "+items["totalPrice"].toStringAsFixed(1)} \n");
+                                    topping.add(items==[]?"-":items['additionalItem']['stockItemName']+" (${widget.store["currencyCode"].toString()+items["price"].toStringAsFixed(0)})   x${items['quantity'].toString()+"    "+widget.store["currencyCode"].toString()+": "+items["totalPrice"].toStringAsFixed(0)} \n");
                                   }
                                   return InkWell(
                                     onTap: (){
@@ -1362,7 +1361,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                                       ),
                                                       child: Center(
                                                         child: AutoSizeText(
-                                                          orders["orderItems"][i]["price"].toStringAsFixed(1),
+                                                          orders["orderItems"][i]["price"].toStringAsFixed(0),
                                                           //cartList[index].sizeName!=null?cartList[index].sizeName:"N/A",
                                                           style: TextStyle(
                                                               color: blueColor,
@@ -1594,7 +1593,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                                       children: [
                                                         Text(
                                                           //"Dine-In",
-                                                          widget.store["currencyCode"]!=null?widget.store["currencyCode"]+": ":" ",
+                                                          widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+": ":" ",
                                                           style: TextStyle(
                                                               fontSize: 20,
                                                               fontWeight: FontWeight.bold,
@@ -1602,7 +1601,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                                           ),
                                                         ),
                                                         Text(
-                                                          orders['orderItems'][i]['totalPrice']!=null?orders['orderItems'][i]['totalPrice'].toStringAsFixed(1):"-",
+                                                          orders['orderItems'][i]['totalPrice']!=null?orders['orderItems'][i]['totalPrice'].toStringAsFixed(0):"-",
                                                           style: TextStyle(
                                                             color: blueColor,
                                                             fontSize: 20,
@@ -1667,152 +1666,156 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
     return Scaffold(
       body: StatefulBuilder(
           builder: (context,innersetState){
-            return Center(
-              child: Container(
-                width: 400,
-                height: 370,
-                child: Container(
-                  decoration: BoxDecoration(
-                      image: DecorationImage(
-                        fit: BoxFit.fill,
-                        //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
-                        image: AssetImage('assets/bb.jpg'),
-                      )
-                  ),
-                  child: Column(
-                    children: [
-                      Container(
-                        width: MediaQuery.of(context).size.width,
-                        height: 40,
-                        color: yellowColor,
-                        child: Center(child: Text("Payout",style: TextStyle(fontSize: 25,fontWeight: FontWeight.bold,color: BackgroundColor),)),
-
+            return ListView(
+              children: [
+                Center(
+                  child: Container(
+                    width: 400,
+                    height: 370,
+                    child: Container(
+                      decoration: BoxDecoration(
+                          image: DecorationImage(
+                            fit: BoxFit.fill,
+                            //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
+                            image: AssetImage('assets/bb.jpg'),
+                          )
                       ),
-                      Padding(
-                        padding: const EdgeInsets.only(top:16.0,left:16.0,right:16.0),
-                        child: Container(
-                          width: MediaQuery.of(context).size.width/0.9,
-                          height: 70,
-                          decoration: BoxDecoration(
-                              color: BackgroundColor,
-                              border: Border.all(color: yellowColor, width: 2),
-                              borderRadius: BorderRadius.circular(9)
+                      child: Column(
+                        children: [
+                          Container(
+                            width: MediaQuery.of(context).size.width,
+                            height: 40,
+                            color: yellowColor,
+                            child: Center(child: Text("Payout",style: TextStyle(fontSize: 25,fontWeight: FontWeight.bold,color: BackgroundColor),)),
+
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text("Total Amount",style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: yellowColor),),
-                                Text(totalAmount.toString(),style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: PrimaryColor),),
-                              ],
+                          Padding(
+                            padding: const EdgeInsets.only(top:16.0,left:16.0,right:16.0),
+                            child: Container(
+                              width: MediaQuery.of(context).size.width/0.9,
+                              height: 70,
+                              decoration: BoxDecoration(
+                                  color: BackgroundColor,
+                                  border: Border.all(color: yellowColor, width: 2),
+                                  borderRadius: BorderRadius.circular(9)
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text("Total Amount",style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: yellowColor),),
+                                    Text(totalAmount.toString(),style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: PrimaryColor),),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                          ),
+                          Form(
+                            key: formKey,
+                            child: Padding(
+                              padding: const EdgeInsets.only(top:16.0,left:16.0,right:16.0),
+                              child: TextFormField(
+
+                                controller: amountPaid,
+                                textInputAction: TextInputAction.go,
+                                keyboardType: TextInputType.number,
+                                autofocus: true,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Amount is Required';
+                                  }else if(int.parse(value)<totalAmount){
+                                    return "Paid Amount should be greater then equal to total Amount";
+                                  }
+                                  return null;
+                                },
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  hintText: "Amount Paid",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
+                                onChanged: (value){
+                                  innersetState(() {
+                                    if(value.isNotEmpty) {
+                                      balance =
+                                      (int.parse(amountPaid.text)-totalAmount);
+                                    }else{
+                                      balance=0;
+                                    }
+                                  });
+
+                                },
+
+                              ),
                             ),
                           ),
-                        ),
-
-                      ),
-                      Form(
-                         key: formKey,
-                        child: Padding(
-                          padding: const EdgeInsets.only(top:16.0,left:16.0,right:16.0),
-                          child: TextFormField(
-
-                            controller: amountPaid,
-                            textInputAction: TextInputAction.go,
-                            keyboardType: TextInputType.number,
-                            autofocus: true,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Amount is Required';
-                              }else if(int.parse(value)<totalAmount){
-                                return "Paid Amount should be greater then equal to total Amount";
-                              }
-                              return null;
-                            },
-                            decoration: InputDecoration(
-                              border: OutlineInputBorder(),
-                              hintText: "Amount Paid",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Container(
+                              width: MediaQuery.of(context).size.width/0.9,
+                              height: 70,
+                              decoration: BoxDecoration(
+                                  color: BackgroundColor,
+                                  border: Border.all(color: yellowColor, width: 2),
+                                  borderRadius: BorderRadius.circular(9)
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text("Balance",style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: yellowColor),),
+                                    Text(balance.toStringAsFixed(0),style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: PrimaryColor),),
+                                  ],
+                                ),
+                              ),
                             ),
-                            onChanged: (value){
-                              innersetState(() {
-                                if(value.isNotEmpty) {
-                                  balance =
-                                  (int.parse(amountPaid.text)-totalAmount);
-                                }else{
-                                  balance=0;
-                                }
-                              });
-
-                            },
 
                           ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Container(
-                          width: MediaQuery.of(context).size.width/0.9,
-                          height: 70,
-                          decoration: BoxDecoration(
-                              color: BackgroundColor,
-                              border: Border.all(color: yellowColor, width: 2),
-                              borderRadius: BorderRadius.circular(9)
-                          ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text("Balance",style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: yellowColor),),
-                                Text(balance.toStringAsFixed(0),style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: PrimaryColor),),
-                              ],
-                            ),
-                          ),
-                        ),
+                          InkWell(
+                            onTap: (){
+                              if(!formKey.currentState.validate()){
 
-                      ),
-                      InkWell(
-                        onTap: (){
-                          if(!formKey.currentState.validate()){
-
-                          }else{
-                            var payCash ={
-                              "orderid": orders["id"],
-                              "CashPay": orders["grossTotal"],
-                              "Balance": orders["grossTotal"],
-                              "Comment": null,
-                              "PaymentType": 1,
-                              "OrderStatus": 7,
-                            };
-                            Network_Operations.payCashOrder(this.context,token, payCash).then((isPaid){
-                              if(isPaid){
-                                WidgetsBinding.instance
-                                    .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
-                                Utils.showSuccess(this.context,"Payment Successful");
                               }else{
-                                Utils.showError(this.context,"Problem in Making Payment");
+                                var payCash ={
+                                  "orderid": orders["id"],
+                                  "CashPay": orders["grossTotal"],
+                                  "Balance": orders["grossTotal"],
+                                  "Comment": null,
+                                  "PaymentType": 1,
+                                  "OrderStatus": 7,
+                                };
+                                Network_Operations.payCashOrder(this.context,token, payCash).then((isPaid){
+                                  if(isPaid){
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                                    Utils.showSuccess(this.context,"Payment Successful");
+                                  }else{
+                                    Utils.showError(this.context,"Problem in Making Payment");
+                                  }
+                                  Navigator.pop(context);
+                                });
                               }
-                              Navigator.pop(context);
-                            });
-                          }
-                        },
-                        child: Card(
-                          elevation: 8,
-                          child: Container(
-                            width: 230,
-                            height: 50,
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(4),
-                              color: yellowColor
+                            },
+                            child: Card(
+                              elevation: 8,
+                              child: Container(
+                                width: 230,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(4),
+                                    color: yellowColor
+                                ),
+                                child: Center(child: Text("Payout",style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
+                              ),
                             ),
-                            child: Center(child: Text("Payout",style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
-                          ),
-                        ),
-                      )
-                    ],
+                          )
+                        ],
+                      ),
+                    ),
                   ),
-                ),
-              ),
+                )
+              ],
             );
           }
       ),

@@ -430,7 +430,14 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                             ),
                                                           ],
                                                         ),
-                                                        orderList[index]["orderType"]==1? FaIcon(FontAwesomeIcons.utensils, color: blueColor, size:30):orderList[index]["orderType"]==2?FaIcon(FontAwesomeIcons.shoppingBag, color: blueColor,size:30):FaIcon(FontAwesomeIcons.biking, color: blueColor,size:30)
+                                                        Row(
+                                                          children: [
+                                                            orderList[index]["grossTotal"]==0.0||orderList[index]["netTotal"]==0.0?FaIcon(FontAwesomeIcons.handHoldingUsd, color: blueColor, size:30):FaIcon(FontAwesomeIcons.biking, color: yellowColor,size:30),
+                                                            SizedBox(width: 7,),
+                                                            orderList[index]["orderType"]==1? FaIcon(FontAwesomeIcons.utensils, color: blueColor, size:30):orderList[index]["orderType"]==2?FaIcon(FontAwesomeIcons.shoppingBag, color: blueColor,size:30):FaIcon(FontAwesomeIcons.biking, color: blueColor,size:30)
+
+                                                          ],
+                                                        ),
                                                       ],
                                                     ),
                                                   ),
@@ -463,7 +470,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                           children: [
                                                             Text(
                                                               //"Dine-In",
-                                                              widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                                              widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
                                                               style: TextStyle(
                                                                   fontSize: 20,
                                                                   fontWeight: FontWeight.bold,
@@ -472,7 +479,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                             ),
                                                             Text(
                                                               //"Dine-In",
-                                                              orderList[index]['grossTotal'].toStringAsFixed(1),
+                                                              orderList[index]['grossTotal'].toStringAsFixed(0),
                                                               style: TextStyle(
                                                                   fontSize: 20,
                                                                   fontWeight: FontWeight.bold,
@@ -748,9 +755,10 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                               ),
                               Row(
                                 children: [
-                                waiveOffService!="null"&&waiveOffService=="true"?Padding(
+                                waiveOffService!="null"&&waiveOffService=="true"&&orders["grossTotal"]!=0.0&&orders["netTotal"]!=0.0?Padding(
                                     padding: const EdgeInsets.only(left: 8.0,right:8.0),
                                     child: InkWell(
+
                                         onTap: (){
                                           Navigator.pop(context);
                                           showDialog(
@@ -761,7 +769,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                     child: Container(
                                                         height: 450,
                                                         width: 400,
-                                                        child: refundOrderItemsPopup(orders["orderItems"],orders["id"])
+                                                        child: refundOrderItemsPopup(orders["orderItems"].where((element)=>element["isRefunded"]==null||element["isRefunded"]==false).toList(),orders["id"])
                                                     )
                                                 );
 
@@ -771,6 +779,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                   ):Container(),
                                   InkWell(
                                       onTap: (){
+                                        //Utils.printReceiptByWifiPrinter("192.168.10.15", this.context, widget.store, orders, getTableName(orders["tableId"]));
                                         Utils.buildInvoice(orders,widget.store,customerName);
                                       },
                                       child: FaIcon(FontAwesomeIcons.print, color: blueColor, size: 30,)),
@@ -891,7 +900,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                             children: [
                                               Text(
                                                 //"Dine-In",
-                                                widget.store["currencyCode"]!=null?widget.store["currencyCode"]+": ":" ",
+                                                widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+": ":" ",
                                                 style: TextStyle(
                                                     fontSize: 20,
                                                     fontWeight: FontWeight.bold,
@@ -900,7 +909,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                               ),
                                               Text(
                                                 //"Dine-In",
-                                                orders["grossTotal"].toStringAsFixed(1),
+                                                orders["grossTotal"].toStringAsFixed(0),
                                                 style: TextStyle(
                                                     fontSize: 20,
                                                     fontWeight: FontWeight.bold,
@@ -911,7 +920,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                           ),
                                           // Center(
                                           //   child: AutoSizeText(
-                                          //     widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                          //     widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
                                           //     style: TextStyle(
                                           //         color: blueColor,
                                           //         fontSize: 22,
@@ -943,7 +952,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                 //       children: [
                                 //         Text(
                                 //           //"Dine-In",
-                                //           widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                //           widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
                                 //           style: TextStyle(
                                 //               fontSize: 20,
                                 //               fontWeight: FontWeight.bold,
@@ -952,7 +961,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                 //         ),
                                 //         Text(
                                 //           //"Dine-In",
-                                //           orders['grossTotal'].toStringAsFixed(1),
+                                //           orders['grossTotal'].toStringAsFixed(0),
                                 //           style: TextStyle(
                                 //               fontSize: 20,
                                 //               fontWeight: FontWeight.bold,
@@ -1266,7 +1275,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                               Row(
                                                 children: [
                                                   Text(
-                                                    widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                                    widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
                                                     style: TextStyle(
                                                         fontSize:
                                                         20,
@@ -1279,8 +1288,8 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                     width: 2,
                                                   ),
                                                   Text(
-                                                    orders["netTotal"].toStringAsFixed(1),
-                                                    //overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
+                                                    orders["netTotal"].toStringAsFixed(0),
+                                                    //overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(0)+"/-":"0.0/-",
                                                     style: TextStyle(
                                                         fontSize:
                                                         20,
@@ -1323,7 +1332,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                         children: [
                                                           Text(
                                                             orders["orderTaxes"][index]["taxName"],
-                                                            //orders["orderTaxes"][index].percentage!=null&&orders["orderTaxes"][index].percentage!=0.0?orders["orderTaxes"][index]["taxName"]+" (${typeBasedTaxes[index].percentage.toStringAsFixed(1)})":typeBasedTaxes[index].name,
+                                                            //orders["orderTaxes"][index].percentage!=null&&orders["orderTaxes"][index].percentage!=0.0?orders["orderTaxes"][index]["taxName"]+" (${typeBasedTaxes[index].percentage.toStringAsFixed(0)})":typeBasedTaxes[index].name,
                                                             style: TextStyle(
                                                                 fontSize:
                                                                 16,
@@ -1336,9 +1345,9 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                           Row(
                                                             children: [
                                                               Text(
-                                                                widget.store["currencyCode"]+" "+
-                                                                    orders["orderTaxes"][index]["amount"].toStringAsFixed(1),
-                                                                //typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"]+": "+(overallTotalPriceWithTax/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1),
+                                                                widget.store["currencyCode"].toString()+" "+
+                                                                    orders["orderTaxes"][index]["amount"].toStringAsFixed(0),
+                                                                //typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"].toString()+" "+typeBasedTaxes[index].price.toStringAsFixed(0):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"].toString()+": "+(overallTotalPriceWithTax/100*typeBasedTaxes[index].percentage).toStringAsFixed(0):widget.store["currencyCode"].toString()+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(0),
                                                                 style: TextStyle(
                                                                     fontSize:
                                                                     16,
@@ -1381,7 +1390,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                               Row(
                                                 children: [
                                                   Text(
-                                                    widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":"",
+                                                    widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":"",
                                                     style: TextStyle(
                                                         fontSize:
                                                         20,
@@ -1394,8 +1403,8 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                     width: 2,
                                                   ),
                                                   Text(
-                                                    orders["grossTotal"].toStringAsFixed(1),
-                                                    //priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(1)+"/-":overallTotalPriceWithTax.toStringAsFixed(1)+"/-",
+                                                    orders["grossTotal"].toStringAsFixed(0),
+                                                    //priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(0)+"/-":overallTotalPriceWithTax.toStringAsFixed(0)+"/-",
                                                     style: TextStyle(
                                                         fontSize:
                                                         20,
@@ -1428,7 +1437,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                   topping=[];
 
                                   for(var items in orders['orderItems'][i]['orderItemsToppings']){
-                                    topping.add(items==[]?"-":items['additionalItem']['stockItemName']+" (${widget.store["currencyCode"]+items["price"].toStringAsFixed(1)})   x${items['quantity'].toString()+"    "+widget.store["currencyCode"]+": "+items["totalPrice"].toStringAsFixed(1)} \n");
+                                    topping.add(items==[]?"-":items['additionalItem']['stockItemName']+" (${widget.store["currencyCode"].toString()+items["price"].toStringAsFixed(0)})   x${items['quantity'].toString()+"    "+widget.store["currencyCode"].toString()+": "+items["totalPrice"].toStringAsFixed(0)} \n");
                                   }
                                   return InkWell(
                                     onTap: (){
@@ -1456,7 +1465,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                 child: Row(
                                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                   children: [
-                                                    FaIcon(FontAwesomeIcons.exchangeAlt, color: yellowColor,),
+                                                    FaIcon(FontAwesomeIcons.handHoldingUsd, color: yellowColor,),
                                                     Text(
                                                       orders['orderItems']!=null?orders['orderItems'][i]['name']:"",
                                                       style: TextStyle(
@@ -1465,7 +1474,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                           fontSize: 22
                                                       ),
                                                     ),
-                                                orders['orderItems'][i]["isRefunded"]!=null&&orders['orderItems'][i]["isRefunded"]==true?FaIcon(FontAwesomeIcons.exchangeAlt, color: blueColor,):Container(),
+                                                orders['orderItems'][i]["isRefunded"]!=null&&orders['orderItems'][i]["isRefunded"]==true?FaIcon(FontAwesomeIcons.handHoldingUsd, color: blueColor,):Container(),
                                                   ],
                                                 ),
                                               )
@@ -1511,7 +1520,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                       ),
                                                       child: Center(
                                                         child: AutoSizeText(
-                                                          orders["orderItems"][i]["price"].toStringAsFixed(1),
+                                                          orders["orderItems"][i]["price"].toStringAsFixed(0),
                                                           //cartList[index].sizeName!=null?cartList[index].sizeName:"N/A",
                                                           style: TextStyle(
                                                               color: blueColor,
@@ -1743,7 +1752,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                       children: [
                                                         Text(
                                                           //"Dine-In",
-                                                          widget.store["currencyCode"]!=null?widget.store["currencyCode"]+": ":" ",
+                                                          widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+": ":" ",
                                                           style: TextStyle(
                                                               fontSize: 20,
                                                               fontWeight: FontWeight.bold,
@@ -1751,7 +1760,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                           ),
                                                         ),
                                                         Text(
-                                                          orders['orderItems'][i]['totalPrice']!=null?orders['orderItems'][i]['totalPrice'].toStringAsFixed(1):"-",
+                                                          orders['orderItems'][i]['totalPrice']!=null?orders['orderItems'][i]['totalPrice'].toStringAsFixed(0):"-",
                                                           style: TextStyle(
                                                             color: blueColor,
                                                             fontSize: 20,
@@ -1858,7 +1867,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                         mainAxisAlignment:
                                         MainAxisAlignment.spaceBetween,
                                         children: [
-                                          new Text(orderItems[index]["name"]+" "+"(${orderItems[index]["sizeName"]})" ,style: TextStyle(color: yellowColor, fontSize: 17, fontWeight: FontWeight.bold),),
+                                          new Text(orderItems[index]["name"]+" "+"(${orderItems[index]["sizeName"]!=null?orderItems[index]["sizeName"]:"Deal"})" ,style: TextStyle(color: yellowColor, fontSize: 17, fontWeight: FontWeight.bold),),
                                         ],
                                       ),
                                       controlAffinity: ListTileControlAffinity.leading,
@@ -1891,10 +1900,8 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                             orderItemsIds.add(orderItems[i]["id"].toString());
                           }
                         }
-                        print("OrderItems Ids "+orderItemsIds.toString());
                         Network_Operations.refundOrder(context: this.context,token: token, orderItemsId: orderItemsIds, orderId: orderId).then((value){
                           Navigator.pop(this.context);
-                          print(value);
                           if(value){
                             WidgetsBinding.instance
                                 .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());

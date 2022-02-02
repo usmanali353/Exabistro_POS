@@ -173,10 +173,10 @@ class Utils{
        //bytes+= ticket.text(itemList[i]['name']);
 
        bytes+= ticket.row([
-         PosColumn(text: '${orderitems[i].quantity}', width: 1,),
+         PosColumn(text: '${orderitems[i].quantity.toStringAsFixed(0)}', width: 1,),
          PosColumn(text: ' ${orderitems[i].name.length>=16?orderitems[i].name.substring(0,16)+" "+"(${orderObj["orderItems"][i]["sizeName"].toString().substring(0,1)})":orderitems[i].name+" "+"(${orderObj["orderItems"][i]["sizeName"].toString().substring(0,1)})"}', width: 9,styles: PosStyles(align: PosAlign.left)),
          // PosColumn(text: '${ itemList[i]['price']} ', width: 2),
-         PosColumn(text: '${ orderitems[i].totalPrice} ', width: 2),
+         PosColumn(text: '${ orderitems[i].totalPrice.toStringAsFixed(0)} ', width: 2),
        ]);
        // bytes+= ticket.text('Topping', styles:PosStyles(bold: true),);
        if(orderitems[i].haveTopping){
@@ -184,7 +184,7 @@ class Utils{
            //  total += itemList[i]['price'];
            bytes+= ticket.row([
              PosColumn(text: '-', width: 1, styles:PosStyles(bold: true)),
-             PosColumn(text: 'x${orderitems[i].orderItemsToppings[j].quantity}', width: 2,),
+             PosColumn(text: 'x${orderitems[i].orderItemsToppings[j].quantity.toStringAsFixed(0)}', width: 2,),
              PosColumn(text: ' ${orderObj["orderItems"][i]["orderItemsToppings"][j]['additionalItem']['stockItemName']}', width: 5),
              PosColumn(text: ' ${ orderitems[i].orderItemsToppings[j].price} ', width: 4),
            ]);
@@ -209,16 +209,11 @@ class Utils{
        //
        // ]);
      }
-     if(orderObj["discountedPrice"]!=null&&orderObj["discountedPrice"]!=0.0)
-       bytes+= ticket.row([
-         PosColumn(text: ' ${"Discount"}', width: 10),
-         PosColumn(text: '${orderObj["discountedPrice"].toStringAsFixed(1)} ', width: 2),
-       ]);
      bytes+= ticket.hr();
 
      bytes+= ticket.row([
        PosColumn(text: 'Total', width: 10, styles: PosStyles(bold: true)),
-       PosColumn(text: '${orderObj["discountedPrice"]!=null&&orderObj["discountedPrice"]!=0.0?(orderObj["grossTotal"]-orderObj["discountedPrice"]).toStringAsFixed(1):orderObj["grossTotal"].toStringAsFixed(1)}', width: 2, styles: PosStyles(bold: true)),
+       PosColumn(text: '${orderObj["grossTotal"].toStringAsFixed(0)}', width: 2, styles: PosStyles(bold: true)),
      ]);
      bytes+= ticket.hr();
      bytes+= ticket.feed(2);
@@ -299,7 +294,7 @@ class Utils{
          //printer.text(itemList[i]['name']);
 
          printer.row([
-           PosColumn(text: '${orderitems[i].quantity}', width: 1,),
+           PosColumn(text: '${orderitems[i].quantity.toStringAsFixed(0)}', width: 1,),
            PosColumn(text: ' ${orderitems[i].name.length>=16?orderitems[i].name.substring(0,16)+" "+"(${orderObj["orderItems"][i]["sizeName"].toString().substring(0,1)})":orderitems[i].name+" "+"(${orderObj["orderItems"][i]["sizeName"].toString().substring(0,1)})"}', width: 9,styles: PosStyles(align: PosAlign.left)),
            // PosColumn(text: '${ itemList[i]['price']} ', width: 2),
            PosColumn(text: '${ orderitems[i].totalPrice} ', width: 2),
@@ -325,6 +320,7 @@ class Utils{
        ]);
        printer.hr();
        for (var i = 0; i < orderObj['orderTaxes'].length; i++) {
+
          printer.row([
            PosColumn(text: ' ${orderObj['orderTaxes'][i]['taxName']}', width: 10),
            PosColumn(text: '${ orderObj['orderTaxes'][i]['amount']} ', width: 2),
@@ -335,16 +331,11 @@ class Utils{
          //
          // ]);
        }
-       if(orderObj["discountedPrice"]!=null&&orderObj["discountedPrice"]!=0.0)
-         printer.row([
-           PosColumn(text: ' ${"Discount"}', width: 10),
-           PosColumn(text: '${orderObj["discountedPrice"].toStringAsFixed(1)} ', width: 2),
-         ]);
        printer.hr();
 
        printer.row([
          PosColumn(text: 'Total', width: 10, styles: PosStyles(bold: true)),
-         PosColumn(text: '${orderObj["discountedPrice"]!=null&&orderObj["discountedPrice"]!=0.0?(orderObj["grossTotal"]-orderObj["discountedPrice"]).toStringAsFixed(1):orderObj["grossTotal"].toStringAsFixed(1)}', width: 2, styles: PosStyles(bold: true)),
+         PosColumn(text: '${orderObj["grossTotal"].toStringAsFixed(0)}', width: 2, styles: PosStyles(bold: true)),
        ]);
        printer.hr();
        printer.feed(2);
@@ -469,13 +460,13 @@ class Utils{
        // if(orderObj["discountedPrice"]!=null&&orderObj["discountedPrice"]!=0.0)
        //   printer.row([
        //     PosColumn(text: ' ${"Discount"}', width: 10),
-       //     PosColumn(text: '${orderObj["discountedPrice"].toStringAsFixed(1)} ', width: 2),
+       //     PosColumn(text: '${orderObj["discountedPrice"].toStringAsFixed(0)} ', width: 2),
        //   ]);
        // printer.hr();
        //
        // printer.row([
        //   PosColumn(text: 'Total', width: 10, styles: PosStyles(bold: true)),
-       //   PosColumn(text: '${orderObj["discountedPrice"]!=null&&orderObj["discountedPrice"]!=0.0?(orderObj["grossTotal"]-orderObj["discountedPrice"]).toStringAsFixed(1):orderObj["grossTotal"].toStringAsFixed(1)}', width: 2, styles: PosStyles(bold: true)),
+       //   PosColumn(text: '${orderObj["discountedPrice"]!=null&&orderObj["discountedPrice"]!=0.0?(orderObj["grossTotal"]-orderObj["discountedPrice"]).toStringAsFixed(0):orderObj["grossTotal"].toStringAsFixed(0)}', width: 2, styles: PosStyles(bold: true)),
        // ]);
        // printer.hr();
        // printer.feed(2);
@@ -751,30 +742,34 @@ class Utils{
      List<List<dynamic>> tableData=[];
      List<String> topping=[],toppingUnitPrice=[],toppingTotalPrice=[],toppingQuantity=[];
      for(int i=0;i<order["orderItems"].length;i++){
-       if(order["orderItems"][i]["orderItemsToppings"]!=null&&order["orderItems"][i]["orderItemsToppings"].length>0){
-         for(int j=0;j<order["orderItems"][i]["orderItemsToppings"].length;j++){
+       if(order["orderItems"][i]["isRefunded"]==null||order["orderItems"][i]["isRefunded"]==false){
+         if(order["orderItems"][i]["orderItemsToppings"]!=null&&order["orderItems"][i]["orderItemsToppings"].length>0){
+           for(int j=0;j<order["orderItems"][i]["orderItemsToppings"].length;j++){
 
-           topping.add(order["orderItems"][i]["orderItemsToppings"][j]['additionalItem']['stockItemName']);
-           toppingUnitPrice.add(order["orderItems"][i]["orderItemsToppings"][j]["price"].toStringAsFixed(0));
-           toppingTotalPrice.add(order["orderItems"][i]["orderItemsToppings"][j]["totalPrice"].toStringAsFixed(0));
-           toppingQuantity.add("x"+order["orderItems"][i]["orderItemsToppings"][j]["quantity"].toStringAsFixed(0));
+             topping.add(order["orderItems"][i]["orderItemsToppings"][j]['additionalItem']['stockItemName']);
+             toppingUnitPrice.add(order["orderItems"][i]["orderItemsToppings"][j]["price"].toStringAsFixed(0));
+             toppingTotalPrice.add(order["orderItems"][i]["orderItemsToppings"][j]["totalPrice"].toStringAsFixed(0));
+             toppingQuantity.add("x"+order["orderItems"][i]["orderItemsToppings"][j]["quantity"].toStringAsFixed(0));
+           }
+         }
+         if(topping.length>0&&toppingTotalPrice.length>0&&toppingUnitPrice.length>0) {
+           tableData.add([
+             order["orderItems"][i]["name"]+" "+"(${order["orderItems"][i]["sizeName"]})"+"\n"+topping.toString(),
+             order["orderItems"][i]["price"].toStringAsFixed(0)+"\n"+toppingUnitPrice.toString(),
+             "x "+order["orderItems"][i]["quantity"].toStringAsFixed(0)+"\n"+toppingQuantity.toString(),
+             order["orderItems"][i]["totalPrice"].toStringAsFixed(0)+"\n"+toppingTotalPrice.toString()
+           ]);
+         }
+         else{
+           tableData.add([
+             order["orderItems"][i]["sizeName"]!=null?order["orderItems"][i]["name"]+" "+"(${order["orderItems"][i]["sizeName"]})" : order["orderItems"][i]["name"],
+             order["orderItems"][i]["price"].toStringAsFixed(0),
+             "x "+order["orderItems"][i]["quantity"].toStringAsFixed(0),
+             order["orderItems"][i]["totalPrice"].toStringAsFixed(0)
+           ]);
          }
        }
-       if(topping.length>0&&toppingTotalPrice.length>0&&toppingUnitPrice.length>0){
-         tableData.add([
-           order["orderItems"][i]["name"]+" "+"(${order["orderItems"][i]["sizeName"]})"+"\n"+topping.toString(),
-           order["orderItems"][i]["price"].toStringAsFixed(1)+"\n"+toppingUnitPrice.toString(),
-           "x "+order["orderItems"][i]["quantity"].toStringAsFixed(0)+"\n"+toppingQuantity.toString(),
-           order["orderItems"][i]["totalPrice"].toStringAsFixed(1)+"\n"+toppingTotalPrice.toString()
-         ]);
-       }else{
-         tableData.add([
-           order["orderItems"][i]["sizeName"]!=null?order["orderItems"][i]["name"]+" "+"(${order["orderItems"][i]["sizeName"]})" : order["orderItems"][i]["name"],
-           order["orderItems"][i]["price"].toStringAsFixed(1),
-           "x "+order["orderItems"][i]["quantity"].toStringAsFixed(0),
-           order["orderItems"][i]["totalPrice"].toStringAsFixed(1)
-         ]);
-       }
+
        toppingTotalPrice.clear();
        toppingUnitPrice.clear();
        topping.clear();
@@ -795,7 +790,8 @@ class Utils{
 
      final doc = pw.Document();
      doc.addPage(pw.MultiPage(
-       // pageFormat: PdfPageFormat.a4,
+       maxPages: 2,
+        pageFormat: PdfPageFormat.a4,
          header: (context){
            return pw.Column(
                crossAxisAlignment: pw.CrossAxisAlignment.start,
@@ -902,6 +898,7 @@ class Utils{
              pw.Column(
                children: [
                  pw.Column(
+
                      crossAxisAlignment: pw.CrossAxisAlignment.start,
                      children: [
                        pw.Text(
@@ -911,19 +908,22 @@ class Utils{
                        pw.SizedBox(
                            height: 20
                        ),
-                       pw.Table.fromTextArray(
-                           headers: ["Name","Unit Price","Quantity","Total"],
-                           data:tableData,
-                           border: null,
-                           headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                           headerDecoration: pw.BoxDecoration(color: PdfColors.grey300),
-                           cellHeight: 30,
-                           cellAlignments: {
-                             0: pw.Alignment.centerLeft,
-                             1: pw.Alignment.centerLeft,
-                             2: pw.Alignment.centerLeft,
-                             3: pw.Alignment.centerLeft
-                           }
+                       pw.Container(
+                         height: 305,
+                         child:  pw.Table.fromTextArray(
+                             headers: ["Name","Unit Price","Quantity","Total"],
+                             data:tableData,
+                             border: null,
+                             headerStyle: pw.TextStyle(fontWeight: pw.FontWeight.bold),
+                             headerDecoration: pw.BoxDecoration(color: PdfColors.grey300),
+                             cellHeight: 30,
+                             cellAlignments: {
+                               0: pw.Alignment.centerLeft,
+                               1: pw.Alignment.centerLeft,
+                               2: pw.Alignment.centerLeft,
+                               3: pw.Alignment.centerLeft
+                             }
+                         ),
                        ),
                        pw.Divider(),
                        pw.Container(
@@ -945,7 +945,7 @@ class Utils{
                                                      child: pw.Text("SubTotal",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
                                                  ),
                                                  pw.Text(
-                                                     order["netTotal"].toStringAsFixed(1),
+                                                     order["netTotal"].toStringAsFixed(0),
                                                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
                                                  )
                                                ]
@@ -959,7 +959,7 @@ class Utils{
                                                      child: pw.Text("Discount",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
                                                  ),
                                                  pw.Text(
-                                                     order["discountedPrice"].toStringAsFixed(1),
+                                                     order["discountedPrice"].toStringAsFixed(0),
                                                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
                                                  )
                                                ]
@@ -975,7 +975,7 @@ class Utils{
                                                      child: pw.Text(order["orderTaxes"][i]["taxName"],style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
                                                  ),
                                                  pw.Text(
-                                                     order["orderTaxes"][i]["amount"].toStringAsFixed(1),
+                                                     order["orderTaxes"][i]["amount"].toStringAsFixed(0),
                                                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
                                                  )
                                                ]
@@ -990,7 +990,7 @@ class Utils{
                                                      child: pw.Text("Total",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
                                                  ),
                                                  pw.Text(
-                                                     order["grossTotal"].toStringAsFixed(1),
+                                                     order["grossTotal"].toStringAsFixed(0),
                                                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
                                                  )
                                                ]

@@ -375,7 +375,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                                             children: [
                                                               Text(
                                                                 //"Dine-In",
-                                                                widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                                                widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
                                                                 style: TextStyle(
                                                                     fontSize: 20,
                                                                     fontWeight: FontWeight.bold,
@@ -384,7 +384,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                                               ),
                                                               Text(
                                                                 //"Dine-In",
-                                                                orderList[index]['grossTotal'].toStringAsFixed(1),
+                                                                orderList[index]['grossTotal'].toStringAsFixed(0),
                                                                 style: TextStyle(
                                                                     fontSize: 20,
                                                                     fontWeight: FontWeight.bold,
@@ -796,7 +796,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                             children: [
                                               Text(
                                                 //"Dine-In",
-                                                widget.store["currencyCode"]!=null?widget.store["currencyCode"]+": ":" ",
+                                                widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+": ":" ",
                                                 style: TextStyle(
                                                     fontSize: 20,
                                                     fontWeight: FontWeight.bold,
@@ -805,7 +805,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                               ),
                                               Text(
                                                 //"Dine-In",
-                                                orders["grossTotal"].toStringAsFixed(1),
+                                                orders["grossTotal"].toStringAsFixed(0),
                                                 style: TextStyle(
                                                     fontSize: 20,
                                                     fontWeight: FontWeight.bold,
@@ -816,7 +816,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                           ),
                                           // Center(
                                           //   child: AutoSizeText(
-                                          //     widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                          //     widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
                                           //     style: TextStyle(
                                           //         color: blueColor,
                                           //         fontSize: 22,
@@ -848,7 +848,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                 //       children: [
                                 //         Text(
                                 //           //"Dine-In",
-                                //           widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                //           widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
                                 //           style: TextStyle(
                                 //               fontSize: 20,
                                 //               fontWeight: FontWeight.bold,
@@ -857,7 +857,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                 //         ),
                                 //         Text(
                                 //           //"Dine-In",
-                                //           orders['grossTotal'].toStringAsFixed(1),
+                                //           orders['grossTotal'].toStringAsFixed(0),
                                 //           style: TextStyle(
                                 //               fontSize: 20,
                                 //               fontWeight: FontWeight.bold,
@@ -1171,7 +1171,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                               Row(
                                                 children: [
                                                   Text(
-                                                    widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":" ",
+                                                    widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
                                                     style: TextStyle(
                                                         fontSize:
                                                         20,
@@ -1184,8 +1184,8 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                                     width: 2,
                                                   ),
                                                   Text(
-                                                    orders["netTotal"].toStringAsFixed(1),
-                                                    //overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(1)+"/-":"0.0/-",
+                                                    orders["netTotal"].toStringAsFixed(0),
+                                                    //overallTotalPrice!=null?overallTotalPrice.toStringAsFixed(0)+"/-":"0.0/-",
                                                     style: TextStyle(
                                                         fontSize:
                                                         20,
@@ -1228,7 +1228,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                                         children: [
                                                           Text(
                                                             orders["orderTaxes"][index]["taxName"],
-                                                            //orders["orderTaxes"][index].percentage!=null&&orders["orderTaxes"][index].percentage!=0.0?orders["orderTaxes"][index]["taxName"]+" (${typeBasedTaxes[index].percentage.toStringAsFixed(1)})":typeBasedTaxes[index].name,
+                                                            //orders["orderTaxes"][index].percentage!=null&&orders["orderTaxes"][index].percentage!=0.0?orders["orderTaxes"][index]["taxName"]+" (${typeBasedTaxes[index].percentage.toStringAsFixed(0)})":typeBasedTaxes[index].name,
                                                             style: TextStyle(
                                                                 fontSize:
                                                                 16,
@@ -1241,9 +1241,9 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                                           Row(
                                                             children: [
                                                               Text(
-                                                                widget.store["currencyCode"]+" "+
-                                                                    orders["orderTaxes"][index]["amount"].toStringAsFixed(1),
-                                                                //typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"]+" "+typeBasedTaxes[index].price.toStringAsFixed(1):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"]+": "+(overallTotalPriceWithTax/100*typeBasedTaxes[index].percentage).toStringAsFixed(1):widget.store["currencyCode"]+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(1),
+                                                                widget.store["currencyCode"].toString()+" "+
+                                                                    orders["orderTaxes"][index]["amount"].toStringAsFixed(0),
+                                                                //typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"].toString()+" "+typeBasedTaxes[index].price.toStringAsFixed(0):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"].toString()+": "+(overallTotalPriceWithTax/100*typeBasedTaxes[index].percentage).toStringAsFixed(0):widget.store["currencyCode"].toString()+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(0),
                                                                 style: TextStyle(
                                                                     fontSize:
                                                                     16,
@@ -1286,7 +1286,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                               Row(
                                                 children: [
                                                   Text(
-                                                    widget.store["currencyCode"]!=null?widget.store["currencyCode"]+":":"",
+                                                    widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":"",
                                                     style: TextStyle(
                                                         fontSize:
                                                         20,
@@ -1299,8 +1299,8 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                                     width: 2,
                                                   ),
                                                   Text(
-                                                    orders["grossTotal"].toStringAsFixed(1),
-                                                    //priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(1)+"/-":overallTotalPriceWithTax.toStringAsFixed(1)+"/-",
+                                                    orders["grossTotal"].toStringAsFixed(0),
+                                                    //priceWithDiscount!=null&&priceWithDiscount!=0.0?priceWithDiscount.toStringAsFixed(0)+"/-":overallTotalPriceWithTax.toStringAsFixed(0)+"/-",
                                                     style: TextStyle(
                                                         fontSize:
                                                         20,
@@ -1333,7 +1333,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                   topping=[];
 
                                   for(var items in orders['orderItems'][i]['orderItemsToppings']){
-                                    topping.add(items==[]?"-":items['additionalItem']['stockItemName']+" (${widget.store["currencyCode"]+items["price"].toStringAsFixed(1)})   x${items['quantity'].toString()+"    "+widget.store["currencyCode"]+": "+items["totalPrice"].toStringAsFixed(1)} \n");
+                                    topping.add(items==[]?"-":items['additionalItem']['stockItemName']+" (${widget.store["currencyCode"].toString()+items["price"].toStringAsFixed(0)})   x${items['quantity'].toString()+"    "+widget.store["currencyCode"].toString()+": "+items["totalPrice"].toStringAsFixed(0)} \n");
                                   }
                                   return InkWell(
                                     onTap: (){
@@ -1408,7 +1408,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                                       ),
                                                       child: Center(
                                                         child: AutoSizeText(
-                                                          orders["orderItems"][i]["price"].toStringAsFixed(1),
+                                                          orders["orderItems"][i]["price"].toStringAsFixed(0),
                                                           //cartList[index].sizeName!=null?cartList[index].sizeName:"N/A",
                                                           style: TextStyle(
                                                               color: blueColor,
@@ -1640,7 +1640,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                                       children: [
                                                         Text(
                                                           //"Dine-In",
-                                                          widget.store["currencyCode"]!=null?widget.store["currencyCode"]+": ":" ",
+                                                          widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+": ":" ",
                                                           style: TextStyle(
                                                               fontSize: 20,
                                                               fontWeight: FontWeight.bold,
@@ -1648,7 +1648,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                                           ),
                                                         ),
                                                         Text(
-                                                          orders['orderItems'][i]['totalPrice']!=null?orders['orderItems'][i]['totalPrice'].toStringAsFixed(1):"-",
+                                                          orders['orderItems'][i]['totalPrice']!=null?orders['orderItems'][i]['totalPrice'].toStringAsFixed(0):"-",
                                                           style: TextStyle(
                                                             color: blueColor,
                                                             fontSize: 20,

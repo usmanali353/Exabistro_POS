@@ -122,25 +122,6 @@ String token,email;
                   Divider(color: yellowColor, thickness: 1,),
                   ListTile(
                     onTap: (){
-                      if(widget.storeId["payOut"]!=null&&widget.storeId["payOut"]==true){
-                        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>PaidOrdersScreenForTab(widget.storeId)), (route) => false);
-                      }else {
-                        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>PaidTabsScreen(storeId:widget.storeId)), (route) => false);
-                      }
-                    },
-                    title: Text(
-                      "Today Orders",
-                      style: TextStyle(
-                          color: blueColor,
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold
-                      ),
-                    ),
-                    trailing: FaIcon(FontAwesomeIcons.utensils,color: yellowColor,),
-                  ),
-                  Divider(color: yellowColor, thickness: 1,),
-                  ListTile(
-                    onTap: (){
                       Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>OrdersHistoryTabsScreen(storeId:widget.storeId)), (route) => false);
                     },
                     title: Text(
