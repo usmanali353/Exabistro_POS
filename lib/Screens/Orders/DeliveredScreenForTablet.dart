@@ -425,6 +425,7 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                                         ),
                                                       ),
 
+
                                                     ],
                                                   ),
 
@@ -700,60 +701,6 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                             //color: yellowColor,
                             child: Column(
                               children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(2.0),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        flex:2,
-                                        child: Container(
-                                          width: 90,
-                                          height: 30,
-                                          decoration: BoxDecoration(
-                                            color: yellowColor,
-                                            border: Border.all(color: yellowColor, width: 2),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Center(
-                                            child: AutoSizeText(
-                                              'Items:',
-                                              style: TextStyle(
-                                                  color: BackgroundColor,
-                                                  fontSize: 22,
-                                                  fontWeight: FontWeight.bold
-                                              ),
-                                              maxLines: 1,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(width: 2,),
-                                      Expanded(
-                                        flex:3,
-                                        child: Container(
-                                          width: 90,
-                                          height: 30,
-                                          decoration: BoxDecoration(
-                                            border: Border.all(color: yellowColor, width: 2),
-                                            //color: BackgroundColor,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child:
-                                          Center(
-                                            child: Text(orders['orderItems'].length.toString(),
-                                              style: TextStyle(
-                                                  fontSize: 20,
-                                                  color: PrimaryColor,
-                                                  fontWeight: FontWeight.bold
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                ),
                                 Padding(
                                   padding: const EdgeInsets.all(2.0),
                                   child: Row(
@@ -1134,6 +1081,63 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                               child: Text(orders['tableId']!=null?getTableName(orders['tableId']).toString():" N/A ",
                                                 style: TextStyle(
                                                     fontSize: 20,
+                                                    color: PrimaryColor,
+                                                    fontWeight: FontWeight.bold
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        )
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                Visibility(
+                                  visible: orders["refundReason"]!=null,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(2.0),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          flex:2,
+                                          child: Container(
+                                            width: 90,
+                                            height: 30,
+                                            decoration: BoxDecoration(
+                                              color: yellowColor,
+                                              border: Border.all(color: yellowColor, width: 2),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Center(
+                                              child: AutoSizeText(
+                                                'Refund Reason',
+                                                style: TextStyle(
+                                                    color: BackgroundColor,
+                                                    fontSize: 22,
+                                                    fontWeight: FontWeight.bold
+                                                ),
+                                                maxLines: 1,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(width: 2,),
+                                        Expanded(
+                                          flex:3,
+                                          child: Container(
+                                            width: 90,
+                                            height: 30,
+                                            decoration: BoxDecoration(
+                                              border: Border.all(color: yellowColor, width: 2),
+                                              //color: BackgroundColor,
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child:
+                                            Center(
+                                              child: Text(orders["refundReason"],
+                                                style: TextStyle(
+                                                    fontSize: 15,
                                                     color: PrimaryColor,
                                                     fontWeight: FontWeight.bold
                                                 ),

@@ -1,6 +1,7 @@
 import 'package:exabistro_pos/Screens/LoginScreen.dart';
 import 'package:exabistro_pos/Screens/Orders/CancelledOrdersScreenForTablet.dart';
 import 'package:exabistro_pos/Screens/Orders/DeliveredScreenForTablet.dart';
+import 'package:exabistro_pos/Screens/Orders/DiscountedOrders.dart';
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/PaidTabsComponents.dart';
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/PaidOrdersList.dart';
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/UnPaidOrdersList.dart';
@@ -10,10 +11,10 @@ import 'package:exabistro_pos/components/constants.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
-
 import 'package:flutter/services.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'RefundOrders.dart';
 
 
 class OrdersHistoryTabsScreen extends StatefulWidget {
@@ -53,7 +54,7 @@ String token,email;
 
     return DefaultTabController(
 
-        length: 2,
+        length: 4,
         child: Scaffold(
           drawer: Drawer(
             child: Container(
@@ -247,14 +248,42 @@ String token,email;
                       ),
                     ),
                   ),
+                  Tab(
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Text("Discounted Orders",
+                        style: TextStyle(
+                          fontSize: 20,
+                          //color: Colors.white,
+                          fontWeight: FontWeight.bold,
 
+                          //color: Color(0xff172a3a)
+                        ),
+                      ),
+                    ),
+                  ),
+                  Tab(
+                    child: Align(
+                      alignment: Alignment.center,
+                      child: Text("Refunded Orders",
+                        style: TextStyle(
+                          fontSize: 20,
+                          //color: Colors.white,
+                          fontWeight: FontWeight.bold,
+
+                          //color: Color(0xff172a3a)
+                        ),
+                      ),
+                    ),
+                  ),
                 ]),
           ),
           body: TabBarView(children: [
-
             // AllOrders(),
             DeliveredScreenForTablet(widget.storeId),
             CancelledOrdersScreenForTablet(widget.storeId),
+            DiscountedOrders(widget.storeId),
+            RefundedOrders(widget.storeId)
           ]),
         )
     );

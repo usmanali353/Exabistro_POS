@@ -787,14 +787,14 @@ class Network_Operations{
     return null;
   }
 
-  static Future<dynamic> refundOrder({BuildContext context, String token, List<String> orderItemsId, int orderId}) async {
+  static Future<dynamic> refundOrder({BuildContext context, String token, List<String> orderItemsId, int orderId,String refundReason}) async {
     try{
       Map<String,String> headers = {'Content-Type':'application/json','Authorization':'Bearer '+token};
 
       var body=jsonEncode({
         "OrderItemsId": orderItemsId,
-        "OrderId":orderId
-
+        "OrderId":orderId,
+        "RefundReason":refundReason
       }
       );
       var response=await http.post(Uri.parse(Utils.baseUrl()+"orders/RefundedOrder"),headers: headers,body: body);
