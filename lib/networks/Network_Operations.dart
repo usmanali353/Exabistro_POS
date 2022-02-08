@@ -14,6 +14,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../Screens/RolesBaseStoreSelection.dart';
+import '../model/ComplaintTypes.dart';
 
 class Network_Operations{
 
@@ -550,6 +551,49 @@ class Network_Operations{
     }
 
   }
+  static Future<List<dynamic>> getAllOrdersByComplaintTypeId(BuildContext context,String token,int ComplaintTypeId)async{
+    try{
+      var isCacheExist = await APICacheManager().isAPICacheKeyExist("orderListByComplaintType"+ComplaintTypeId.toString());
+      var result=await Utils.check_connection();
+      if (result == ConnectivityResult.none){
+        if (isCacheExist) {
+          List list=[];
+          var cacheData = await APICacheManager().getCacheData("orderListByComplaintType"+ComplaintTypeId.toString());
+          print("cache hit");
+          var data= jsonDecode(cacheData.syncData);
+          if(data!=[])
+            list=List.from(data.reversed);
+          return list;
+        }
+      }
+      if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
+        List list=[];
+        Map<String,String> headers = {'Authorization':'Bearer '+token};
+        var response=await http.get(Uri.parse(Utils.baseUrl()+"orders/getallbasicorders?ComplaintTypeId=$ComplaintTypeId"),headers: headers);
+        var data= jsonDecode(response.body);
+        if(response.statusCode==200){
+          APICacheDBModel cacheDBModel = new APICacheDBModel(
+              key: "orderListByComplaintType"+ComplaintTypeId.toString(), syncData: response.body);
+          await APICacheManager().addCacheData(cacheDBModel);
+          if(data!=[])
+            list=List.from(data.reversed);
+          return list;
+          //return data;
+        }
+        // else if(response.statusCode == 401){
+        //   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => LoginScreen()), (route) => false);
+        // }
+        else{
+          Utils.showError(context, "Please Try Again");
+          return null;
+        }
+      }
+    }catch(e){
+      Utils.showError(context,"Unable to Fetch Orders due to some error Please Contact Support");
+      return null;
+    }
+
+  }
   static Future<List<dynamic>> getOrdersByTableId(BuildContext context,String token,int tableId,int storeId)async{
     try{
       List list=[];
@@ -787,16 +831,18 @@ class Network_Operations{
     return null;
   }
 
-  static Future<dynamic> refundOrder({BuildContext context, String token, List<String> orderItemsId, int orderId,String refundReason}) async {
+  static Future<dynamic> refundOrder({BuildContext context, String token, List<String> orderItemsId, int orderId,String refundReason,int ComplaintTypeId}) async {
     try{
       Map<String,String> headers = {'Content-Type':'application/json','Authorization':'Bearer '+token};
 
       var body=jsonEncode({
         "OrderItemsId": orderItemsId,
         "OrderId":orderId,
-        "RefundReason":refundReason
+        "RefundReason":refundReason,
+        "ComplaintTypeId":ComplaintTypeId
       }
       );
+      print("Body "+body.toString());
       var response=await http.post(Uri.parse(Utils.baseUrl()+"orders/RefundedOrder"),headers: headers,body: body);
       if(response.statusCode==200){
         return true;
@@ -813,5 +859,25 @@ class Network_Operations{
       Utils.showError(context, "Unable to refund order");
       return false;
     }
+  }
+
+  static Future<List<ComplaintType>> getComplainTypeListByStoreId(BuildContext context,String token,int storeId )async{
+
+    try{
+      Map<String,String> headers = {'Authorization':'Bearer '+token};
+      var response=await http.get(Uri.parse(Utils.baseUrl()+"Complaint/GetAllComplaintType/"+storeId.toString()),headers: headers);
+      var data= jsonDecode(response.body);
+      if(response.statusCode==200){
+        return ComplaintType.ListComplaintTypeFromJson(response.body);
+      }
+      else{
+        Utils.showError(context, "Please Try Again");
+        return null;
+      }
+    }catch(e){
+      print(e);
+      Utils.showError(context, "Unable to Fetch Complain Type Due to Some Error Contact Support");
+    }
+    return null;
   }
 }

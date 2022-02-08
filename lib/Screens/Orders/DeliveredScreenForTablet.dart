@@ -14,6 +14,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter_bluetooth_basic/flutter_bluetooth_basic.dart';
 
+import '../../model/ComplaintTypes.dart';
+
 
 class DeliveredScreenForTablet extends StatefulWidget {
   var store;
@@ -53,7 +55,8 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
    PaperSize paper = PaperSize.mm58;
   BluetoothManager bluetoothManager = BluetoothManager.instance;
   //List<Categories> allCategories = [];
-
+  List<ComplaintType> types=[];
+  List<String> complainTypes=[];
   @override
   void initState() {
 
@@ -121,6 +124,18 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
     }else
       return "empty";
   }
+  String getComplaintTypeById(int id){
+    String name;
+    if(id!=null&&types!=null){
+      for(int i=0;i<types.length;i++){
+        if(types[i].id == id) {
+          name = types[i].name;
+        }
+      }
+      return name!=null?name:"-";
+    }else
+      return "-";
+  }
   @override
   Widget build(BuildContext context) {
 
@@ -157,6 +172,15 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                 print("Height "+MediaQuery.of(context).size.height.toString());
                 print("Width "+MediaQuery.of(context).size.width.toString());
                 orderList.clear();
+                complainTypes.clear();
+                Network_Operations.getComplainTypeListByStoreId(context, token, widget.store["id"]).then((complaintTypes){
+                  setState(() {
+                    types=complaintTypes;
+                    for(int i=0;i<types.length;i++){
+                      complainTypes.add(types[i].name);
+                    }
+                  });
+                });
                 Network_Operations.getAllOrdersWithItemsByOrderStatusId(context, token, 7,widget.store["id"]).then((value) {
                   setState(() {
                     orderList = value;
@@ -608,6 +632,21 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
         orders["orderTaxes"].remove(orders["orderTaxes"].last);
       }
       orders["orderTaxes"].add({"taxName":"Discount","amount":orders["discountedPrice"]});
+    }
+    if(orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList().length>0){
+      orders["orderTaxes"].remove(orders["orderTaxes"].last);
+    }
+    var refundedPrice=0.0;
+    if(orders["orderItems"]!=null){
+      for(int i=0;i<orders["orderItems"].length;i++)
+      {
+        if(orders["orderItems"][i]["isRefunded"]!=null&&orders["orderItems"][i]["isRefunded"]==true){
+          refundedPrice=refundedPrice+=orders["orderItems"][i]["totalPrice"];
+        }
+      }
+    }
+    if(refundedPrice!=0.0){
+      orders["orderTaxes"].add({"taxName":"Refunded Amount","amount":refundedPrice});
     }
     return Scaffold(
         backgroundColor: Colors.white.withOpacity(0.1),
@@ -1096,56 +1135,69 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                   visible: orders["refundReason"]!=null,
                                   child: Padding(
                                     padding: const EdgeInsets.all(2.0),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          flex:2,
-                                          child: Container(
-                                            width: 90,
-                                            height: 30,
-                                            decoration: BoxDecoration(
-                                              color: yellowColor,
-                                              border: Border.all(color: yellowColor, width: 2),
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Center(
-                                              child: AutoSizeText(
-                                                'Refund Reason',
-                                                style: TextStyle(
-                                                    color: BackgroundColor,
-                                                    fontSize: 22,
-                                                    fontWeight: FontWeight.bold
-                                                ),
-                                                maxLines: 1,
+                                    child: InkWell(
+                                      onTap: (){
+                                        showDialog(
+                                            context: context,
+                                            builder: (cotext){
+                                              return AlertDialog(
+                                                title: Text("Refund Reason Detail"),
+                                                content: Text(orders["refundReason"]!=null?orders["refundReason"]:"N/A"),
+                                              );
+                                            }
+                                        );
+                                      },
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            flex:2,
+                                            child: Container(
+                                              width: 90,
+                                              height: 30,
+                                              decoration: BoxDecoration(
+                                                color: yellowColor,
+                                                border: Border.all(color: yellowColor, width: 2),
+                                                borderRadius: BorderRadius.circular(8),
                                               ),
-                                            ),
-                                          ),
-                                        ),
-                                        SizedBox(width: 2,),
-                                        Expanded(
-                                          flex:3,
-                                          child: Container(
-                                            width: 90,
-                                            height: 30,
-                                            decoration: BoxDecoration(
-                                              border: Border.all(color: yellowColor, width: 2),
-                                              //color: BackgroundColor,
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child:
-                                            Center(
-                                              child: Text(orders["refundReason"],
-                                                style: TextStyle(
-                                                    fontSize: 15,
-                                                    color: PrimaryColor,
-                                                    fontWeight: FontWeight.bold
+                                              child: Center(
+                                                child: AutoSizeText(
+                                                  'Refund Reason',
+                                                  style: TextStyle(
+                                                      color: BackgroundColor,
+                                                      fontSize: 22,
+                                                      fontWeight: FontWeight.bold
+                                                  ),
+                                                  maxLines: 1,
                                                 ),
                                               ),
                                             ),
                                           ),
-                                        )
-                                      ],
+                                          SizedBox(width: 2,),
+                                          Expanded(
+                                            flex:3,
+                                            child: Container(
+                                              width: 90,
+                                              height: 30,
+                                              decoration: BoxDecoration(
+                                                border: Border.all(color: yellowColor, width: 2),
+                                                //color: BackgroundColor,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child:
+                                              Center(
+                                                child: Text(orders["complaintTypeId"]!=null?getComplaintTypeById(orders["complaintTypeId"]):"N/A",
+                                                  style: TextStyle(
+                                                      fontSize: 15,
+                                                      color: PrimaryColor,
+                                                      fontWeight: FontWeight.bold
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),

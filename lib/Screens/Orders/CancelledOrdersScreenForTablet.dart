@@ -605,6 +605,21 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
       }
       orders["orderTaxes"].add({"taxName":"Discount","amount":orders["discountedPrice"]});
     }
+    if(orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList().length>0){
+      orders["orderTaxes"].remove(orders["orderTaxes"].last);
+    }
+    var refundedPrice=0.0;
+    if(orders["orderItems"]!=null){
+      for(int i=0;i<orders["orderItems"].length;i++)
+      {
+        if(orders["orderItems"][i]["isRefunded"]!=null&&orders["orderItems"][i]["isRefunded"]==true){
+          refundedPrice=refundedPrice+=orders["orderItems"][i]["totalPrice"];
+        }
+      }
+    }
+    if(refundedPrice!=0.0){
+      orders["orderTaxes"].add({"taxName":"Refunded Amount","amount":refundedPrice});
+    }
     return Scaffold(
         backgroundColor: Colors.white.withOpacity(0.1),
         body: StatefulBuilder(

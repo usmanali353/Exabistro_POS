@@ -10,6 +10,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../model/ComplaintTypes.dart';
 import '../LoadingScreen.dart';
 import '../LoginScreen.dart';
 import '../POSMainScreenUI1.dart';
@@ -41,7 +42,8 @@ class _RefundedOrdersState extends State<RefundedOrders>{
   List<bool> _selected = [];
   int quantity=5;
   bool isLoading=false;
-
+  List<ComplaintType> types=[];
+  List<String> complainTypes=[];
   @override
   void initState() {
 
@@ -69,6 +71,18 @@ class _RefundedOrdersState extends State<RefundedOrders>{
       for(int i=0;i<allTables.length;i++){
         if(allTables[i]['id'] == id) {
           name = allTables[i]['name'];
+        }
+      }
+      return name!=null?name:"-";
+    }else
+      return "-";
+  }
+  String getComplaintTypeById(int id){
+    String name;
+    if(id!=null&&types!=null){
+      for(int i=0;i<types.length;i++){
+        if(types[i].id == id) {
+          name = types[i].name;
         }
       }
       return name!=null?name:"-";
@@ -227,6 +241,15 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                   isLoading=true;
                 });
                 orderList.clear();
+                complainTypes.clear();
+                Network_Operations.getComplainTypeListByStoreId(context, token, widget.store["id"]).then((complaintTypes){
+                  setState(() {
+                    types=complaintTypes;
+                    for(int i=0;i<types.length;i++){
+                      complainTypes.add(types[i].name);
+                    }
+                  });
+                });
                 Network_Operations.getAllOrders(context, token,widget.store["id"]).then((value) {
                   setState(() {
                     isLoading=false;
@@ -578,11 +601,11 @@ class _RefundedOrdersState extends State<RefundedOrders>{
   Widget _buildChips() {
     List<Widget> chips = new List();
 
-    for (int i = 0; i < allTables.length; i++) {
+    for (int i = 0; i < types.length; i++) {
       _selected.add(false);
       FilterChip filterChip = FilterChip(
         selected: _selected[i],
-        label: Text(getTableName(allTables[i]["id"]), style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: Text(getComplaintTypeById(types[i].id), style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         // avatar: FlutterLogo(),
         elevation: 10,
         pressElevation: 5,
@@ -601,27 +624,10 @@ class _RefundedOrdersState extends State<RefundedOrders>{
               Utils.check_connectivity().then((result){
                 if(result){
                   orderList.clear();
-                  Network_Operations.getOrdersByTableId(context, token,allTables[i]["id"],widget.store["id"]).then((value) {
+                  Network_Operations.getAllOrdersByComplaintTypeId(context, token,types[i].id).then((value) {
                     setState(() {
-                      if(value!=null&&value.length>0){
-                        for(var order in value){
-                          // String createdOn=DateFormat("yyyy-MM-dd").parse(order["createdOn"]).toString().split(" ")[0].trim();
-                          // String todayDate=DateTime(DateTime.now().year,DateTime.now().month,DateTime.now().day).toIso8601String().replaceAll("T00:00:00.000","").trim();
-                          //print(order["cashPay"]!=null);
-                          if(order["grossTotal"]==0.0||order["netTotal"]==0.0){
-                            orderList.add(order);
-                          }else{
-                            for(var OrderItems in order["orderItems"]){
-                              if(OrderItems["isRefunded"]!=null&&OrderItems["isRefunded"]==true){
-                                orderList.add(order);
-                                break;
-                              }
-                            }
-                          }
-                        }
-                      }
-
-
+                      orderList=value;
+                      print("OrderList "+orderList.toString());
                     });
                   });
                 }else{
@@ -683,6 +689,22 @@ class _RefundedOrdersState extends State<RefundedOrders>{
       }
       orders["orderTaxes"].add({"taxName":"Discount","amount":orders["discountedPrice"]});
     }
+    if(orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList().length>0){
+      orders["orderTaxes"].remove(orders["orderTaxes"].last);
+    }
+    var refundedPrice=0.0;
+    if(orders["orderItems"]!=null){
+      for(int i=0;i<orders["orderItems"].length;i++)
+      {
+        if(orders["orderItems"][i]["isRefunded"]!=null&&orders["orderItems"][i]["isRefunded"]==true){
+          refundedPrice=refundedPrice+=orders["orderItems"][i]["totalPrice"];
+        }
+      }
+    }
+    if(refundedPrice!=0.0){
+      orders["orderTaxes"].add({"taxName":"Refunded Amount","amount":refundedPrice});
+    }
+
     return Scaffold(
         backgroundColor: Colors.white.withOpacity(0.1),
         body: StatefulBuilder(
@@ -751,28 +773,6 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                               ),
                               Row(
                                 children: [
-                                  waiveOffService!="null"&&waiveOffService=="true"&&orders["grossTotal"]!=0.0&&orders["netTotal"]!=0.0?Padding(
-                                    padding: const EdgeInsets.only(left: 8.0,right:8.0),
-                                    child: InkWell(
-
-                                        onTap: (){
-                                          Navigator.pop(context);
-                                          showDialog(
-                                              context: context,
-                                              builder:(BuildContext context){
-                                                return Dialog(
-                                                    backgroundColor: Colors.transparent,
-                                                    child: Container(
-                                                        height: 450,
-                                                        width: 400,
-                                                        child: refundOrderItemsPopup(orders["orderItems"].where((element)=>element["isRefunded"]==null||element["isRefunded"]==false).toList(),orders["id"])
-                                                    )
-                                                );
-
-                                              });
-                                        },
-                                        child: FaIcon(FontAwesomeIcons.handHoldingUsd, color: blueColor, size: 30,)),
-                                  ):Container(),
                                   InkWell(
                                       onTap: (){
                                         //Utils.printReceiptByWifiPrinter("192.168.10.15", this.context, widget.store, orders, getTableName(orders["tableId"]));
@@ -797,83 +797,86 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                             //color: yellowColor,
                             child: Column(
                               children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(2.0),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        flex:2,
-                                        child: Container(
-                                          width: 90,
-                                          height: 30,
-                                          decoration: BoxDecoration(
-                                            color: yellowColor,
-                                            border: Border.all(color: yellowColor, width: 2),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Center(
-                                            child: AutoSizeText(
-                                              'Total: ',
-                                              style: TextStyle(
-                                                  color: BackgroundColor,
-                                                  fontSize: 22,
-                                                  fontWeight: FontWeight.bold
+                                Visibility(
+                                  visible:orders["tableId"]==null,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(2.0),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          flex:2,
+                                          child: Container(
+                                            width: 90,
+                                            height: 30,
+                                            decoration: BoxDecoration(
+                                              color: yellowColor,
+                                              border: Border.all(color: yellowColor, width: 2),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Center(
+                                              child: AutoSizeText(
+                                                'Total: ',
+                                                style: TextStyle(
+                                                    color: BackgroundColor,
+                                                    fontSize: 22,
+                                                    fontWeight: FontWeight.bold
+                                                ),
+                                                maxLines: 2,
                                               ),
-                                              maxLines: 2,
                                             ),
                                           ),
                                         ),
-                                      ),
-                                      SizedBox(width: 2,),
-                                      Expanded(
-                                        flex:3,
-                                        child: Container(
-                                          width: 90,
-                                          height: 30,
-                                          decoration: BoxDecoration(
-                                            border: Border.all(color: yellowColor, width: 2),
-                                            //color: BackgroundColor,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child:
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Text(
-                                                //"Dine-In",
-                                                widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+": ":" ",
-                                                style: TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: blueColor
+                                        SizedBox(width: 2,),
+                                        Expanded(
+                                          flex:3,
+                                          child: Container(
+                                            width: 90,
+                                            height: 30,
+                                            decoration: BoxDecoration(
+                                              border: Border.all(color: yellowColor, width: 2),
+                                              //color: BackgroundColor,
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child:
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  //"Dine-In",
+                                                  widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+": ":" ",
+                                                  style: TextStyle(
+                                                      fontSize: 20,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: blueColor
+                                                  ),
                                                 ),
-                                              ),
-                                              Text(
-                                                //"Dine-In",
-                                                orders["grossTotal"].toStringAsFixed(0),
-                                                style: TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: blueColor
+                                                Text(
+                                                  //"Dine-In",
+                                                  orders["grossTotal"].toStringAsFixed(0),
+                                                  style: TextStyle(
+                                                      fontSize: 20,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: blueColor
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
+                                              ],
+                                            ),
+                                            // Center(
+                                            //   child: AutoSizeText(
+                                            //     widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
+                                            //     style: TextStyle(
+                                            //         color: blueColor,
+                                            //         fontSize: 22,
+                                            //         fontWeight: FontWeight.bold
+                                            //     ),
+                                            //     maxLines: 2,
+                                            //   ),
+                                            // ),
                                           ),
-                                          // Center(
-                                          //   child: AutoSizeText(
-                                          //     widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
-                                          //     style: TextStyle(
-                                          //         color: blueColor,
-                                          //         fontSize: 22,
-                                          //         fontWeight: FontWeight.bold
-                                          //     ),
-                                          //     maxLines: 2,
-                                          //   ),
-                                          // ),
-                                        ),
-                                      )
-                                    ],
+                                        )
+                                      ],
+                                    ),
                                   ),
                                 ),
                                 // Row(
@@ -1189,59 +1192,72 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                   ),
                                 ),
                                 Visibility(
-                                  visible: orders['refundReason']!=null,
+                                  visible: orders["refundReason"]!=null,
                                   child: Padding(
                                     padding: const EdgeInsets.all(2.0),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          flex:2,
-                                          child: Container(
-                                            width: 90,
-                                            height: 30,
-                                            decoration: BoxDecoration(
-                                              color: yellowColor,
-                                              border: Border.all(color: yellowColor, width: 2),
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Center(
-                                              child: AutoSizeText(
-                                                'Refund Reason:',
-                                                style: TextStyle(
-                                                    color: BackgroundColor,
-                                                    fontSize: 22,
-                                                    fontWeight: FontWeight.bold
-                                                ),
-                                                maxLines: 1,
+                                    child: InkWell(
+                                      onTap: (){
+                                        showDialog(
+                                            context: context,
+                                            builder: (cotext){
+                                              return AlertDialog(
+                                                title: Text("Refund Reason Detail"),
+                                                content: Text(orders["refundReason"]!=null?orders["refundReason"]:"N/A"),
+                                              );
+                                            }
+                                        );
+                                      },
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            flex:2,
+                                            child: Container(
+                                              width: 90,
+                                              height: 30,
+                                              decoration: BoxDecoration(
+                                                color: yellowColor,
+                                                border: Border.all(color: yellowColor, width: 2),
+                                                borderRadius: BorderRadius.circular(8),
                                               ),
-                                            ),
-                                          ),
-                                        ),
-                                        SizedBox(width: 2,),
-                                        Expanded(
-                                          flex:3,
-                                          child: Container(
-                                            width: 90,
-                                            height: 30,
-                                            decoration: BoxDecoration(
-                                              border: Border.all(color: yellowColor, width: 2),
-                                              //color: BackgroundColor,
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child:
-                                            Center(
-                                              child: Text(orders['refundReason']!=null?orders['refundReason']:" N/A ",
-                                                style: TextStyle(
-                                                    fontSize: 15,
-                                                    color: PrimaryColor,
-                                                    fontWeight: FontWeight.bold
+                                              child: Center(
+                                                child: AutoSizeText(
+                                                  'Refund Reason',
+                                                  style: TextStyle(
+                                                      color: BackgroundColor,
+                                                      fontSize: 22,
+                                                      fontWeight: FontWeight.bold
+                                                  ),
+                                                  maxLines: 1,
                                                 ),
                                               ),
                                             ),
                                           ),
-                                        )
-                                      ],
+                                          SizedBox(width: 2,),
+                                          Expanded(
+                                            flex:3,
+                                            child: Container(
+                                              width: 90,
+                                              height: 30,
+                                              decoration: BoxDecoration(
+                                                border: Border.all(color: yellowColor, width: 2),
+                                                //color: BackgroundColor,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child:
+                                              Center(
+                                                child: Text(orders["complaintTypeId"]!=null?getComplaintTypeById(orders["complaintTypeId"]):"N/A",
+                                                  style: TextStyle(
+                                                      fontSize: 15,
+                                                      color: PrimaryColor,
+                                                      fontWeight: FontWeight.bold
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1811,127 +1827,6 @@ class _RefundedOrdersState extends State<RefundedOrders>{
             ///
           },
         )
-    );
-  }
-
-  Widget refundOrderItemsPopup(List<dynamic> orderItems,int orderId){
-    List<bool> inputs = new List<bool>();
-    for (int i = 0; i < orderItems.length; i++) {
-      inputs.add(false);
-    }
-    return Scaffold(
-      body: StatefulBuilder(
-        builder: (context,innerSetstate){
-          return Container(
-            width: 400,
-            height: 450,
-            decoration: BoxDecoration(
-                image: DecorationImage(
-                  fit: BoxFit.cover,
-                  image: AssetImage('assets/bb.jpg'),
-                )
-            ),
-            child: Column(
-              children: [
-                Container(
-                  width: MediaQuery.of(context).size.width,
-                  height: 40,
-                  color: yellowColor,
-                  child: Center(child: Text("Refund Items",style: TextStyle(fontSize: 25,fontWeight: FontWeight.bold,color: BackgroundColor),)),
-
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ListView.builder(
-                        itemCount: orderItems.length,
-                        itemBuilder: (context,index){
-                          return Card(
-                            elevation: 8,
-                            child: new Container(
-                              decoration: BoxDecoration(
-                                  color: BackgroundColor,
-                                  // borderRadius: BorderRadius.only(
-                                  //   bottomRight: Radius.circular(15),
-                                  //   topLeft: Radius.circular(15),
-                                  // ),
-                                  border: Border.all(color: yellowColor, width: 1)
-                              ),
-                              padding: new EdgeInsets.all(10.0),
-                              child: new Column(
-                                children: <Widget>[
-                                  new CheckboxListTile(
-                                      value: inputs[index],
-                                      title: Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          new Text(orderItems[index]["name"]+" "+"(${orderItems[index]["sizeName"]!=null?orderItems[index]["sizeName"]:"Deal"})" ,style: TextStyle(color: yellowColor, fontSize: 17, fontWeight: FontWeight.bold),),
-                                        ],
-                                      ),
-                                      controlAffinity: ListTileControlAffinity.leading,
-                                      onChanged: (bool val) {
-                                        innerSetstate(() {
-                                          if(inputs[index]){
-                                            inputs[index]=false;
-                                          }else {
-                                            inputs[index] = true;
-                                          }
-                                        });
-                                      })
-                                ],
-                              ),
-                            ),
-                          );
-                        }
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: InkWell(
-                    onTap: (){
-                      innerSetstate(() {
-                        List<String> orderItemsIds=[];
-                        // Navigator.pop(context);
-                        for(int i=0;i<inputs.length;i++){
-                          if(inputs[i]){
-                            orderItemsIds.add(orderItems[i]["id"].toString());
-                          }
-                        }
-                        Network_Operations.refundOrder(context: this.context,token: token, orderItemsId: orderItemsIds, orderId: orderId).then((value){
-                          Navigator.pop(this.context);
-                          if(value){
-                            WidgetsBinding.instance
-                                .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
-                            Utils.showSuccess(this.context,"Refunded Successfully");
-                          }else{
-                            Utils.showError(this.context,"Unable to Rwfund due to some error");
-                          }
-                        });
-                      });
-
-
-                    },
-                    child: Card(
-                      elevation: 8,
-                      child: Container(
-                        width: 230,
-                        height: 50,
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(4),
-                            color: yellowColor
-                        ),
-                        child: Center(child: Text("Refund",style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
     );
   }
 }

@@ -5,6 +5,7 @@ import 'package:exabistro_pos/Screens/Orders/HistoryTabsComponents.dart';
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/KitchenOrdersDetails.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/components/constants.dart';
+import 'package:exabistro_pos/model/ComplaintTypes.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -44,7 +45,8 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
   List<bool> _selected = [];
   int quantity=5;
   bool isLoading=false;
-
+  List<ComplaintType> types=[];
+  List<String> complainTypes=[];
   @override
   void initState() {
 
@@ -66,6 +68,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
     // TODO: implement initState
     super.initState();
   }
+
   String getTableName(int id){
     String name;
     if(id!=null&&allTables!=null){
@@ -244,6 +247,15 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                   isLoading=true;
                 });
                 orderList.clear();
+                complainTypes.clear();
+                Network_Operations.getComplainTypeListByStoreId(context, token, widget.store["id"]).then((complaintTypes){
+                  setState(() {
+                    types=complaintTypes;
+                    for(int i=0;i<types.length;i++){
+                      complainTypes.add(types[i].name);
+                    }
+                  });
+                });
                 Network_Operations.getAllOrders(context, token,widget.store["id"]).then((value) {
                   setState(() {
                     isLoading=false;
@@ -276,6 +288,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                 Utils.showError(context, "Network Error");
               }
             });
+
           },
 
           child: isLoading?LoadingScreen():Container(
@@ -680,14 +693,42 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
 
 
   }
+  String getComplaintTypeById(int id){
+    String name;
+    if(id!=null&&types!=null){
+      for(int i=0;i<types.length;i++){
+        if(types[i].id == id) {
+          name = types[i].name;
+        }
+      }
+      return name!=null?name:"-";
+    }else
+      return "-";
+  }
   String waiterName="-",customerName="-";
   Widget ordersDetailPopupLayoutHorizontal(dynamic orders) {
     debugPrint(orders.toString());
+    print("ComplaintTypeId"+orders["complaintTypeId"].toString());
     if(orders["discountedPrice"]!=null&&orders["discountedPrice"]!=0.0){
       if(orders["orderTaxes"].where((element)=>element["taxName"]=="Discount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Discount").toList().length>0){
         orders["orderTaxes"].remove(orders["orderTaxes"].last);
       }
       orders["orderTaxes"].add({"taxName":"Discount","amount":orders["discountedPrice"]});
+    }
+    if(orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList().length>0){
+      orders["orderTaxes"].remove(orders["orderTaxes"].last);
+    }
+    var refundedPrice=0.0;
+    if(orders["orderItems"]!=null){
+      for(int i=0;i<orders["orderItems"].length;i++)
+      {
+        if(orders["orderItems"][i]["isRefunded"]!=null&&orders["orderItems"][i]["isRefunded"]==true){
+          refundedPrice=refundedPrice+=orders["orderItems"][i]["totalPrice"];
+        }
+      }
+    }
+    if(refundedPrice!=0.0){
+      orders["orderTaxes"].add({"taxName":"Refunded Amount","amount":refundedPrice});
     }
     return Scaffold(
         backgroundColor: Colors.white.withOpacity(0.1),
@@ -769,7 +810,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                 return Dialog(
                                                     backgroundColor: Colors.transparent,
                                                     child: Container(
-                                                        height: 450,
+                                                        height: 500,
                                                         width: 400,
                                                         child: refundOrderItemsPopup(orders["orderItems"].where((element)=>element["isRefunded"]==null||element["isRefunded"]==false).toList(),orders["id"])
                                                     )
@@ -803,60 +844,6 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                             //color: yellowColor,
                             child: Column(
                               children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(2.0),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        flex:2,
-                                        child: Container(
-                                          width: 90,
-                                          height: 30,
-                                          decoration: BoxDecoration(
-                                            color: yellowColor,
-                                            border: Border.all(color: yellowColor, width: 2),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Center(
-                                            child: AutoSizeText(
-                                              'Items:',
-                                              style: TextStyle(
-                                                  color: BackgroundColor,
-                                                  fontSize: 22,
-                                                  fontWeight: FontWeight.bold
-                                              ),
-                                              maxLines: 1,
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                      SizedBox(width: 2,),
-                                      Expanded(
-                                        flex:3,
-                                        child: Container(
-                                          width: 90,
-                                          height: 30,
-                                          decoration: BoxDecoration(
-                                            border: Border.all(color: yellowColor, width: 2),
-                                            //color: BackgroundColor,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child:
-                                          Center(
-                                            child: Text(orders['orderItems'].length.toString(),
-                                              style: TextStyle(
-                                                  fontSize: 20,
-                                                  color: PrimaryColor,
-                                                  fontWeight: FontWeight.bold
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                      )
-                                    ],
-                                  ),
-                                ),
                                 Padding(
                                   padding: const EdgeInsets.all(2.0),
                                   child: Row(
@@ -1252,56 +1239,69 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                   visible: orders["refundReason"]!=null,
                                   child: Padding(
                                     padding: const EdgeInsets.all(2.0),
-                                    child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Expanded(
-                                          flex:2,
-                                          child: Container(
-                                            width: 90,
-                                            height: 30,
-                                            decoration: BoxDecoration(
-                                              color: yellowColor,
-                                              border: Border.all(color: yellowColor, width: 2),
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child: Center(
-                                              child: AutoSizeText(
-                                                'Refund Reason',
-                                                style: TextStyle(
-                                                    color: BackgroundColor,
-                                                    fontSize: 22,
-                                                    fontWeight: FontWeight.bold
-                                                ),
-                                                maxLines: 1,
+                                    child: InkWell(
+                                      onTap: (){
+                                        showDialog(
+                                          context: context,
+                                          builder: (cotext){
+                                            return AlertDialog(
+                                              title: Text("Refund Reason Detail"),
+                                              content: Text(orders["refundReason"]!=null?orders["refundReason"]:"N/A"),
+                                            );
+                                          }
+                                        );
+                                      },
+                                      child: Row(
+                                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                        children: [
+                                          Expanded(
+                                            flex:2,
+                                            child: Container(
+                                              width: 90,
+                                              height: 30,
+                                              decoration: BoxDecoration(
+                                                color: yellowColor,
+                                                border: Border.all(color: yellowColor, width: 2),
+                                                borderRadius: BorderRadius.circular(8),
                                               ),
-                                            ),
-                                          ),
-                                        ),
-                                        SizedBox(width: 2,),
-                                        Expanded(
-                                          flex:3,
-                                          child: Container(
-                                            width: 90,
-                                            height: 30,
-                                            decoration: BoxDecoration(
-                                              border: Border.all(color: yellowColor, width: 2),
-                                              //color: BackgroundColor,
-                                              borderRadius: BorderRadius.circular(8),
-                                            ),
-                                            child:
-                                            Center(
-                                              child: Text(orders["refundReason"]!=null?orders["refundReason"]:"N/A",
-                                                style: TextStyle(
-                                                    fontSize: 15,
-                                                    color: PrimaryColor,
-                                                    fontWeight: FontWeight.bold
+                                              child: Center(
+                                                child: AutoSizeText(
+                                                  'Refund Reason',
+                                                  style: TextStyle(
+                                                      color: BackgroundColor,
+                                                      fontSize: 22,
+                                                      fontWeight: FontWeight.bold
+                                                  ),
+                                                  maxLines: 1,
                                                 ),
                                               ),
                                             ),
                                           ),
-                                        )
-                                      ],
+                                          SizedBox(width: 2,),
+                                          Expanded(
+                                            flex:3,
+                                            child: Container(
+                                              width: 90,
+                                              height: 30,
+                                              decoration: BoxDecoration(
+                                                border: Border.all(color: yellowColor, width: 2),
+                                                //color: BackgroundColor,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child:
+                                              Center(
+                                                child: Text(orders["complaintTypeId"]!=null?getComplaintTypeById(orders["complaintTypeId"]):"N/A",
+                                                  style: TextStyle(
+                                                      fontSize: 15,
+                                                      color: PrimaryColor,
+                                                      fontWeight: FontWeight.bold
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          )
+                                        ],
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -1877,7 +1877,9 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
   Widget refundOrderItemsPopup(List<dynamic> orderItems,int orderId){
     List<bool> inputs = new List<bool>();
     refundReason.clear();
-    List<String> refundReasonTypes=["Wilted Food","Expired Food","Smelly Food","Food was Delivered Late","Relative","Other Reason"];
+    var complaintTypeId=0;
+    String selectedComplaintType;
+  //  List<String> refundReasonTypes=["Wilted Food","Expired Food","Smelly Food","Food was Delivered Late","Relative","Other Reason"];
     String selectedRefundReason;
     for (int i = 0; i < orderItems.length; i++) {
       inputs.add(false);
@@ -1885,121 +1887,125 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
     return Scaffold(
       body: StatefulBuilder(
         builder: (context,innerSetstate){
-          return Container(
-            width: 400,
-            height: 450,
-            decoration: BoxDecoration(
-                image: DecorationImage(
-                  fit: BoxFit.cover,
-                  image: AssetImage('assets/bb.jpg'),
-                )
-            ),
-            child: Column(
-              children: [
-                Container(
-                  width: MediaQuery.of(context).size.width,
-                  height: 40,
-                  color: yellowColor,
-                  child: Center(child: Text("Refund Items",style: TextStyle(fontSize: 25,fontWeight: FontWeight.bold,color: BackgroundColor),)),
 
-                ),
+          return ListView(
+            children: [
+              Container(
+              width: 400,
+              height: 500,
+              decoration: BoxDecoration(
+                  image: DecorationImage(
+                    fit: BoxFit.cover,
+                    image: AssetImage('assets/bb.jpg'),
+                  )
+              ),
+              child:Column(
+                children: [
+                  Container(
+                    width: MediaQuery.of(context).size.width,
+                    height: 40,
+                    color: yellowColor,
+                    child: Center(child: Text("Refund Items",style: TextStyle(fontSize: 25,fontWeight: FontWeight.bold,color: BackgroundColor),)),
 
-                Form(
-                  key: formKey,
-                  child:Column(
-                    mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: DropdownButtonFormField<String>(
-                        decoration: InputDecoration(
-                          labelText: "Select Refund Reason",
-                          alignLabelWithHint: true,
-                          labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                          enabledBorder: OutlineInputBorder(
-                          ),
-                          focusedBorder:  OutlineInputBorder(
-                            borderSide: BorderSide(color:yellowColor),
-                          ),
-                        ),
+                  ),
 
-                        value: selectedRefundReason,
-                        onChanged: (value) {
-                          innerSetstate(() {
-                            selectedRefundReason=value;
-                          });
-                        },
-                        items: refundReasonTypes.map((value) {
-                          return  DropdownMenuItem<String>(
-                            value: value,
-                            child: Row(
-                              children: <Widget>[
-                                Text(
-                                  value,
-                                  style:  TextStyle(color: yellowColor,fontSize: 13),
+                  Form(
+                      key: formKey,
+                      child:Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: DropdownButtonFormField<String>(
+                              decoration: InputDecoration(
+                                labelText: "Select Reason Type",
+                                alignLabelWithHint: true,
+                                labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                enabledBorder: OutlineInputBorder(
                                 ),
-                                //user.icon,
-                                //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                              ],
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                    Visibility(
-                      visible: selectedRefundReason!=null&&selectedRefundReason=="Other Reason",
-                      child: Padding(
-                        padding: const EdgeInsets.all(8.0),
-                        child: TextFormField(
-                          controller: refundReason,
-                          validator: (value){
-                            if(value==null||value.isEmpty&&selectedRefundReason=="Other Reason"){
-                              return "Please Specify Reason for Refund";
-                            }
-                            return null;
-                          },
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(),
-                            hintText: "Reason of Refund",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ),
-                    )
-                   ],
-          )
-                ),
-
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ListView.builder(
-                      itemCount: orderItems.length,
-                        itemBuilder: (context,index){
-                          return Card(
-                            elevation: 8,
-                            child: new Container(
-                              decoration: BoxDecoration(
-                                  color: BackgroundColor,
-                                  // borderRadius: BorderRadius.only(
-                                  //   bottomRight: Radius.circular(15),
-                                  //   topLeft: Radius.circular(15),
-                                  // ),
-                                  border: Border.all(color: yellowColor, width: 1)
+                                focusedBorder:  OutlineInputBorder(
+                                  borderSide: BorderSide(color:yellowColor),
+                                ),
                               ),
-                              padding: new EdgeInsets.all(10.0),
-                              child: new Column(
-                                children: <Widget>[
-                                  new CheckboxListTile(
-                                      value: inputs[index],
-                                      title: Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          new Text(orderItems[index]["name"]+" "+"(${orderItems[index]["sizeName"]!=null?orderItems[index]["sizeName"]:"Deal"})" ,style: TextStyle(color: yellowColor, fontSize: 17, fontWeight: FontWeight.bold),),
-                                        ],
+
+                              value: selectedComplaintType,
+                              onChanged: (value) {
+                                innerSetstate(() {
+                                  complaintTypeId=types.where((element) => element.name==value).toList()[0].id;
+                                  selectedComplaintType=value;
+                                });
+                              },
+                              items: complainTypes.map((value) {
+                                return  DropdownMenuItem<String>(
+                                  value: value,
+                                  child: Row(
+                                    children: <Widget>[
+                                      Text(
+                                        value,
+                                        style:  TextStyle(color: yellowColor,fontSize: 13),
                                       ),
-                                      controlAffinity: ListTileControlAffinity.leading,
-                                      onChanged: (bool val) {
+                                      //user.icon,
+                                      //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                          Visibility(
+                            visible: selectedComplaintType!=null,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: TextFormField(
+                                controller: refundReason,
+                                validator: (value){
+                                  if(value==null||value.isEmpty){
+                                    return "Please Specify Reason for Refund";
+                                  }
+                                  return null;
+                                },
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  hintText: "Reason of Refund",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                          )
+                        ],
+                      )
+                  ),
+
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: ListView.builder(
+                          itemCount: orderItems.length,
+                          itemBuilder: (context,index){
+                            return Card(
+                              elevation: 8,
+                              child: new Container(
+                                decoration: BoxDecoration(
+                                    color: BackgroundColor,
+                                    // borderRadius: BorderRadius.only(
+                                    //   bottomRight: Radius.circular(15),
+                                    //   topLeft: Radius.circular(15),
+                                    // ),
+                                    border: Border.all(color: yellowColor, width: 1)
+                                ),
+                                padding: new EdgeInsets.all(10.0),
+                                child: new Column(
+                                  children: <Widget>[
+                                    new CheckboxListTile(
+                                        value: inputs[index],
+                                        title: Row(
+                                          mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            new Text(orderItems[index]["name"]+" "+"(${orderItems[index]["sizeName"]!=null?orderItems[index]["sizeName"]:"Deal"})" ,style: TextStyle(color: yellowColor, fontSize: 17, fontWeight: FontWeight.bold),),
+                                          ],
+                                        ),
+                                        controlAffinity: ListTileControlAffinity.leading,
+                                        onChanged: (bool val) {
                                           innerSetstate(() {
                                             if(inputs[index]){
                                               inputs[index]=false;
@@ -2007,61 +2013,65 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                               inputs[index] = true;
                                             }
                                           });
-                                      })
-                                ],
+                                        })
+                                  ],
+                                ),
                               ),
-                            ),
-                          );
-                        }
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: InkWell(
-                    onTap: (){
-                      innerSetstate(() {
-                        List<String> orderItemsIds=[];
-                        // Navigator.pop(context);
-                        for(int i=0;i<inputs.length;i++){
-                          if(inputs[i]){
-                            orderItemsIds.add(orderItems[i]["id"].toString());
+                            );
                           }
-                        }
-                        if(orderItemsIds.length>0&&formKey.currentState.validate()&&selectedRefundReason!=null){
-                          Network_Operations.refundOrder(context: this.context,token: token, orderItemsId: orderItemsIds, orderId: orderId,refundReason: selectedRefundReason=="Other Reason"?refundReason.text:selectedRefundReason).then((value){
-                            Navigator.pop(this.context);
-                            if(value){
-                              WidgetsBinding.instance
-                                  .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
-                              Utils.showSuccess(this.context,"Refunded Successfully");
-                            }else{
-                              Utils.showError(this.context,"Unable to Rwfund due to some error");
-                            }
-                          });
-                        }else{
-                          Utils.showError(this.context, "Provide Required Information");
-                        }
-
-                      });
-                    },
-                    child: Card(
-                      elevation: 8,
-                      child: Container(
-                        width: 230,
-                        height: 50,
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(4),
-                            color: yellowColor
-                        ),
-                        child: Center(child: Text("Refund",style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          );
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: InkWell(
+                      onTap: (){
+                        innerSetstate(() {
+                          List<String> orderItemsIds=[];
+                          // Navigator.pop(context);
+                          for(int i=0;i<inputs.length;i++){
+                            if(inputs[i]){
+                              orderItemsIds.add(orderItems[i]["id"].toString());
+                            }
+                          }
+                          if(orderItemsIds.length>0&&formKey.currentState.validate()&&selectedComplaintType!=null){
+                            Network_Operations.refundOrder(context: this.context,token: token, orderItemsId: orderItemsIds, orderId: orderId,refundReason: refundReason.text,ComplaintTypeId: complaintTypeId).then((value){
+                              Navigator.pop(this.context);
+                              if(value){
+                                WidgetsBinding.instance
+                                    .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                                Utils.showSuccess(this.context,"Refunded Successfully");
+                              }else{
+                                Utils.showError(this.context,"Unable to Rwfund due to some error");
+                              }
+                            });
+                          }else{
+                            Utils.showError(this.context, "Provide Required Information");
+                          }
+
+                        });
+                      },
+                      child: Card(
+                        elevation: 8,
+                        child: Container(
+                          width: 230,
+                          height: 50,
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(4),
+                              color: yellowColor
+                          ),
+                          child: Center(child: Text("Refund",style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+
+          )
+            ],
+          ) ;
+
         },
       ),
     );
