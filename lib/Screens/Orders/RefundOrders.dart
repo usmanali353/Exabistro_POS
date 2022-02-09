@@ -44,6 +44,7 @@ class _RefundedOrdersState extends State<RefundedOrders>{
   bool isLoading=false;
   List<ComplaintType> types=[];
   List<String> complainTypes=[];
+
   @override
   void initState() {
 
@@ -242,6 +243,7 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                 });
                 orderList.clear();
                 complainTypes.clear();
+
                 Network_Operations.getComplainTypeListByStoreId(context, token, widget.store["id"]).then((complaintTypes){
                   setState(() {
                     types=complaintTypes;
@@ -627,7 +629,6 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                   Network_Operations.getAllOrdersByComplaintTypeId(context, token,types[i].id).then((value) {
                     setState(() {
                       orderList=value;
-                      print("OrderList "+orderList.toString());
                     });
                   });
                 }else{

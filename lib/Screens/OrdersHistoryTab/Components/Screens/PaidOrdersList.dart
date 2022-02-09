@@ -40,13 +40,14 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
   List<dynamic> foodList = [];
   List<Map<String,dynamic>> foodList1 = [];
   bool isListVisible = false,isLoad;
-  List allTables=[];
+  List allTables=[],predefinedReasons=[];
   bool selectedCategory = false;
   List<bool> _selected = [];
   int quantity=5;
   bool isLoading=false;
   List<ComplaintType> types=[];
   List<String> complainTypes=[];
+
   @override
   void initState() {
 
@@ -248,6 +249,12 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                 });
                 orderList.clear();
                 complainTypes.clear();
+                Network_Operations.getPredefinedReasons(context, token,widget.store["id"]).then((value){
+                  setState(() {
+                    this.predefinedReasons=value;
+                    print("Predefined Reason "+predefinedReasons.toString());
+                  });
+                });
                 Network_Operations.getComplainTypeListByStoreId(context, token, widget.store["id"]).then((complaintTypes){
                   setState(() {
                     types=complaintTypes;
@@ -810,7 +817,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                 return Dialog(
                                                     backgroundColor: Colors.transparent,
                                                     child: Container(
-                                                        height: 500,
+                                                        height: 600,
                                                         width: 400,
                                                         child: refundOrderItemsPopup(orders["orderItems"].where((element)=>element["isRefunded"]==null||element["isRefunded"]==false).toList(),orders["id"])
                                                     )
@@ -1877,8 +1884,9 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
   Widget refundOrderItemsPopup(List<dynamic> orderItems,int orderId){
     List<bool> inputs = new List<bool>();
     refundReason.clear();
+    List reasonsByComplaintType=[];
     var complaintTypeId=0;
-    String selectedComplaintType;
+    String selectedComplaintType,selectedPredefinedReason;
   //  List<String> refundReasonTypes=["Wilted Food","Expired Food","Smelly Food","Food was Delivered Late","Relative","Other Reason"];
     String selectedRefundReason;
     for (int i = 0; i < orderItems.length; i++) {
@@ -1892,7 +1900,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
             children: [
               Container(
               width: 400,
-              height: 500,
+              height: 600,
               decoration: BoxDecoration(
                   image: DecorationImage(
                     fit: BoxFit.cover,
@@ -1933,6 +1941,12 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                 innerSetstate(() {
                                   complaintTypeId=types.where((element) => element.name==value).toList()[0].id;
                                   selectedComplaintType=value;
+                                  reasonsByComplaintType.clear();
+                                  selectedPredefinedReason=null;
+                                  reasonsByComplaintType=predefinedReasons.where((element) =>element["complaintTypeId"]==complaintTypeId).toList();
+                                  if(reasonsByComplaintType.length>0){
+                                    reasonsByComplaintType.add({"reasonText":"Other"});
+                                  }
                                 });
                               },
                               items: complainTypes.map((value) {
@@ -1953,7 +1967,47 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                             ),
                           ),
                           Visibility(
-                            visible: selectedComplaintType!=null,
+                            visible: reasonsByComplaintType.length>0&&selectedComplaintType!="Other"&&selectedPredefinedReason!="Other",
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: DropdownButtonFormField<String>(
+                                decoration: InputDecoration(
+                                  labelText: "Select Predefined Reason",
+                                  alignLabelWithHint: true,
+                                  labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                  enabledBorder: OutlineInputBorder(
+                                  ),
+                                  focusedBorder:  OutlineInputBorder(
+                                    borderSide: BorderSide(color:yellowColor),
+                                  ),
+                                ),
+
+                                value: selectedPredefinedReason,
+                                onChanged: (value) {
+                                  innerSetstate(() {
+                                    selectedPredefinedReason=value;
+                                  });
+                                },
+                                items: reasonsByComplaintType.map((value) {
+                                  return  DropdownMenuItem<String>(
+                                    value: value["reasonText"],
+                                    child: Row(
+                                      children: <Widget>[
+                                        Text(
+                                          value["reasonText"],
+                                          style:  TextStyle(color: yellowColor,fontSize: 13),
+                                        ),
+                                        //user.icon,
+                                        //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                      ],
+                                    ),
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ),
+                          Visibility(
+                            visible: selectedComplaintType!=null&&selectedComplaintType=="Other"||selectedPredefinedReason!=null&&selectedPredefinedReason=="Other",
                             child: Padding(
                               padding: const EdgeInsets.all(8.0),
                               child: TextFormField(
@@ -2035,7 +2089,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                             }
                           }
                           if(orderItemsIds.length>0&&formKey.currentState.validate()&&selectedComplaintType!=null){
-                            Network_Operations.refundOrder(context: this.context,token: token, orderItemsId: orderItemsIds, orderId: orderId,refundReason: refundReason.text,ComplaintTypeId: complaintTypeId).then((value){
+                            Network_Operations.refundOrder(context: this.context,token: token, orderItemsId: orderItemsIds, orderId: orderId,refundReason: selectedComplaintType!=null&&selectedComplaintType=="Other"||selectedPredefinedReason!=null&&selectedPredefinedReason=="Other"?refundReason.text:selectedPredefinedReason,ComplaintTypeId: complaintTypeId).then((value){
                               Navigator.pop(this.context);
                               if(value){
                                 WidgetsBinding.instance

@@ -613,7 +613,39 @@ class Network_Operations{
     }
     return null;
   }
-
+  static Future<List<dynamic>>getPredefinedReasons(BuildContext context,String token,int storeId)async{
+    try{
+      var isCacheExist = await APICacheManager().isAPICacheKeyExist("PredefinedReasons"+storeId.toString());
+      var result=await Utils.check_connection();
+      if (result == ConnectivityResult.none){
+        if (isCacheExist) {
+          var cacheData = await APICacheManager().getCacheData("PredefinedReasons"+storeId.toString());
+          return jsonDecode(cacheData.syncData);
+        }else{
+          Utils.showError(context, "No Offline Data");
+        }
+      }
+      if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi) {
+        Map<String, String> headers = {'Authorization': 'Bearer ' + token};
+        var response = await http.get(Uri.parse(Utils.baseUrl() + "predefinedReasons/GetPredefinedReasons?storeId="+ storeId.toString()),headers: headers);
+        var data = jsonDecode(response.body);
+        if (response.statusCode == 200) {
+          APICacheDBModel cacheDBModel = new APICacheDBModel(
+              key: "PredefinedReasons"+storeId.toString(), syncData: response.body);
+          await APICacheManager().addCacheData(cacheDBModel);
+          return data;
+        }
+        else {
+          Utils.showError(context, "Please Try Again");
+          return null;
+        }
+      }else{
+        Utils.showError(context, "You are in Offline mode");
+      }
+    }catch(e){
+      Utils.showError(context,"Unable to Fetch info due to some error Please Contact Support");
+    }
+  }
   static Future<dynamic> getCustomerById(BuildContext context,String token,int Id)async{
 
     try{
