@@ -406,6 +406,7 @@ class Network_Operations{
 
         var response=await http.get(Uri.parse(Utils.baseUrl()+"Taxes/GetAll/"+storeId.toString()));
         var data= jsonDecode(response.body);
+        print("Taxes Json "+data.toString());
         if(response.statusCode==200){
           APICacheDBModel cacheDBModel = new APICacheDBModel(
               key: "getTaxList"+storeId.toString(), syncData: response.body);
@@ -893,6 +894,35 @@ class Network_Operations{
     }
   }
 
+  static Future<dynamic> refundOrderByCash({BuildContext context, String token, List<String> orderItemsId, int orderId,String refundReason,int ComplaintTypeId,String cashAmount}) async {
+    try{
+      Map<String,String> headers = {'Content-Type':'application/json','Authorization':'Bearer '+token};
+
+      var body=jsonEncode({
+        "OrderId":orderId,
+        "RefundReason":refundReason,
+        "ComplaintTypeId":ComplaintTypeId,
+        "CashAmount":cashAmount
+      }
+      );
+      print("Body "+body.toString());
+      var response=await http.post(Uri.parse(Utils.baseUrl()+"orders/RefundbyCash"),headers: headers,body: body);
+      if(response.statusCode==200){
+        return true;
+      }
+      else{
+        if(response.body!=null){
+          print("response "+response.body.toString());
+        }
+        Utils.showError(context, "Please Try Again");
+        return false;
+      }
+    }catch(e){
+      print("Exception "+e);
+      Utils.showError(context, "Unable to refund order");
+      return false;
+    }
+  }
   static Future<List<ComplaintType>> getComplainTypeListByStoreId(BuildContext context,String token,int storeId )async{
 
     try{

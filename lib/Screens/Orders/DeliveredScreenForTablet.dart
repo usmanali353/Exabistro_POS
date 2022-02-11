@@ -364,7 +364,7 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                                           ),
                                                           Row(
                                                             children: [
-                                                              orderList[index]["grossTotal"]==0.0||orderList[index]["netTotal"]==0.0?FaIcon(FontAwesomeIcons.handHoldingUsd, color: blueColor, size:30):FaIcon(FontAwesomeIcons.biking, color: yellowColor,size:30),
+                                                              orderList[index]["isRefunded"]!=null&&orderList[index]["isRefunded"]==true?FaIcon(FontAwesomeIcons.handHoldingUsd, color: blueColor, size:30):FaIcon(FontAwesomeIcons.biking, color: yellowColor,size:30),
                                                               SizedBox(width: 7,),
                                                               orderList[index]["orderType"]==1? FaIcon(FontAwesomeIcons.utensils, color: blueColor, size:30):orderList[index]["orderType"]==2?FaIcon(FontAwesomeIcons.shoppingBag, color: blueColor,size:30):FaIcon(FontAwesomeIcons.biking, color: blueColor,size:30)
 
@@ -629,24 +629,15 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
   Widget ordersDetailPopupLayoutHorizontal(dynamic orders) {
     if(orders["discountedPrice"]!=null&&orders["discountedPrice"]!=0.0){
       if(orders["orderTaxes"].where((element)=>element["taxName"]=="Discount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Discount").toList().length>0){
-        orders["orderTaxes"].remove(orders["orderTaxes"].last);
+        orders["orderTaxes"].remove(orders["orderTaxes"].indexOf(orders["orderTaxes"].where((element) => element["taxName"]=="Discount").toList()[0]));
       }
       orders["orderTaxes"].add({"taxName":"Discount","amount":orders["discountedPrice"]});
     }
     if(orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList().length>0){
       orders["orderTaxes"].remove(orders["orderTaxes"].last);
-    }
-    var refundedPrice=0.0;
-    if(orders["orderItems"]!=null){
-      for(int i=0;i<orders["orderItems"].length;i++)
-      {
-        if(orders["orderItems"][i]["isRefunded"]!=null&&orders["orderItems"][i]["isRefunded"]==true){
-          refundedPrice=refundedPrice+=orders["orderItems"][i]["totalPrice"];
-        }
-      }
-    }
-    if(refundedPrice!=0.0){
-      orders["orderTaxes"].add({"taxName":"Refunded Amount","amount":refundedPrice});
+    }else
+    if(orders["refundedAmount"]!=null&&orders["refundedAmount"]!=0.0){
+      orders["orderTaxes"].add({"taxName":"Refunded Amount","amount":orders["refundedAmount"]});
     }
     return Scaffold(
         backgroundColor: Colors.white.withOpacity(0.1),

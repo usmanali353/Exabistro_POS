@@ -666,24 +666,15 @@ class _DiscountedOrdersState extends State<DiscountedOrders>{
   Widget ordersDetailPopupLayoutHorizontal(dynamic orders) {
     if(orders["discountedPrice"]!=null&&orders["discountedPrice"]!=0.0){
       if(orders["orderTaxes"].where((element)=>element["taxName"]=="Discount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Discount").toList().length>0){
-        orders["orderTaxes"].remove(orders["orderTaxes"].last);
+        orders["orderTaxes"].remove(orders["orderTaxes"].indexOf(orders["orderTaxes"].where((element) => element["taxName"]=="Discount").toList()[0]));
       }
       orders["orderTaxes"].add({"taxName":"Discount","amount":orders["discountedPrice"]});
     }
     if(orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList().length>0){
       orders["orderTaxes"].remove(orders["orderTaxes"].last);
-    }
-    var refundedPrice=0.0;
-    if(orders["orderItems"]!=null){
-      for(int i=0;i<orders["orderItems"].length;i++)
-      {
-        if(orders["orderItems"][i]["isRefunded"]!=null&&orders["orderItems"][i]["isRefunded"]==true){
-          refundedPrice=refundedPrice+=orders["orderItems"][i]["totalPrice"];
-        }
-      }
-    }
-    if(refundedPrice!=0.0){
-      orders["orderTaxes"].add({"taxName":"Refunded Amount","amount":refundedPrice});
+    }else
+    if(orders["refundedAmount"]!=null&&orders["refundedAmount"]!=0.0){
+      orders["orderTaxes"].add({"taxName":"Refunded Amount","amount":orders["refundedAmount"]});
     }
     return Scaffold(
         backgroundColor: Colors.white.withOpacity(0.1),

@@ -261,6 +261,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                     for(int i=0;i<types.length;i++){
                       complainTypes.add(types[i].name);
                     }
+                    print("Complaint Types "+complainTypes.toString());
                   });
                 });
                 Network_Operations.getAllOrders(context, token,widget.store["id"]).then((value) {
@@ -453,7 +454,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                         ),
                                                         Row(
                                                           children: [
-                                                            orderList[index]["grossTotal"]==0.0||orderList[index]["netTotal"]==0.0?FaIcon(FontAwesomeIcons.handHoldingUsd, color: blueColor, size:30):FaIcon(FontAwesomeIcons.biking, color: yellowColor,size:30),
+                                                            orderList[index]["isRefunded"]!=null||orderList[index]["isRefunded"]==true?FaIcon(FontAwesomeIcons.handHoldingUsd, color: blueColor, size:30):FaIcon(FontAwesomeIcons.biking, color: yellowColor,size:30),
                                                             SizedBox(width: 7,),
                                                             orderList[index]["orderType"]==1? FaIcon(FontAwesomeIcons.utensils, color: blueColor, size:30):orderList[index]["orderType"]==2?FaIcon(FontAwesomeIcons.shoppingBag, color: blueColor,size:30):FaIcon(FontAwesomeIcons.biking, color: blueColor,size:30)
 
@@ -645,8 +646,6 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                           }
                         }
                       }
-
-
                     });
                   });
                 }else{
@@ -718,24 +717,15 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
     print("ComplaintTypeId"+orders["complaintTypeId"].toString());
     if(orders["discountedPrice"]!=null&&orders["discountedPrice"]!=0.0){
       if(orders["orderTaxes"].where((element)=>element["taxName"]=="Discount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Discount").toList().length>0){
-        orders["orderTaxes"].remove(orders["orderTaxes"].last);
+        orders["orderTaxes"].remove(orders["orderTaxes"].indexOf(orders["orderTaxes"].where((element) => element["taxName"]=="Discount").toList()[0]));
       }
       orders["orderTaxes"].add({"taxName":"Discount","amount":orders["discountedPrice"]});
     }
     if(orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList().length>0){
       orders["orderTaxes"].remove(orders["orderTaxes"].last);
-    }
-    var refundedPrice=0.0;
-    if(orders["orderItems"]!=null){
-      for(int i=0;i<orders["orderItems"].length;i++)
-      {
-        if(orders["orderItems"][i]["isRefunded"]!=null&&orders["orderItems"][i]["isRefunded"]==true){
-          refundedPrice=refundedPrice+=orders["orderItems"][i]["totalPrice"];
-        }
-      }
-    }
-    if(refundedPrice!=0.0){
-      orders["orderTaxes"].add({"taxName":"Refunded Amount","amount":refundedPrice});
+    }else
+    if(orders["refundedAmount"]!=null&&orders["refundedAmount"]!=0.0){
+      orders["orderTaxes"].add({"taxName":"Refunded Amount","amount":orders["refundedAmount"]});
     }
     return Scaffold(
         backgroundColor: Colors.white.withOpacity(0.1),
@@ -805,7 +795,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                               ),
                               Row(
                                 children: [
-                                waiveOffService!="null"&&waiveOffService=="true"&&orders["grossTotal"]!=0.0&&orders["netTotal"]!=0.0?Padding(
+                                waiveOffService!="null"&&waiveOffService=="true"&&orders["isRefunded"]==null||orders["isRefunded"]==false?Padding(
                                     padding: const EdgeInsets.only(left: 8.0,right:8.0),
                                     child: InkWell(
 
@@ -851,83 +841,86 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                             //color: yellowColor,
                             child: Column(
                               children: [
-                                Padding(
-                                  padding: const EdgeInsets.all(2.0),
-                                  child: Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Expanded(
-                                        flex:2,
-                                        child: Container(
-                                          width: 90,
-                                          height: 30,
-                                          decoration: BoxDecoration(
-                                            color: yellowColor,
-                                            border: Border.all(color: yellowColor, width: 2),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: Center(
-                                            child: AutoSizeText(
-                                              'Total: ',
-                                              style: TextStyle(
-                                                  color: BackgroundColor,
-                                                  fontSize: 22,
-                                                  fontWeight: FontWeight.bold
+                                Visibility(
+                                  visible:orders["tableId"]==null,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(2.0),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Expanded(
+                                          flex:2,
+                                          child: Container(
+                                            width: 90,
+                                            height: 30,
+                                            decoration: BoxDecoration(
+                                              color: yellowColor,
+                                              border: Border.all(color: yellowColor, width: 2),
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: Center(
+                                              child: AutoSizeText(
+                                                'Total: ',
+                                                style: TextStyle(
+                                                    color: BackgroundColor,
+                                                    fontSize: 22,
+                                                    fontWeight: FontWeight.bold
+                                                ),
+                                                maxLines: 2,
                                               ),
-                                              maxLines: 2,
                                             ),
                                           ),
                                         ),
-                                      ),
-                                      SizedBox(width: 2,),
-                                      Expanded(
-                                        flex:3,
-                                        child: Container(
-                                          width: 90,
-                                          height: 30,
-                                          decoration: BoxDecoration(
-                                            border: Border.all(color: yellowColor, width: 2),
-                                            //color: BackgroundColor,
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child:
-                                          Row(
-                                            mainAxisAlignment: MainAxisAlignment.center,
-                                            children: [
-                                              Text(
-                                                //"Dine-In",
-                                                widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+": ":" ",
-                                                style: TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: blueColor
+                                        SizedBox(width: 2,),
+                                        Expanded(
+                                          flex:3,
+                                          child: Container(
+                                            width: 90,
+                                            height: 30,
+                                            decoration: BoxDecoration(
+                                              border: Border.all(color: yellowColor, width: 2),
+                                              //color: BackgroundColor,
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child:
+                                            Row(
+                                              mainAxisAlignment: MainAxisAlignment.center,
+                                              children: [
+                                                Text(
+                                                  //"Dine-In",
+                                                  widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+": ":" ",
+                                                  style: TextStyle(
+                                                      fontSize: 20,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: blueColor
+                                                  ),
                                                 ),
-                                              ),
-                                              Text(
-                                                //"Dine-In",
-                                                orders["grossTotal"].toStringAsFixed(0),
-                                                style: TextStyle(
-                                                    fontSize: 20,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: blueColor
+                                                Text(
+                                                  //"Dine-In",
+                                                  orders["grossTotal"].toStringAsFixed(0),
+                                                  style: TextStyle(
+                                                      fontSize: 20,
+                                                      fontWeight: FontWeight.bold,
+                                                      color: blueColor
+                                                  ),
                                                 ),
-                                              ),
-                                            ],
+                                              ],
+                                            ),
+                                            // Center(
+                                            //   child: AutoSizeText(
+                                            //     widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
+                                            //     style: TextStyle(
+                                            //         color: blueColor,
+                                            //         fontSize: 22,
+                                            //         fontWeight: FontWeight.bold
+                                            //     ),
+                                            //     maxLines: 2,
+                                            //   ),
+                                            // ),
                                           ),
-                                          // Center(
-                                          //   child: AutoSizeText(
-                                          //     widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
-                                          //     style: TextStyle(
-                                          //         color: blueColor,
-                                          //         fontSize: 22,
-                                          //         fontWeight: FontWeight.bold
-                                          //     ),
-                                          //     maxLines: 2,
-                                          //   ),
-                                          // ),
-                                        ),
-                                      )
-                                    ],
+                                        )
+                                      ],
+                                    ),
                                   ),
                                 ),
                                 // Row(
@@ -1881,12 +1874,15 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
     );
   }
   TextEditingController refundReason=TextEditingController();
+  TextEditingController cashAmount=TextEditingController();
   Widget refundOrderItemsPopup(List<dynamic> orderItems,int orderId){
     List<bool> inputs = new List<bool>();
     refundReason.clear();
+    cashAmount.clear();
     List reasonsByComplaintType=[];
+    List refundType=["Cash Amount","Percentage"];
     var complaintTypeId=0;
-    String selectedComplaintType,selectedPredefinedReason;
+    String selectedComplaintType,selectedPredefinedReason,selectedRefundType;
   //  List<String> refundReasonTypes=["Wilted Food","Expired Food","Smelly Food","Food was Delivered Late","Relative","Other Reason"];
     String selectedRefundReason;
     for (int i = 0; i < orderItems.length; i++) {
@@ -2024,97 +2020,138 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                 ),
                               ),
                             ),
-                          )
+                          ),
+                          Visibility(
+                            visible: selectedComplaintType!=null&&selectedComplaintType!="Food Quality"&&selectedPredefinedReason!=null&&selectedPredefinedReason!="Other",
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: TextFormField(
+                                controller: cashAmount,
+                                validator: (value){
+                                  if(value==null||value.isEmpty){
+                                    return "Please Specify Amount for Refund";
+                                  }
+                                  return null;
+                                },
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  hintText: "Cash Amount to Refund",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ),
+                          ),
                         ],
                       )
                   ),
 
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8.0),
-                      child: ListView.builder(
-                          itemCount: orderItems.length,
-                          itemBuilder: (context,index){
-                            return Card(
-                              elevation: 8,
-                              child: new Container(
-                                decoration: BoxDecoration(
-                                    color: BackgroundColor,
-                                    // borderRadius: BorderRadius.only(
-                                    //   bottomRight: Radius.circular(15),
-                                    //   topLeft: Radius.circular(15),
-                                    // ),
-                                    border: Border.all(color: yellowColor, width: 1)
+                  Visibility(
+                    visible: selectedComplaintType!=null&&selectedComplaintType=="Food Quality",
+                    child: Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ListView.builder(
+                            itemCount: orderItems.length,
+                            itemBuilder: (context,index){
+                              return Card(
+                                elevation: 8,
+                                child: new Container(
+                                  decoration: BoxDecoration(
+                                      color: BackgroundColor,
+                                      // borderRadius: BorderRadius.only(
+                                      //   bottomRight: Radius.circular(15),
+                                      //   topLeft: Radius.circular(15),
+                                      // ),
+                                      border: Border.all(color: yellowColor, width: 1)
+                                  ),
+                                  padding: new EdgeInsets.all(10.0),
+                                  child: new Column(
+                                    children: <Widget>[
+                                      new CheckboxListTile(
+                                          value: inputs[index],
+                                          title: Row(
+                                            mainAxisAlignment:
+                                            MainAxisAlignment.spaceBetween,
+                                            children: [
+                                              new Text(orderItems[index]["name"]+" "+"(${orderItems[index]["sizeName"]!=null?orderItems[index]["sizeName"]:"Deal"})" ,style: TextStyle(color: yellowColor, fontSize: 17, fontWeight: FontWeight.bold),),
+                                            ],
+                                          ),
+                                          controlAffinity: ListTileControlAffinity.leading,
+                                          onChanged: (bool val) {
+                                            innerSetstate(() {
+                                              if(inputs[index]){
+                                                inputs[index]=false;
+                                              }else {
+                                                inputs[index] = true;
+                                              }
+                                            });
+                                          })
+                                    ],
+                                  ),
                                 ),
-                                padding: new EdgeInsets.all(10.0),
-                                child: new Column(
-                                  children: <Widget>[
-                                    new CheckboxListTile(
-                                        value: inputs[index],
-                                        title: Row(
-                                          mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            new Text(orderItems[index]["name"]+" "+"(${orderItems[index]["sizeName"]!=null?orderItems[index]["sizeName"]:"Deal"})" ,style: TextStyle(color: yellowColor, fontSize: 17, fontWeight: FontWeight.bold),),
-                                          ],
-                                        ),
-                                        controlAffinity: ListTileControlAffinity.leading,
-                                        onChanged: (bool val) {
-                                          innerSetstate(() {
-                                            if(inputs[index]){
-                                              inputs[index]=false;
-                                            }else {
-                                              inputs[index] = true;
-                                            }
-                                          });
-                                        })
-                                  ],
-                                ),
-                              ),
-                            );
-                          }
+                              );
+                            }
+                        ),
                       ),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: InkWell(
-                      onTap: (){
-                        innerSetstate(() {
-                          List<String> orderItemsIds=[];
-                          // Navigator.pop(context);
-                          for(int i=0;i<inputs.length;i++){
-                            if(inputs[i]){
-                              orderItemsIds.add(orderItems[i]["id"].toString());
-                            }
-                          }
-                          if(orderItemsIds.length>0&&formKey.currentState.validate()&&selectedComplaintType!=null){
-                            Network_Operations.refundOrder(context: this.context,token: token, orderItemsId: orderItemsIds, orderId: orderId,refundReason: selectedComplaintType!=null&&selectedComplaintType=="Other"||selectedPredefinedReason!=null&&selectedPredefinedReason=="Other"?refundReason.text:selectedPredefinedReason,ComplaintTypeId: complaintTypeId).then((value){
-                              Navigator.pop(this.context);
-                              if(value){
-                                WidgetsBinding.instance
-                                    .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
-                                Utils.showSuccess(this.context,"Refunded Successfully");
-                              }else{
-                                Utils.showError(this.context,"Unable to Rwfund due to some error");
+                  Visibility(
+                    visible: selectedPredefinedReason!=null||selectedComplaintType=="Other",
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: InkWell(
+                        onTap: (){
+                          innerSetstate(() {
+                            if(selectedComplaintType!=null&&selectedComplaintType=="Food Quality"){
+                              List<String> orderItemsIds=[];
+                              // Navigator.pop(context);
+                              for(int i=0;i<inputs.length;i++){
+                                if(inputs[i]){
+                                  orderItemsIds.add(orderItems[i]["id"].toString());
+                                }
                               }
-                            });
-                          }else{
-                            Utils.showError(this.context, "Provide Required Information");
-                          }
+                              if(orderItemsIds.length>0&&formKey.currentState.validate()&&selectedComplaintType!=null&&selectedComplaintType=="Food Quality"){
+                                Network_Operations.refundOrder(context: this.context,token: token, orderItemsId: orderItemsIds, orderId: orderId,refundReason: selectedComplaintType!=null&&selectedComplaintType=="Other"||selectedPredefinedReason!=null&&selectedPredefinedReason=="Other"?refundReason.text:selectedPredefinedReason,ComplaintTypeId: complaintTypeId).then((value){
+                                  Navigator.pop(this.context);
+                                  if(value){
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                                    Utils.showSuccess(this.context,"Refunded Successfully");
+                                  }else{
+                                    Utils.showError(this.context,"Unable to Rwfund due to some error");
+                                  }
+                                });
+                              }else{
+                                Utils.showError(this.context, "Provide Required Information");
+                              }
+                            }else {
+                              Network_Operations.refundOrderByCash(context: context,token: token,orderId: orderId,refundReason: selectedComplaintType!=null&&selectedComplaintType=="Other"||selectedPredefinedReason!=null&&selectedPredefinedReason=="Other"?refundReason.text:selectedPredefinedReason,ComplaintTypeId: complaintTypeId,cashAmount: cashAmount.text).then((value){
+                                if(value!=null){
+                                  Navigator.pop(this.context);
+                                  if(value){
+                                    WidgetsBinding.instance
+                                        .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                                    Utils.showSuccess(this.context,"Refunded Successfully");
+                                  }else{
+                                    Utils.showError(this.context,"Unable to Rwfund due to some error");
+                                  }
+                                }
+                              });
+                            }
 
-                        });
-                      },
-                      child: Card(
-                        elevation: 8,
-                        child: Container(
-                          width: 230,
-                          height: 50,
-                          decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(4),
-                              color: yellowColor
+
+                          });
+                        },
+                        child: Card(
+                          elevation: 8,
+                          child: Container(
+                            width: 230,
+                            height: 50,
+                            decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(4),
+                                color: yellowColor
+                            ),
+                            child: Center(child: Text("Refund",style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
                           ),
-                          child: Center(child: Text("Refund",style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
                         ),
                       ),
                     ),

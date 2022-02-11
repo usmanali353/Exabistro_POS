@@ -261,15 +261,8 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                       for(var order in value){
                         // String createdOn=DateFormat("yyyy-MM-dd").parse(order["createdOn"]).toString().split(" ")[0].trim();
                         //String todayDate=DateTime(DateTime.now().year,DateTime.now().month,DateTime.now().day).toIso8601String().replaceAll("T00:00:00.000","").trim();
-                        if(order["grossTotal"]==0.0||order["netTotal"]==0.0){
+                        if(order["isRefunded"]!=null||order["isRefunded"]==true){
                           orderList.add(order);
-                        }else{
-                          for(var OrderItems in order["orderItems"]){
-                            if(OrderItems["isRefunded"]!=null&&OrderItems["isRefunded"]==true){
-                              orderList.add(order);
-                              break;
-                            }
-                          }
                         }
                       }
                     }
@@ -447,7 +440,7 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                                         ),
                                                         Row(
                                                           children: [
-                                                            orderList[index]["grossTotal"]==0.0||orderList[index]["netTotal"]==0.0?FaIcon(FontAwesomeIcons.handHoldingUsd, color: blueColor, size:30):FaIcon(FontAwesomeIcons.biking, color: yellowColor,size:30),
+                                                            orderList[index]["isRefunded"]!=null||orderList[index]["isRefunded"]==true?FaIcon(FontAwesomeIcons.handHoldingUsd, color: blueColor, size:30):FaIcon(FontAwesomeIcons.biking, color: yellowColor,size:30),
                                                             SizedBox(width: 7,),
                                                             orderList[index]["orderType"]==1? FaIcon(FontAwesomeIcons.utensils, color: blueColor, size:30):orderList[index]["orderType"]==2?FaIcon(FontAwesomeIcons.shoppingBag, color: blueColor,size:30):FaIcon(FontAwesomeIcons.biking, color: blueColor,size:30)
 
@@ -692,18 +685,9 @@ class _RefundedOrdersState extends State<RefundedOrders>{
     }
     if(orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList().length>0){
       orders["orderTaxes"].remove(orders["orderTaxes"].last);
-    }
-    var refundedPrice=0.0;
-    if(orders["orderItems"]!=null){
-      for(int i=0;i<orders["orderItems"].length;i++)
-      {
-        if(orders["orderItems"][i]["isRefunded"]!=null&&orders["orderItems"][i]["isRefunded"]==true){
-          refundedPrice=refundedPrice+=orders["orderItems"][i]["totalPrice"];
-        }
-      }
-    }
-    if(refundedPrice!=0.0){
-      orders["orderTaxes"].add({"taxName":"Refunded Amount","amount":refundedPrice});
+    }else
+    if(orders["refundedAmount"]!=null&&orders["refundedAmount"]!=0.0){
+      orders["orderTaxes"].add({"taxName":"Refunded Amount","amount":orders["refundedAmount"]});
     }
 
     return Scaffold(

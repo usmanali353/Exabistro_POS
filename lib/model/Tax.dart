@@ -24,6 +24,7 @@ class Tax {
     this.updatedOn,
     this.isVisible,
     this.storeId,
+    this.isService
   });
   dynamic orderTaxes;
   int id;
@@ -38,6 +39,7 @@ class Tax {
   DateTime updatedOn;
   bool isVisible;
   int storeId;
+  bool isService;
   factory Tax.fromJson(Map<String, dynamic> json) => Tax(
     orderTaxes: json["orderTaxes"],
     id: json["id"] == null ? null : json["id"],
@@ -53,6 +55,7 @@ class Tax {
     updatedOn: json["updatedOn"] == null ? null : DateTime.parse(json["updatedOn"]),
     isVisible: json["isVisible"] == null ? null : json["isVisible"],
     storeId: json["storeId"] == null ? null : json["storeId"],
+    isService: json["isService"]==null?null:json["isService"]
   );
 
   Map<String, dynamic> toJson() => {
@@ -64,7 +67,8 @@ class Tax {
     "dineIn": dineIn == true ? true : false,
     "takeAway": takeAway== true ? true : false,
     "StoreId": storeId == null ? null : storeId,
-    "IsVisible":true
+    "IsVisible":true,
+    "IsService":isService
   };
   Map<String, dynamic> toMap() => {
     "id": id == null ? null : id,
@@ -75,6 +79,7 @@ class Tax {
     "dineIn": dineIn == true ? true : false,
     "takeAway": takeAway== true ? true : false,
     "StoreId": storeId == null ? null : storeId,
-    "IsVisible":true
+    "IsVisible":true,
+    "IsService":isService
   };
 }
