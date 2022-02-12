@@ -713,20 +713,20 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
   }
   String waiterName="-",customerName="-";
   Widget ordersDetailPopupLayoutHorizontal(dynamic orders) {
-    debugPrint(orders.toString());
-    print("ComplaintTypeId"+orders["complaintTypeId"].toString());
-    if(orders["discountedPrice"]!=null&&orders["discountedPrice"]!=0.0){
-      if(orders["orderTaxes"].where((element)=>element["taxName"]=="Discount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Discount").toList().length>0){
-        orders["orderTaxes"].remove(orders["orderTaxes"].indexOf(orders["orderTaxes"].where((element) => element["taxName"]=="Discount").toList()[0]));
-      }
-      orders["orderTaxes"].add({"taxName":"Discount","amount":orders["discountedPrice"]});
-    }
-    if(orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList().length>0){
-      orders["orderTaxes"].remove(orders["orderTaxes"].last);
-    }else
-    if(orders["refundedAmount"]!=null&&orders["refundedAmount"]!=0.0){
-      orders["orderTaxes"].add({"taxName":"Refunded Amount","amount":orders["refundedAmount"]});
-    }
+    // debugPrint(orders.toString());
+    // print("ComplaintTypeId"+orders["complaintTypeId"].toString());
+    // if(orders["discountedPrice"]!=null&&orders["discountedPrice"]!=0.0){
+    //   if(orders["orderTaxes"].where((element)=>element["taxName"]=="Discount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Discount").toList().length>0){
+    //     orders["orderTaxes"].remove(orders["orderTaxes"].indexOf(orders["orderTaxes"].where((element) => element["taxName"]=="Discount").toList()[0]));
+    //   }
+    //   orders["orderTaxes"].add({"taxName":"Discount","amount":orders["discountedPrice"]});
+    // }
+    // if(orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList().length>0){
+    //   orders["orderTaxes"].remove(orders["orderTaxes"].last);
+    // }else
+    // if(orders["refundedAmount"]!=null&&orders["refundedAmount"]!=0.0){
+    //   orders["orderTaxes"].add({"taxName":"Refunded Amount","amount":orders["refundedAmount"]});
+    // }
     return Scaffold(
         backgroundColor: Colors.white.withOpacity(0.1),
         body: StatefulBuilder(
@@ -1377,7 +1377,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                 //borderRadius: BorderRadius.circular(8)
                                               ),
                                               child: ListView.builder(
-                                                  itemCount:orders["orderTaxes"]!=null? orders["orderTaxes"].length:0,
+                                                  itemCount:orders["logicallyArrangedTaxes"]!=null? orders["logicallyArrangedTaxes"].length:0,
 
                                                   itemBuilder: (context, index){
                                                     return  Padding(
@@ -1390,7 +1390,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                             .spaceBetween,
                                                         children: [
                                                           Text(
-                                                            orders["orderTaxes"][index]["taxName"],
+                                                            orders["logicallyArrangedTaxes"][index]["taxName"],
                                                             //orders["orderTaxes"][index].percentage!=null&&orders["orderTaxes"][index].percentage!=0.0?orders["orderTaxes"][index]["taxName"]+" (${typeBasedTaxes[index].percentage.toStringAsFixed(0)})":typeBasedTaxes[index].name,
                                                             style: TextStyle(
                                                                 fontSize:
@@ -1405,7 +1405,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                             children: [
                                                               Text(
                                                                 widget.store["currencyCode"].toString()+" "+
-                                                                    orders["orderTaxes"][index]["amount"].toStringAsFixed(0),
+                                                                    orders["logicallyArrangedTaxes"][index]["amount"].toStringAsFixed(0),
                                                                 //typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"].toString()+" "+typeBasedTaxes[index].price.toStringAsFixed(0):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"].toString()+": "+(overallTotalPriceWithTax/100*typeBasedTaxes[index].percentage).toStringAsFixed(0):widget.store["currencyCode"].toString()+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(0),
                                                                 style: TextStyle(
                                                                     fontSize:
