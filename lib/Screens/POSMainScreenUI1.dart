@@ -1266,7 +1266,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
 
 
                                                   }
+                                                  typeBasedTaxes.add(Tax(name: "Discount",price:0,percentage:0,isService:true));
                                                   typeBasedTaxes.add(Tax(name: "Net Total",price:overallTotalPriceWithTax,isService:true));
+
                                                   for(Tax t in tempTaxList.toList()){
                                                     setState(() {
                                                       if(t.isService==null||t.isService==false){
@@ -1397,6 +1399,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
 
 
                                   }
+                                  typeBasedTaxes.add(Tax(name: "Discount",price:0,percentage:0,isService:true));
                                   typeBasedTaxes.add(Tax(name: "Net Total",price:overallTotalPriceWithTax,isService:true));
                                   for(Tax t in tempTaxList.toList()){
                                     setState(() {
@@ -1550,16 +1553,12 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                         }
                                         typeBasedTaxes.add(t);
                                       }
-
-
-
                                       taxesList.add({
                                         "TaxId": t.id
                                       });
                                     });
-
-
                                   }
+                                  typeBasedTaxes.add(Tax(name: "Discount",price:0,percentage:0,isService:true));
                                   typeBasedTaxes.add(Tax(name: "Net Total",price:overallTotalPriceWithTax,isService:true));
                                   for(Tax t in tempTaxList.toList()){
                                     setState(() {
@@ -2156,10 +2155,6 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                 print(discountValue.text);
                                                 print("Total Tax "+totalTax.toString());
                                                 priceWithDiscount=overallTotalPriceWithTax;
-                                                if(typeBasedTaxes.last.name=="Discount"){
-                                                  //priceWithDiscount=overallTotalPriceWithTax;
-                                                  typeBasedTaxes.remove(typeBasedTaxes.last);
-                                                }
                                                 if(value.isNotEmpty){
                                                   discountedValue=0.0;
                                                   // // if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
@@ -2211,12 +2206,12 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                   }
 
                                                   print("Price after Taxes "+priceWithDiscount.toStringAsFixed(0));
-                                                  typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(value)));
-
+                                                  typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Discount").toList()[0])]=Tax(name: "Discount",price: double.parse(value),isService: true);
                                                 }else{
                                                   innersetState(() {
                                                     priceWithDiscount=overallTotalPriceWithTax;
                                                     typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Net Total").toList()[0])]=Tax(name: "Net Total",price: overallTotalPriceWithTax-nonServiceTaxesPrice,isService:true);
+                                                    typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Discount").toList()[0])]=Tax(name: "Discount",price: 0,percentage:0,isService: true);
                                                   });
                                                 }
 
@@ -3233,10 +3228,6 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                 print(discountValue.text);
                                                 print("Total Tax "+totalTax.toString());
                                                 priceWithDiscount=overallTotalPriceWithTax;
-                                                if(typeBasedTaxes.last.name=="Discount"){
-                                                  //priceWithDiscount=overallTotalPriceWithTax;
-                                                  typeBasedTaxes.remove(typeBasedTaxes.last);
-                                                }
                                                 if(value.isNotEmpty){
                                                   discountedValue=0.0;
                                                   // // if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
@@ -3288,12 +3279,12 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                   }
 
                                                   print("Price after Taxes "+priceWithDiscount.toStringAsFixed(0));
-                                                  typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(value)));
-
+                                                  typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Discount").toList()[0])]=Tax(name: "Discount",price: double.parse(value),isService: true);
                                                 }else{
                                                   innersetState(() {
                                                     priceWithDiscount=overallTotalPriceWithTax;
                                                     typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Net Total").toList()[0])]=Tax(name: "Net Total",price: overallTotalPriceWithTax-nonServiceTaxesPrice,isService:true);
+                                                    typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Discount").toList()[0])]=Tax(name: "Discount",price: 0,percentage:0,isService: true);
                                                   });
                                                 }
 
@@ -4694,10 +4685,6 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                 print(discountValue.text);
                                                 print("Total Tax "+totalTax.toString());
                                                 priceWithDiscount=overallTotalPriceWithTax;
-                                                if(typeBasedTaxes.last.name=="Discount"){
-                                                  //priceWithDiscount=overallTotalPriceWithTax;
-                                                  typeBasedTaxes.remove(typeBasedTaxes.last);
-                                                }
                                                 if(value.isNotEmpty){
                                                   discountedValue=0.0;
                                                   // // if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
@@ -4749,12 +4736,12 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                   }
 
                                                   print("Price after Taxes "+priceWithDiscount.toStringAsFixed(0));
-                                                  typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(value)));
-
+                                                  typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Discount").toList()[0])]=Tax(name: "Discount",price: double.parse(value),isService: true);
                                                 }else{
                                                   innersetState(() {
                                                     priceWithDiscount=overallTotalPriceWithTax;
                                                     typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Net Total").toList()[0])]=Tax(name: "Net Total",price: overallTotalPriceWithTax-nonServiceTaxesPrice,isService:true);
+                                                    typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Discount").toList()[0])]=Tax(name: "Discount",price: 0,percentage:0,isService: true);
                                                   });
                                                 }
 
