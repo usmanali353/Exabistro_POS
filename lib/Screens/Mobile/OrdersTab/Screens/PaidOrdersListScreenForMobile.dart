@@ -1,10 +1,13 @@
 import 'dart:ui';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:exabistro_pos/Screens/LoadingScreen.dart';
+import 'package:exabistro_pos/Screens/Mobile/HistoryTab/components/PaidTabsComponents.dart';
+import 'package:exabistro_pos/Screens/Mobile/POSTabs/ForMobile/components/POSTabsComponent.dart';
 import 'package:exabistro_pos/Screens/Orders/HistoryTabsComponents.dart';
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/KitchenOrdersDetails.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/components/constants.dart';
+import 'package:exabistro_pos/model/ComplaintTypes.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -26,9 +29,9 @@ class PaidOrdersScreenForMobile extends StatefulWidget {
 }
 
 class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
-
   String token,discountService,waiveOffService,email;
   final GlobalKey<RefreshIndicatorState> _refreshIndicatorKey = GlobalKey<RefreshIndicatorState>();
+  final formKey= GlobalKey<FormState>();
   // bool isVisible=false;
   List orderList = [];
   List itemsList=[],toppingName =[];
@@ -36,12 +39,13 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
   List<dynamic> foodList = [];
   List<Map<String,dynamic>> foodList1 = [];
   bool isListVisible = false,isLoad;
-  List allTables=[];
+  List allTables=[],predefinedReasons=[];
   bool selectedCategory = false;
   List<bool> _selected = [];
   int quantity=5;
   bool isLoading=false;
-  final formKey= GlobalKey<FormState>();
+  List<ComplaintType> types=[];
+  List<String> complainTypes=[];
 
   @override
   void initState() {
@@ -80,158 +84,158 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
   Widget build(BuildContext context) {
 
     return Scaffold(
-        // drawer: widget.store["payOut"]!=null&&widget.store["payOut"]==true?Drawer(
-        //   child: Container(
-        //     decoration: BoxDecoration(
-        //         image: DecorationImage(
-        //           fit: BoxFit.cover,
-        //           //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
-        //           image: AssetImage('assets/bb.jpg'),
-        //         )),
-        //     child: ListView(
-        //       children: [
-        //         Container(
-        //           width: MediaQuery.of(context).size.width,
-        //           //height: 170,
-        //           decoration: BoxDecoration(
-        //             //color: yellowColor
-        //             //: Border.all(color: yellowColor)
-        //           ),
-        //           child: Column(
-        //             children: [
-        //               Container(
-        //                 width: 170,
-        //                 height: 150,
-        //                 //color: yellowColor,
-        //                 child: Center(child: Image.asset(
-        //                   "assets/caspian11.png",
-        //                   fit: BoxFit.contain,
-        //                 ),
-        //                 ),
-        //               ),
-        //               SizedBox(height: 9,),
-        //               Text(
-        //                 "Exabistro - POS",
-        //                 //"$name",
-        //                 style: TextStyle(
-        //                     color: blueColor,
-        //                     fontSize: 25,
-        //                     fontWeight: FontWeight.bold
-        //                 ),
-        //               ),
-        //               Text(
-        //                 email.toString(),
-        //                 //"$email",
-        //                 style: TextStyle(
-        //                     color: Colors.grey,
-        //                     fontSize: 16,
-        //                     fontWeight: FontWeight.w600
-        //                 ),
-        //               )
-        //             ],
-        //           ),
-        //         ),
-        //         Divider(color: yellowColor, thickness: 2,),
-        //         ListTile(
-        //           onTap: (){
-        //             Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>POSMainScreenUI1(store:widget.store)), (route) => false);
-        //           },
-        //           title: Text(
-        //             "Home",
-        //             style: TextStyle(
-        //                 color: blueColor,
-        //                 fontSize: 22,
-        //                 fontWeight: FontWeight.bold
-        //             ),
-        //           ),
-        //           trailing: Icon(Icons.dashboard,color: yellowColor,),
-        //         ),
-        //         Divider(color: yellowColor, thickness: 1,),
-        //         ListTile(
-        //           onTap: (){
-        //             Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>OrdersHistoryTabsScreen(storeId:widget.store)), (route) => false);
-        //           },
-        //           title: Text(
-        //             "Order History",
-        //             style: TextStyle(
-        //                 color: blueColor,
-        //                 fontSize: 22,
-        //                 fontWeight: FontWeight.bold
-        //             ),
-        //           ),
-        //           trailing: FaIcon(FontAwesomeIcons.history,color: yellowColor,),
-        //         ),
-        //         Divider(color: yellowColor, thickness: 1,),
-        //         ListTile(
-        //           onTap: (){
-        //             Network_Operations.getAllDailySessionByStoreId(context, token,widget.store["id"]).then((value){
-        //               if(value!=null&&value.length>0){
-        //                 showDialog(
-        //                     context: context,
-        //                     builder:(context){
-        //                       return Dialog(
-        //                         backgroundColor: Colors.transparent,
-        //                         child: Container(
-        //                           width: 400,
-        //                           height: 130,
-        //                           child: Utils.shiftReportDialog(context,value.last),
-        //                         ),
-        //                       ) ;
-        //                     }
-        //                 );
-        //
-        //               }
-        //             });
-        //           },
-        //           title: Text(
-        //             "Shift Report",
-        //             style: TextStyle(
-        //                 color: blueColor,
-        //                 fontSize: 22,
-        //                 fontWeight: FontWeight.bold
-        //             ),
-        //           ),
-        //           trailing: FaIcon(FontAwesomeIcons.calendar,color: yellowColor,),
-        //         ),
-        //         Divider(color: yellowColor, thickness: 1,),
-        //
-        //         ListTile(
-        //           onTap: (){
-        //             SharedPreferences.getInstance().then((value) {
-        //               value.remove("token");
-        //               value.remove("roles");
-        //               Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>LoginScreen()), (route) => false);
-        //             });
-        //           },
-        //           title: Text(
-        //             "Logout",
-        //             style: TextStyle(
-        //                 color: blueColor,
-        //                 fontSize: 22,
-        //                 fontWeight: FontWeight.bold
-        //             ),
-        //           ),
-        //           trailing: FaIcon(FontAwesomeIcons.signOutAlt,color: yellowColor,),
-        //         ),
-        //         Divider(color: yellowColor, thickness: 1,),
-        //       ],
-        //     ),
-        //   ),
-        // ):Container(),
-        // appBar: widget.store["payOut"]!=null&&widget.store["payOut"]==true&&!isLoading? AppBar(
-        //   title: Text(
-        //     'Today Orders',
-        //     style: TextStyle(
-        //         color: yellowColor,
-        //         fontWeight: FontWeight.bold,
-        //         fontSize: 30),
-        //   ),
-        //   centerTitle: true,
-        //   iconTheme: IconThemeData(
-        //       color: blueColor
-        //   ),
-        //   backgroundColor: BackgroundColor,
-        // ):null,
+        drawer: widget.store["payOut"]!=null&&widget.store["payOut"]==true?Drawer(
+          child: Container(
+            decoration: BoxDecoration(
+                image: DecorationImage(
+                  fit: BoxFit.cover,
+                  //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
+                  image: AssetImage('assets/bb.jpg'),
+                )),
+            child: ListView(
+              children: [
+                Container(
+                  width: MediaQuery.of(context).size.width,
+                  //height: 170,
+                  decoration: BoxDecoration(
+                    //color: yellowColor
+                    //: Border.all(color: yellowColor)
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 170,
+                        height: 150,
+                        //color: yellowColor,
+                        child: Center(child: Image.asset(
+                          "assets/caspian11.png",
+                          fit: BoxFit.contain,
+                        ),
+                        ),
+                      ),
+                      SizedBox(height: 9,),
+                      Text(
+                        "Exabistro - POS",
+                        //"$name",
+                        style: TextStyle(
+                            color: blueColor,
+                            fontSize: 25,
+                            fontWeight: FontWeight.bold
+                        ),
+                      ),
+                      Text(
+                        email.toString(),
+                        //"$email",
+                        style: TextStyle(
+                            color: Colors.grey,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600
+                        ),
+                      )
+                    ],
+                  ),
+                ),
+                Divider(color: yellowColor, thickness: 2,),
+                ListTile(
+                  onTap: (){
+                    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>POSMobileScreenTab(store:widget.store)), (route) => false);
+                  },
+                  title: Text(
+                    "Home",
+                    style: TextStyle(
+                        color: blueColor,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold
+                    ),
+                  ),
+                  trailing: Icon(Icons.dashboard,color: yellowColor,),
+                ),
+                Divider(color: yellowColor, thickness: 1,),
+                ListTile(
+                  onTap: (){
+                    Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>OrdersHistoryTabsScreenForMobile(storeId:widget.store)), (route) => false);
+                  },
+                  title: Text(
+                    "Order History",
+                    style: TextStyle(
+                        color: blueColor,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold
+                    ),
+                  ),
+                  trailing: FaIcon(FontAwesomeIcons.history,color: yellowColor,),
+                ),
+                Divider(color: yellowColor, thickness: 1,),
+                ListTile(
+                  onTap: (){
+                    Network_Operations.getAllDailySessionByStoreId(context, token,widget.store["id"]).then((value){
+                      if(value!=null&&value.length>0){
+                        showDialog(
+                            context: context,
+                            builder:(context){
+                              return Dialog(
+                                backgroundColor: Colors.transparent,
+                                child: Container(
+                                  width: 400,
+                                  height: 130,
+                                  child: Utils.shiftReportDialog(context,value.last),
+                                ),
+                              ) ;
+                            }
+                        );
+
+                      }
+                    });
+                  },
+                  title: Text(
+                    "Shift Report",
+                    style: TextStyle(
+                        color: blueColor,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold
+                    ),
+                  ),
+                  trailing: FaIcon(FontAwesomeIcons.calendar,color: yellowColor,),
+                ),
+                Divider(color: yellowColor, thickness: 1,),
+
+                ListTile(
+                  onTap: (){
+                    SharedPreferences.getInstance().then((value) {
+                      value.remove("token");
+                      value.remove("roles");
+                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>LoginScreen()), (route) => false);
+                    });
+                  },
+                  title: Text(
+                    "Logout",
+                    style: TextStyle(
+                        color: blueColor,
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold
+                    ),
+                  ),
+                  trailing: FaIcon(FontAwesomeIcons.signOutAlt,color: yellowColor,),
+                ),
+                Divider(color: yellowColor, thickness: 1,),
+              ],
+            ),
+          ),
+        ):Container(),
+        appBar: widget.store["payOut"]!=null&&widget.store["payOut"]==true&&!isLoading? AppBar(
+          title: Text(
+            'Today Orders',
+            style: TextStyle(
+                color: yellowColor,
+                fontWeight: FontWeight.bold,
+                fontSize: 30),
+          ),
+          centerTitle: true,
+          iconTheme: IconThemeData(
+              color: blueColor
+          ),
+          backgroundColor: BackgroundColor,
+        ):null,
         body: RefreshIndicator(
           key: _refreshIndicatorKey,
           onRefresh: (){
@@ -259,6 +263,21 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                     //orderList = value;
                   });
                 });
+                complainTypes.clear();
+                Network_Operations.getPredefinedReasons(context, token,widget.store["id"]).then((value){
+                  setState(() {
+                    this.predefinedReasons=value;
+                    print("Predefined Reason "+predefinedReasons.toString());
+                  });
+                });
+                Network_Operations.getComplainTypeListByStoreId(context, token, widget.store["id"]).then((complaintTypes){
+                  setState(() {
+                    types=complaintTypes;
+                    for(int i=0;i<types.length;i++){
+                      complainTypes.add(types[i].name);
+                    }
+                  });
+                });
                 Network_Operations.getTableList(context,token,widget.store["id"])
                     .then((value) {
                   setState(() {
@@ -275,7 +294,9 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
             });
           },
 
-          child: isLoading?LoadingScreen():Container(
+          child:
+          //isLoading?LoadingScreen():
+          Container(
               height: MediaQuery.of(context).size.height,
               width: MediaQuery.of(context).size.width,
               decoration: BoxDecoration(
@@ -400,7 +421,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                                           children: [
                                                             Text('Order ID: ',
                                                               style: TextStyle(
-                                                                  fontSize: 30,
+                                                                  fontSize: 25,
                                                                   fontWeight: FontWeight.bold,
                                                                   color: Colors.white
                                                               ),
@@ -409,7 +430,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                                               //"01",
                                                               orderList[index]['id']!=null?orderList[index]['id'].toString():"",
                                                               style: TextStyle(
-                                                                  fontSize: 30,
+                                                                  fontSize: 25,
                                                                   color: blueColor,
                                                                   fontWeight: FontWeight.bold
                                                               ),
@@ -675,11 +696,18 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
 
   Widget orderDetailPopup(dynamic orders){
     debugPrint(orders.toString());
+    print("ComplaintTypeId"+orders["complaintTypeId"].toString());
     if(orders["discountedPrice"]!=null&&orders["discountedPrice"]!=0.0){
       if(orders["orderTaxes"].where((element)=>element["taxName"]=="Discount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Discount").toList().length>0){
-        orders["orderTaxes"].remove(orders["orderTaxes"].last);
+        orders["orderTaxes"].remove(orders["orderTaxes"].indexOf(orders["orderTaxes"].where((element) => element["taxName"]=="Discount").toList()[0]));
       }
       orders["orderTaxes"].add({"taxName":"Discount","amount":orders["discountedPrice"]});
+    }
+    if(orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList().length>0){
+      orders["orderTaxes"].remove(orders["orderTaxes"].last);
+    }else
+    if(orders["refundedAmount"]!=null&&orders["refundedAmount"]!=0.0){
+      orders["orderTaxes"].add({"taxName":"Refunded Amount","amount":orders["refundedAmount"]});
     }
     return Scaffold(
         body: StatefulBuilder(
@@ -732,14 +760,14 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                 children: [
                                   Text('Order ID: ',
                                     style: TextStyle(
-                                        fontSize: 25,
+                                        fontSize: 22,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white
                                     ),
                                   ),
                                   Text(orders['id']!=null?orders['id'].toString():"",
                                     style: TextStyle(
-                                        fontSize: 25,
+                                        fontSize: 22,
                                         color: blueColor,
                                         fontWeight: FontWeight.bold
                                     ),
@@ -751,7 +779,6 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                   waiveOffService!="null"&&waiveOffService=="true"&&orders["grossTotal"]!=0.0&&orders["netTotal"]!=0.0?Padding(
                                     padding: const EdgeInsets.only(left: 8.0,right:8.0),
                                     child: InkWell(
-
                                         onTap: (){
                                           Navigator.pop(context);
                                           showDialog(
@@ -760,8 +787,8 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                                 return Dialog(
                                                     backgroundColor: Colors.transparent,
                                                     child: Container(
-                                                        height: 450,
-                                                        width: 400,
+                                                        height: 550,
+                                                        width: 600,
                                                         child: refundOrderItemsPopup(orders["orderItems"].where((element)=>element["isRefunded"]==null||element["isRefunded"]==false).toList(),orders["id"])
                                                     )
                                                 );
@@ -809,10 +836,10 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                       ),
                                       child: Center(
                                         child: AutoSizeText(
-                                          'Items:',
+                                          'Items',
                                           style: TextStyle(
                                               color: BackgroundColor,
-                                              fontSize: 22,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold
                                           ),
                                           maxLines: 1,
@@ -835,7 +862,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                       Center(
                                         child: Text(orders['orderItems'].length.toString(),
                                           style: TextStyle(
-                                              fontSize: 20,
+                                              fontSize: 16,
                                               color: PrimaryColor,
                                               fontWeight: FontWeight.bold
                                           ),
@@ -863,10 +890,10 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                       ),
                                       child: Center(
                                         child: AutoSizeText(
-                                          'Total: ',
+                                          'Total',
                                           style: TextStyle(
                                               color: BackgroundColor,
-                                              fontSize: 22,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold
                                           ),
                                           maxLines: 2,
@@ -893,7 +920,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                             //"Dine-In",
                                             widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+": ":" ",
                                             style: TextStyle(
-                                                fontSize: 20,
+                                                fontSize: 16,
                                                 fontWeight: FontWeight.bold,
                                                 color: blueColor
                                             ),
@@ -902,7 +929,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                             //"Dine-In",
                                             orders["grossTotal"].toStringAsFixed(0),
                                             style: TextStyle(
-                                                fontSize: 20,
+                                                fontSize: 16,
                                                 fontWeight: FontWeight.bold,
                                                 color: blueColor
                                             ),
@@ -942,10 +969,10 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                       ),
                                       child: Center(
                                         child: AutoSizeText(
-                                          'Status:',
+                                          'Status',
                                           style: TextStyle(
                                               color: BackgroundColor,
-                                              fontSize: 22,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold
                                           ),
                                           maxLines: 1,
@@ -968,7 +995,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                       Center(
                                         child: Text( getStatus(orders!=null?orders['orderStatus']:null),
                                           style: TextStyle(
-                                              fontSize: 20,
+                                              fontSize: 16,
                                               color: PrimaryColor,
                                               fontWeight: FontWeight.bold
                                           ),
@@ -996,10 +1023,10 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                       ),
                                       child: Center(
                                         child: AutoSizeText(
-                                          'Waiter:',
+                                          'Waiter',
                                           style: TextStyle(
                                               color: BackgroundColor,
-                                              fontSize: 22,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold
                                           ),
                                           maxLines: 1,
@@ -1022,7 +1049,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                       Center(
                                         child: Text( waiterName,
                                           style: TextStyle(
-                                              fontSize: 20,
+                                              fontSize: 16,
                                               color: PrimaryColor,
                                               fontWeight: FontWeight.bold
                                           ),
@@ -1050,10 +1077,10 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                       ),
                                       child: Center(
                                         child: AutoSizeText(
-                                          'Customer:',
+                                          'Customer',
                                           style: TextStyle(
                                               color: BackgroundColor,
-                                              fontSize: 22,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold
                                           ),
                                           maxLines: 1,
@@ -1076,7 +1103,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                       Center(
                                         child: Text( orders["visitingCustomer"]!=null?orders["visitingCustomer"]:customerName,
                                           style: TextStyle(
-                                              fontSize: 20,
+                                              fontSize: 16,
                                               color: PrimaryColor,
                                               fontWeight: FontWeight.bold
                                           ),
@@ -1106,10 +1133,10 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                         ),
                                         child: Center(
                                           child: AutoSizeText(
-                                            'Table#:',
+                                            'Table#',
                                             style: TextStyle(
                                                 color: BackgroundColor,
-                                                fontSize: 22,
+                                                fontSize: 16,
                                                 fontWeight: FontWeight.bold
                                             ),
                                             maxLines: 1,
@@ -1132,7 +1159,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                         Center(
                                           child: Text(orders['tableId']!=null?getTableName(orders['tableId']).toString():" N/A ",
                                             style: TextStyle(
-                                                fontSize: 20,
+                                                fontSize: 16,
                                                 color: PrimaryColor,
                                                 fontWeight: FontWeight.bold
                                             ),
@@ -1166,7 +1193,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                             'Refund Reason',
                                             style: TextStyle(
                                                 color: BackgroundColor,
-                                                fontSize: 22,
+                                                fontSize: 16,
                                                 fontWeight: FontWeight.bold
                                             ),
                                             maxLines: 1,
@@ -1189,7 +1216,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                         Center(
                                           child: Text(orders["refundReason"]!=null?orders["refundReason"]:"N/A",
                                             style: TextStyle(
-                                                fontSize: 15,
+                                                fontSize: 16,
                                                 color: PrimaryColor,
                                                 fontWeight: FontWeight.bold
                                             ),
@@ -1248,13 +1275,12 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                               child: Row(
                                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                 children: [
-                                                  FaIcon(FontAwesomeIcons.handHoldingUsd, color: yellowColor,),
                                                   Text(
                                                     orders['orderItems']!=null?orders['orderItems'][i]['name']:"",
                                                     style: TextStyle(
                                                         color: BackgroundColor,
                                                         fontWeight: FontWeight.bold,
-                                                        fontSize: 22
+                                                        fontSize: 16
                                                     ),
                                                   ),
                                                   orders['orderItems'][i]["isRefunded"]!=null&&orders['orderItems'][i]["isRefunded"]==true?FaIcon(FontAwesomeIcons.handHoldingUsd, color: blueColor,):Container(),
@@ -1279,13 +1305,13 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                                   ),
                                                   child: Center(
                                                     child: AutoSizeText(
-                                                      'Unit Price: ',
+                                                      'Unit Price',
                                                       style: TextStyle(
                                                           color: yellowColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
-                                                      maxLines: 2,
+                                                      maxLines: 1,
                                                     ),
                                                   ),
                                                 ),
@@ -1307,10 +1333,10 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                                       //cartList[index].sizeName!=null?cartList[index].sizeName:"N/A",
                                                       style: TextStyle(
                                                           color: blueColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
-                                                      maxLines: 2,
+                                                      maxLines: 1,
                                                     ),
                                                   ),
                                                 ),
@@ -1335,13 +1361,13 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                                   ),
                                                   child: Center(
                                                     child: AutoSizeText(
-                                                      'Quantity: ',
+                                                      'Quantity',
                                                       style: TextStyle(
                                                           color: yellowColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
-                                                      maxLines: 2,
+                                                      maxLines: 1,
                                                     ),
                                                   ),
                                                 ),
@@ -1363,10 +1389,10 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                                       //cartList[index].sizeName!=null?cartList[index].sizeName:"N/A",
                                                       style: TextStyle(
                                                           color: blueColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
-                                                      maxLines: 2,
+                                                      maxLines: 1,
                                                     ),
                                                   ),
                                                 ),
@@ -1391,13 +1417,13 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                                   ),
                                                   child: Center(
                                                     child: AutoSizeText(
-                                                      'Size: ',
+                                                      'Size',
                                                       style: TextStyle(
                                                           color: yellowColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
-                                                      maxLines: 2,
+                                                      maxLines: 1,
                                                     ),
                                                   ),
                                                 ),
@@ -1419,10 +1445,10 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                                       //cartList[index].sizeName!=null?cartList[index].sizeName:"N/A",
                                                       style: TextStyle(
                                                           color: blueColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
-                                                      maxLines: 2,
+                                                      maxLines: 1,
                                                     ),
                                                   ),
                                                 ),
@@ -1473,13 +1499,13 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                                       child: Column(
                                                         children: [
                                                           AutoSizeText(
-                                                            'Extras: ',
+                                                            'Extras',
                                                             style: TextStyle(
                                                                 color: yellowColor,
-                                                                fontSize: 20,
+                                                                fontSize: 16,
                                                                 fontWeight: FontWeight.bold
                                                             ),
-                                                            maxLines: 2,
+                                                            maxLines: 1,
                                                           ),
                                                           Center(
                                                             child: Text(
@@ -1523,7 +1549,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                               children: [
                                                 Text(
-                                                  'Price: ',
+                                                  'Price ',
                                                   style: TextStyle(
                                                     color: BackgroundColor,
                                                     fontSize: 25,
@@ -1578,7 +1604,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                               .spaceBetween,
                           children: [
                             Text(
-                              "SubTotal: ",
+                              "SubTotal",
                               style: TextStyle(
                                   fontSize:
                                   20,
@@ -1690,7 +1716,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                               .spaceBetween,
                           children: [
                             Text(
-                              "Total: ",
+                              "Total",
                               style: TextStyle(
                                   fontSize:
                                   20,
@@ -2938,10 +2964,14 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
   //   );
   // }
   TextEditingController refundReason=TextEditingController();
+  TextEditingController cashAmount=TextEditingController();
   Widget refundOrderItemsPopup(List<dynamic> orderItems,int orderId){
     List<bool> inputs = new List<bool>();
     refundReason.clear();
-    List<String> refundReasonTypes=["Wilted Food","Expired Food","Smelly Food","Food was Delivered Late","Relative","Other Reason"];
+    List reasonsByComplaintType=[];
+    var complaintTypeId=0;
+    String selectedComplaintType,selectedPredefinedReason;
+    //  List<String> refundReasonTypes=["Wilted Food","Expired Food","Smelly Food","Food was Delivered Late","Relative","Other Reason"];
     String selectedRefundReason;
     for (int i = 0; i < orderItems.length; i++) {
       inputs.add(false);
@@ -2950,8 +2980,8 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
       body: StatefulBuilder(
         builder: (context,innerSetstate){
           return Container(
-            width: 400,
-            height: 450,
+            width: 600,
+            height: 550,
             decoration: BoxDecoration(
                 image: DecorationImage(
                   fit: BoxFit.cover,
@@ -2977,7 +3007,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                           padding: const EdgeInsets.all(8.0),
                           child: DropdownButtonFormField<String>(
                             decoration: InputDecoration(
-                              labelText: "Select Refund Reason",
+                              labelText: "Select Reason Type",
                               alignLabelWithHint: true,
                               labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
                               enabledBorder: OutlineInputBorder(
@@ -2987,13 +3017,20 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                               ),
                             ),
 
-                            value: selectedRefundReason,
+                            value: selectedComplaintType,
                             onChanged: (value) {
                               innerSetstate(() {
-                                selectedRefundReason=value;
+                                complaintTypeId=types.where((element) => element.name==value).toList()[0].id;
+                                selectedComplaintType=value;
+                                reasonsByComplaintType.clear();
+                                selectedPredefinedReason=null;
+                                reasonsByComplaintType=predefinedReasons.where((element) =>element["complaintTypeId"]==complaintTypeId).toList();
+                                if(reasonsByComplaintType.length>0){
+                                  reasonsByComplaintType.add({"reasonText":"Other"});
+                                }
                               });
                             },
-                            items: refundReasonTypes.map((value) {
+                            items: complainTypes.map((value) {
                               return  DropdownMenuItem<String>(
                                 value: value,
                                 child: Row(
@@ -3011,13 +3048,53 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                           ),
                         ),
                         Visibility(
-                          visible: selectedRefundReason!=null&&selectedRefundReason=="Other Reason",
+                          visible: reasonsByComplaintType.length>0&&selectedComplaintType!="Other"&&selectedPredefinedReason!="Other",
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: DropdownButtonFormField<String>(
+                              decoration: InputDecoration(
+                                labelText: "Select Predefined Reason",
+                                alignLabelWithHint: true,
+                                labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                enabledBorder: OutlineInputBorder(
+                                ),
+                                focusedBorder:  OutlineInputBorder(
+                                  borderSide: BorderSide(color:yellowColor),
+                                ),
+                              ),
+
+                              value: selectedPredefinedReason,
+                              onChanged: (value) {
+                                innerSetstate(() {
+                                  selectedPredefinedReason=value;
+                                });
+                              },
+                              items: reasonsByComplaintType.map((value) {
+                                return  DropdownMenuItem<String>(
+                                  value: value["reasonText"],
+                                  child: Row(
+                                    children: <Widget>[
+                                      Text(
+                                        value["reasonText"],
+                                        style:  TextStyle(color: yellowColor,fontSize: 13),
+                                      ),
+                                      //user.icon,
+                                      //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                        ),
+                        Visibility(
+                          visible: selectedComplaintType!=null&&selectedComplaintType=="Other"||selectedPredefinedReason!=null&&selectedPredefinedReason=="Other",
                           child: Padding(
                             padding: const EdgeInsets.all(8.0),
                             child: TextFormField(
                               controller: refundReason,
                               validator: (value){
-                                if(value==null||value.isEmpty&&selectedRefundReason=="Other Reason"){
+                                if(value==null||value.isEmpty){
                                   return "Please Specify Reason for Refund";
                                 }
                                 return null;
@@ -3028,97 +3105,138 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForMobile>{
                               ),
                             ),
                           ),
-                        )
+                        ),
+                        Visibility(
+                          visible: selectedComplaintType!=null&&selectedComplaintType!="Food Quality"&&selectedPredefinedReason!=null&&selectedPredefinedReason!="Other",
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: TextFormField(
+                              controller: cashAmount,
+                              validator: (value){
+                                if(value==null||value.isEmpty){
+                                  return "Please Specify Amount for Refund";
+                                }
+                                return null;
+                              },
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                                hintText: "Cash Amount to Refund",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ),
+                        ),
                       ],
                     )
                 ),
 
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(8.0),
-                    child: ListView.builder(
-                        itemCount: orderItems.length,
-                        itemBuilder: (context,index){
-                          return Card(
-                            elevation: 8,
-                            child: new Container(
-                              decoration: BoxDecoration(
-                                  color: BackgroundColor,
-                                  // borderRadius: BorderRadius.only(
-                                  //   bottomRight: Radius.circular(15),
-                                  //   topLeft: Radius.circular(15),
-                                  // ),
-                                  border: Border.all(color: yellowColor, width: 1)
+                Visibility(
+                  visible: selectedComplaintType!=null&&selectedComplaintType=="Food Quality",
+                  child: Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: ListView.builder(
+                          itemCount: orderItems.length,
+                          itemBuilder: (context,index){
+                            return Card(
+                              elevation: 8,
+                              child: new Container(
+                                decoration: BoxDecoration(
+                                    color: BackgroundColor,
+                                    // borderRadius: BorderRadius.only(
+                                    //   bottomRight: Radius.circular(15),
+                                    //   topLeft: Radius.circular(15),
+                                    // ),
+                                    border: Border.all(color: yellowColor, width: 1)
+                                ),
+                                padding: new EdgeInsets.all(10.0),
+                                child: new Column(
+                                  children: <Widget>[
+                                    new CheckboxListTile(
+                                        value: inputs[index],
+                                        title: Row(
+                                          mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            new Text(orderItems[index]["name"]+" "+"(${orderItems[index]["sizeName"]!=null?orderItems[index]["sizeName"]:"Deal"})" ,style: TextStyle(color: yellowColor, fontSize: 17, fontWeight: FontWeight.bold),),
+                                          ],
+                                        ),
+                                        controlAffinity: ListTileControlAffinity.leading,
+                                        onChanged: (bool val) {
+                                          innerSetstate(() {
+                                            if(inputs[index]){
+                                              inputs[index]=false;
+                                            }else {
+                                              inputs[index] = true;
+                                            }
+                                          });
+                                        })
+                                  ],
+                                ),
                               ),
-                              padding: new EdgeInsets.all(10.0),
-                              child: new Column(
-                                children: <Widget>[
-                                  new CheckboxListTile(
-                                      value: inputs[index],
-                                      title: Row(
-                                        mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                        children: [
-                                          new Text(orderItems[index]["name"]+" "+"(${orderItems[index]["sizeName"]!=null?orderItems[index]["sizeName"]:"Deal"})" ,style: TextStyle(color: yellowColor, fontSize: 11.5, fontWeight: FontWeight.bold),),
-                                        ],
-                                      ),
-                                      controlAffinity: ListTileControlAffinity.leading,
-                                      onChanged: (bool val) {
-                                        innerSetstate(() {
-                                          if(inputs[index]){
-                                            inputs[index]=false;
-                                          }else {
-                                            inputs[index] = true;
-                                          }
-                                        });
-                                      })
-                                ],
-                              ),
-                            ),
-                          );
-                        }
+                            );
+                          }
+                      ),
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: InkWell(
-                    onTap: (){
-                      innerSetstate(() {
-                        List<String> orderItemsIds=[];
-                        // Navigator.pop(context);
-                        for(int i=0;i<inputs.length;i++){
-                          if(inputs[i]){
-                            orderItemsIds.add(orderItems[i]["id"].toString());
-                          }
-                        }
-                        if(orderItemsIds.length>0&&formKey.currentState.validate()&&selectedRefundReason!=null){
-                          Network_Operations.refundOrder(context: this.context,token: token, orderItemsId: orderItemsIds, orderId: orderId,refundReason: selectedRefundReason=="Other Reason"?refundReason.text:selectedRefundReason).then((value){
-                            Navigator.pop(this.context);
-                            if(value){
-                              WidgetsBinding.instance
-                                  .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
-                              Utils.showSuccess(this.context,"Refunded Successfully");
-                            }else{
-                              Utils.showError(this.context,"Unable to Rwfund due to some error");
+                Visibility(
+                  visible: selectedPredefinedReason!=null||selectedComplaintType=="Other",
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: InkWell(
+                      onTap: (){
+                        innerSetstate(() {
+                          if(selectedComplaintType!=null&&selectedComplaintType=="Food Quality"){
+                            List<String> orderItemsIds=[];
+                            // Navigator.pop(context);
+                            for(int i=0;i<inputs.length;i++){
+                              if(inputs[i]){
+                                orderItemsIds.add(orderItems[i]["id"].toString());
+                              }
                             }
-                          });
-                        }else{
-                          Utils.showError(this.context, "Provide Required Information");
-                        }
+                            if(orderItemsIds.length>0&&formKey.currentState.validate()&&selectedComplaintType!=null&&selectedComplaintType=="Food Quality"){
+                              Network_Operations.refundOrder(context: this.context,token: token, orderItemsId: orderItemsIds, orderId: orderId,refundReason: selectedComplaintType!=null&&selectedComplaintType=="Other"||selectedPredefinedReason!=null&&selectedPredefinedReason=="Other"?refundReason.text:selectedPredefinedReason,ComplaintTypeId: complaintTypeId).then((value){
+                                Navigator.pop(this.context);
+                                if(value){
+                                  WidgetsBinding.instance
+                                      .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                                  Utils.showSuccess(this.context,"Refunded Successfully");
+                                }else{
+                                  Utils.showError(this.context,"Unable to Rwfund due to some error");
+                                }
+                              });
+                            }else{
+                              Utils.showError(this.context, "Provide Required Information");
+                            }
+                          }else {
+                            Network_Operations.refundOrderByCash(context: context,token: token,orderId: orderId,refundReason: selectedComplaintType!=null&&selectedComplaintType=="Other"||selectedPredefinedReason!=null&&selectedPredefinedReason=="Other"?refundReason.text:selectedPredefinedReason,ComplaintTypeId: complaintTypeId,cashAmount: cashAmount.text).then((value){
+                              if(value!=null){
+                                Navigator.pop(this.context);
+                                if(value){
+                                  WidgetsBinding.instance
+                                      .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                                  Utils.showSuccess(this.context,"Refunded Successfully");
+                                }else{
+                                  Utils.showError(this.context,"Unable to Rwfund due to some error");
+                                }
+                              }
+                            });
+                          }
 
-                      });
-                    },
-                    child: Card(
-                      elevation: 8,
-                      child: Container(
-                        width: 230,
-                        height: 50,
-                        decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(4),
-                            color: yellowColor
+
+                        });
+                      },
+                      child: Card(
+                        elevation: 8,
+                        child: Container(
+                          width: 230,
+                          height: 50,
+                          decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(4),
+                              color: yellowColor
+                          ),
+                          child: Center(child: Text("Refund",style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
                         ),
-                        child: Center(child: Text("Refund",style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
                       ),
                     ),
                   ),

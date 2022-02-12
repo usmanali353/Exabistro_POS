@@ -115,7 +115,9 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
             });
           },
 
-          child:isLoading?LoadingScreen():Container(
+          child:
+          //isLoading?LoadingScreen():
+          Container(
               height: MediaQuery.of(context).size.height,
               width: MediaQuery.of(context).size.width,
               decoration: BoxDecoration(
@@ -232,7 +234,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                                           children: [
                                                             Text('Order ID: ',
                                                               style: TextStyle(
-                                                                  fontSize: 30,
+                                                                  fontSize: 25,
                                                                   fontWeight: FontWeight.bold,
                                                                   color: Colors.white
                                                               ),
@@ -241,7 +243,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                                               //"01",
                                                               orderList[index]['id']!=null?orderList[index]['id'].toString():"",
                                                               style: TextStyle(
-                                                                  fontSize: 30,
+                                                                  fontSize: 25,
                                                                   color: blueColor,
                                                                   fontWeight: FontWeight.bold
                                                               ),
@@ -556,14 +558,14 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                 children: [
                                   Text('Order ID: ',
                                     style: TextStyle(
-                                        fontSize: 25,
+                                        fontSize: 22,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white
                                     ),
                                   ),
                                   Text(orders['id']!=null?orders['id'].toString():"",
                                     style: TextStyle(
-                                        fontSize: 25,
+                                        fontSize: 22,
                                         color: blueColor,
                                         fontWeight: FontWeight.bold
                                     ),
@@ -583,8 +585,8 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                                 return Dialog(
                                                   backgroundColor: Colors.transparent,
                                                   child: Container(
-                                                    width: 400,
-                                                    height: 370,
+                                                    width: 500,
+                                                    height: 400,
                                                     child: payoutDialog(orders),
                                                   ),
                                                 );
@@ -650,10 +652,10 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                       ),
                                       child: Center(
                                         child: AutoSizeText(
-                                          'Items:',
+                                          'Items',
                                           style: TextStyle(
                                               color: BackgroundColor,
-                                              fontSize: 22,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold
                                           ),
                                           maxLines: 1,
@@ -676,7 +678,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                       Center(
                                         child: Text(orders['orderItems'].length.toString(),
                                           style: TextStyle(
-                                              fontSize: 20,
+                                              fontSize: 16,
                                               color: PrimaryColor,
                                               fontWeight: FontWeight.bold
                                           ),
@@ -704,13 +706,13 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                       ),
                                       child: Center(
                                         child: AutoSizeText(
-                                          'Total: ',
+                                          'Total',
                                           style: TextStyle(
                                               color: BackgroundColor,
-                                              fontSize: 22,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold
                                           ),
-                                          maxLines: 2,
+                                          maxLines: 1,
                                         ),
                                       ),
                                     ),
@@ -734,7 +736,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                             //"Dine-In",
                                             widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+": ":" ",
                                             style: TextStyle(
-                                                fontSize: 20,
+                                                fontSize: 16,
                                                 fontWeight: FontWeight.bold,
                                                 color: blueColor
                                             ),
@@ -743,7 +745,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                             //"Dine-In",
                                             orders["grossTotal"].toStringAsFixed(0),
                                             style: TextStyle(
-                                                fontSize: 20,
+                                                fontSize: 16,
                                                 fontWeight: FontWeight.bold,
                                                 color: blueColor
                                             ),
@@ -783,10 +785,10 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                       ),
                                       child: Center(
                                         child: AutoSizeText(
-                                          'Status:',
+                                          'Status',
                                           style: TextStyle(
                                               color: BackgroundColor,
-                                              fontSize: 22,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold
                                           ),
                                           maxLines: 1,
@@ -809,7 +811,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                       Center(
                                         child: Text( getStatus(orders!=null?orders['orderStatus']:null),
                                           style: TextStyle(
-                                              fontSize: 20,
+                                              fontSize: 16,
                                               color: PrimaryColor,
                                               fontWeight: FontWeight.bold
                                           ),
@@ -837,10 +839,10 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                       ),
                                       child: Center(
                                         child: AutoSizeText(
-                                          'Waiter:',
+                                          'Waiter',
                                           style: TextStyle(
                                               color: BackgroundColor,
-                                              fontSize: 22,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold
                                           ),
                                           maxLines: 1,
@@ -863,7 +865,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                       Center(
                                         child: Text( waiterName,
                                           style: TextStyle(
-                                              fontSize: 20,
+                                              fontSize: 16,
                                               color: PrimaryColor,
                                               fontWeight: FontWeight.bold
                                           ),
@@ -891,10 +893,10 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                       ),
                                       child: Center(
                                         child: AutoSizeText(
-                                          'Customer:',
+                                          'Customer',
                                           style: TextStyle(
                                               color: BackgroundColor,
-                                              fontSize: 22,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold
                                           ),
                                           maxLines: 1,
@@ -917,7 +919,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                       Center(
                                         child: Text( orders["visitingCustomer"]!=null?orders["visitingCustomer"]:customerName,
                                           style: TextStyle(
-                                              fontSize: 20,
+                                              fontSize: 16,
                                               color: PrimaryColor,
                                               fontWeight: FontWeight.bold
                                           ),
@@ -947,10 +949,10 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                         ),
                                         child: Center(
                                           child: AutoSizeText(
-                                            'Table#:',
+                                            'Table#',
                                             style: TextStyle(
                                                 color: BackgroundColor,
-                                                fontSize: 22,
+                                                fontSize: 16,
                                                 fontWeight: FontWeight.bold
                                             ),
                                             maxLines: 1,
@@ -973,7 +975,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                         Center(
                                           child: Text(orders['tableId']!=null?getTableName(orders['tableId']).toString():" N/A ",
                                             style: TextStyle(
-                                                fontSize: 20,
+                                                fontSize: 16,
                                                 color: PrimaryColor,
                                                 fontWeight: FontWeight.bold
                                             ),
@@ -1032,7 +1034,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontWeight: FontWeight.bold,
-                                                  fontSize: 22
+                                                  fontSize: 16
                                               ),
                                             ),
                                           ),
@@ -1054,13 +1056,13 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                                   ),
                                                   child: Center(
                                                     child: AutoSizeText(
-                                                      'Unit Price: ',
+                                                      'Unit Price',
                                                       style: TextStyle(
                                                           color: yellowColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
-                                                      maxLines: 2,
+                                                      maxLines: 1,
                                                     ),
                                                   ),
                                                 ),
@@ -1082,10 +1084,10 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                                       //cartList[index].sizeName!=null?cartList[index].sizeName:"N/A",
                                                       style: TextStyle(
                                                           color: blueColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
-                                                      maxLines: 2,
+                                                      maxLines: 1,
                                                     ),
                                                   ),
                                                 ),
@@ -1110,13 +1112,13 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                                   ),
                                                   child: Center(
                                                     child: AutoSizeText(
-                                                      'Quantity: ',
+                                                      'Quantity',
                                                       style: TextStyle(
                                                           color: yellowColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
-                                                      maxLines: 2,
+                                                      maxLines: 1,
                                                     ),
                                                   ),
                                                 ),
@@ -1138,10 +1140,10 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                                       //cartList[index].sizeName!=null?cartList[index].sizeName:"N/A",
                                                       style: TextStyle(
                                                           color: blueColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
-                                                      maxLines: 2,
+                                                      maxLines: 1,
                                                     ),
                                                   ),
                                                 ),
@@ -1166,13 +1168,13 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                                   ),
                                                   child: Center(
                                                     child: AutoSizeText(
-                                                      'Size: ',
+                                                      'Size',
                                                       style: TextStyle(
                                                           color: yellowColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
-                                                      maxLines: 2,
+                                                      maxLines: 1,
                                                     ),
                                                   ),
                                                 ),
@@ -1194,10 +1196,10 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                                       //cartList[index].sizeName!=null?cartList[index].sizeName:"N/A",
                                                       style: TextStyle(
                                                           color: blueColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
-                                                      maxLines: 2,
+                                                      maxLines: 1,
                                                     ),
                                                   ),
                                                 ),
@@ -1248,13 +1250,13 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                                       child: Column(
                                                         children: [
                                                           AutoSizeText(
-                                                            'Extras: ',
+                                                            'Extras',
                                                             style: TextStyle(
                                                                 color: yellowColor,
-                                                                fontSize: 20,
+                                                                fontSize: 16,
                                                                 fontWeight: FontWeight.bold
                                                             ),
-                                                            maxLines: 2,
+                                                            maxLines: 1,
                                                           ),
                                                           Center(
                                                             child: Text(
@@ -1298,7 +1300,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                               children: [
                                                 Text(
-                                                  'Price: ',
+                                                  'Price',
                                                   style: TextStyle(
                                                     color: BackgroundColor,
                                                     fontSize: 25,
@@ -1353,7 +1355,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                               .spaceBetween,
                           children: [
                             Text(
-                              "SubTotal: ",
+                              "SubTotal",
                               style: TextStyle(
                                   fontSize:
                                   20,
@@ -1468,7 +1470,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                               .spaceBetween,
                           children: [
                             Text(
-                              "Total: ",
+                              "Total",
                               style: TextStyle(
                                   fontSize:
                                   20,
@@ -1586,14 +1588,14 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                 children: [
                                   Text('Order ID: ',
                                     style: TextStyle(
-                                        fontSize: 35,
+                                        fontSize: 25,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white
                                     ),
                                   ),
                                   Text(orders['id']!=null?orders['id'].toString():"",
                                     style: TextStyle(
-                                        fontSize: 35,
+                                        fontSize: 25,
                                         color: blueColor,
                                         fontWeight: FontWeight.bold
                                     ),
@@ -1613,8 +1615,8 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
                                                 return Dialog(
                                                   backgroundColor: Colors.transparent,
                                                   child: Container(
-                                                    width: 400,
-                                                    height: 370,
+                                                    width: 500,
+                                                    height: 400,
                                                     child: payoutDialog(orders),
                                                   ),
                                                 );
@@ -2685,8 +2687,8 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForMobile>{
               children: [
                 Center(
                   child: Container(
-                    width: 400,
-                    height: 370,
+                    width: 500,
+                    height: 400,
                     child: Container(
                       decoration: BoxDecoration(
                           image: DecorationImage(

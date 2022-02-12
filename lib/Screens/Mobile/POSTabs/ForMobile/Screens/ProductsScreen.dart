@@ -374,32 +374,37 @@ class _ProductsScreenState extends State<ProductsScreen> {
                                 ),
                                 child: Column(
                                   children: [
-                                    Container(
-                                      width: MediaQuery.of(context).size.width,
-                                      height: 165,
-                                      decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.only(topRight: Radius.circular(8), topLeft: Radius.circular(8),),
-                                          image: DecorationImage(
-                                            image: NetworkImage(products[index].image),
-                                            fit: BoxFit.cover,
-                                          )
+                                    Expanded(
+                                      flex:3,
+                                      child: Container(
+                                        width: MediaQuery.of(context).size.width,
+                                        //height: 130,
+                                        decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.only(topRight: Radius.circular(8), topLeft: Radius.circular(8),),
+                                            image: DecorationImage(
+                                              image: NetworkImage(products[index].image),
+                                              fit: BoxFit.cover,
+                                            )
+                                        ),
                                       ),
                                     ),
-                                    Container(
-                                      width: MediaQuery.of(context).size.width,
-                                      height: 40,
-                                      color: yellowColor,
-                                      child: Center(
-                                        child: AutoSizeText(
-                                          products[index].name!=null?products[index].name:"",
-                                          textAlign: TextAlign.center,
-                                          style: TextStyle(
+                                    Expanded(
+                                      child: Container(
+                                        width: MediaQuery.of(context).size.width,
+                                        //height: 35,
+                                        color: yellowColor,
+                                        child: Center(
+                                          child: AutoSizeText(
+                                            products[index].name!=null?products[index].name:"",
+                                            textAlign: TextAlign.center,
+                                            style: TextStyle(
 
-                                              color: BackgroundColor,
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.bold
+                                                color: BackgroundColor,
+                                                fontSize: 13,
+                                                fontWeight: FontWeight.bold
+                                            ),
+                                            maxLines: 2,
                                           ),
-                                          maxLines: 2,
                                         ),
                                       ),
                                     ),
@@ -533,32 +538,23 @@ class _ProductsScreenState extends State<ProductsScreen> {
                         height: 50,
                         color: yellowColor,
                         child:  Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.only(bottom: 10, right: 10, left: 10),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              IconButton(
-                                icon: Icon(
-                                  Icons.clear,
-                                  size: 40,
-                                  color: yellowColor,
-                                ),
-                                // onPressed: () {
-                                //   Navigator.of(context).pop();
-                                // },
-                              ),
+
                               Text(product.name,
                                 style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold,
-                                    fontSize: 25
+                                    fontSize: 22
                                 ),
                               ),
                               IconButton(
                                 icon: Icon(
                                   Icons.clear,
-                                  size: 40,
+                                  size: 35,
                                   color: Colors.red,
                                 ),
                                 onPressed: () {
@@ -832,111 +828,114 @@ class _ProductsScreenState extends State<ProductsScreen> {
                         ),
                       ),
                       SizedBox(height: 1,),
-                      InkWell(
-                        onTap: () {
-                          print(selectedSizeName);
-                          print(selectedSizeId);
-                          sqlite_helper().checkAlreadyExists(product.id).then((foundProducts){
-                            if(foundProducts.length>0){
-                              var tempCartItem =CartItems(
-                                  id: foundProducts[0]["id"],
-                                  productId: product.id,
-                                  productName: product.name,
-                                  isDeal: 0,
-                                  dealId: null,
-                                  sizeId: selectedSizeId,
-                                  sizeName: selectedSizeName,
-                                  price: selectedSizeObj["discountedPrice"]==0.0? price:selectedSizeObj["discountedPrice"]!=0.0?selectedSizeObj["discountedPrice"] : price,
-                                  totalPrice:selectedSizeObj["discountedPrice"]==0.0&&totalprice == 0.0 ? price:selectedSizeObj["discountedPrice"]!=0.0&&totalprice == 0.0?selectedSizeObj["discountedPrice"] : totalprice,
-                                  quantity: count,
-                                  storeId: product.storeId,
-                                  topping: topping.length>0?jsonEncode(topping):null
-                              );
-                              sqlite_helper().updateCart(tempCartItem).then((value){
-                                sqlite_helper().getcart1().then((value) {
-                                  setState(() {
-                                    cartCounter.clear();
-                                    cartList.clear();
-                                    cartList = value;
-                                    if (cartList.length > 0) {
-                                      for(CartItems item in cartList){
-                                        cartCounter.add(item.quantity);
-                                      }
-                                    }
-                                    sqlite_helper().gettotal().then((value){
-                                      setState(() {
-                                        overallTotalPrice=value[0]["SUM(totalPrice)"];
-                                      });
-                                    });
-                                  });
-                                });
-                              });
-                              Navigator.of(context).pop();
-                              Utils.showSuccess(context, "Updated to Cart successfully");
-                            }else{
-
-                              sqlite_helper()
-                                  .create_cart(CartItems(
-                                  productId: product.id,
-                                  productName: product.name,
-                                  isDeal: 0,
-                                  dealId: null,
-                                  sizeId: selectedSizeId,
-                                  sizeName: selectedSizeName,
-                                  price: selectedSizeObj["discountedPrice"]==0.0? price:selectedSizeObj["discountedPrice"]!=0.0?selectedSizeObj["discountedPrice"] : price,
-                                  totalPrice:selectedSizeObj["discountedPrice"]==0.0&&totalprice == 0.0 ? price:selectedSizeObj["discountedPrice"]!=0.0&&totalprice == 0.0?selectedSizeObj["discountedPrice"] : totalprice,
-                                  quantity: count,
-                                  storeId: product.storeId,
-                                  topping: topping.length>0?jsonEncode(topping):null))
-                                  .then((isInserted) {
-                                if (isInserted > 0) {
-                                  innersetState(() {
-                                    sqlite_helper().getcart1().then((value) {
-                                      setState(() {
-                                        cartCounter.clear();
-                                        cartList.clear();
-                                        cartList = value;
-                                        if (cartList.length > 0) {
-                                          for(CartItems item in cartList){
-                                            cartCounter.add(item.quantity);
-                                          }
+                      Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: InkWell(
+                          onTap: () {
+                            print(selectedSizeName);
+                            print(selectedSizeId);
+                            sqlite_helper().checkAlreadyExists(product.id).then((foundProducts){
+                              if(foundProducts.length>0){
+                                var tempCartItem =CartItems(
+                                    id: foundProducts[0]["id"],
+                                    productId: product.id,
+                                    productName: product.name,
+                                    isDeal: 0,
+                                    dealId: null,
+                                    sizeId: selectedSizeId,
+                                    sizeName: selectedSizeName,
+                                    price: selectedSizeObj["discountedPrice"]==0.0? price:selectedSizeObj["discountedPrice"]!=0.0?selectedSizeObj["discountedPrice"] : price,
+                                    totalPrice:selectedSizeObj["discountedPrice"]==0.0&&totalprice == 0.0 ? price:selectedSizeObj["discountedPrice"]!=0.0&&totalprice == 0.0?selectedSizeObj["discountedPrice"] : totalprice,
+                                    quantity: count,
+                                    storeId: product.storeId,
+                                    topping: topping.length>0?jsonEncode(topping):null
+                                );
+                                sqlite_helper().updateCart(tempCartItem).then((value){
+                                  sqlite_helper().getcart1().then((value) {
+                                    setState(() {
+                                      cartCounter.clear();
+                                      cartList.clear();
+                                      cartList = value;
+                                      if (cartList.length > 0) {
+                                        for(CartItems item in cartList){
+                                          cartCounter.add(item.quantity);
                                         }
-                                        sqlite_helper().gettotal().then((value){
-                                          setState(() {
-                                            overallTotalPrice=value[0]["SUM(totalPrice)"];
-                                          });
+                                      }
+                                      sqlite_helper().gettotal().then((value){
+                                        setState(() {
+                                          overallTotalPrice=value[0]["SUM(totalPrice)"];
                                         });
                                       });
                                     });
                                   });
-                                  Navigator.of(context).pop();
-                                  Utils.showSuccess(
-                                      context, "Added to Cart successfully");
-                                } else {
-                                  Navigator.of(context).pop();
-                                  Utils.showError(context, "Some Error Occur");
-                                }
-                              });
-                            }
-                          });
+                                });
+                                Navigator.of(context).pop();
+                                Utils.showSuccess(context, "Updated to Cart successfully");
+                              }else{
+
+                                sqlite_helper()
+                                    .create_cart(CartItems(
+                                    productId: product.id,
+                                    productName: product.name,
+                                    isDeal: 0,
+                                    dealId: null,
+                                    sizeId: selectedSizeId,
+                                    sizeName: selectedSizeName,
+                                    price: selectedSizeObj["discountedPrice"]==0.0? price:selectedSizeObj["discountedPrice"]!=0.0?selectedSizeObj["discountedPrice"] : price,
+                                    totalPrice:selectedSizeObj["discountedPrice"]==0.0&&totalprice == 0.0 ? price:selectedSizeObj["discountedPrice"]!=0.0&&totalprice == 0.0?selectedSizeObj["discountedPrice"] : totalprice,
+                                    quantity: count,
+                                    storeId: product.storeId,
+                                    topping: topping.length>0?jsonEncode(topping):null))
+                                    .then((isInserted) {
+                                  if (isInserted > 0) {
+                                    innersetState(() {
+                                      sqlite_helper().getcart1().then((value) {
+                                        setState(() {
+                                          cartCounter.clear();
+                                          cartList.clear();
+                                          cartList = value;
+                                          if (cartList.length > 0) {
+                                            for(CartItems item in cartList){
+                                              cartCounter.add(item.quantity);
+                                            }
+                                          }
+                                          sqlite_helper().gettotal().then((value){
+                                            setState(() {
+                                              overallTotalPrice=value[0]["SUM(totalPrice)"];
+                                            });
+                                          });
+                                        });
+                                      });
+                                    });
+                                    Navigator.of(context).pop();
+                                    Utils.showSuccess(
+                                        context, "Added to Cart successfully");
+                                  } else {
+                                    Navigator.of(context).pop();
+                                    Utils.showError(context, "Some Error Occur");
+                                  }
+                                });
+                              }
+                            });
 
 
-                        },
-                        child: Card(
-                          elevation: 8,
-                          child: Container(
-                            width: MediaQuery.of(context).size.width,
-                            height: 65,
-                            decoration: BoxDecoration(
-                                color: yellowColor,
-                                borderRadius: BorderRadius.circular(4)),
-                            child: Center(
-                              child: Text(
-                                "Add To Cart",
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 30,
-                                    color: Colors.white),
+                          },
+                          child: Card(
+                            elevation: 8,
+                            child: Container(
+                              width: MediaQuery.of(context).size.width - 50,
+                              height: 65,
+                              decoration: BoxDecoration(
+                                  color: yellowColor,
+                                  borderRadius: BorderRadius.circular(4)),
+                              child: Center(
+                                child: Text(
+                                  "Add To Cart",
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 30,
+                                      color: Colors.white),
+                                ),
                               ),
                             ),
                           ),

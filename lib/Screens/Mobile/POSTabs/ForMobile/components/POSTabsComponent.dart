@@ -166,13 +166,13 @@ class POSWidgetState extends State<POSMobileScreenTab> with SingleTickerProvider
                   Divider(color: yellowColor, thickness: 2,),
                   ListTile(
                     onTap: (){
-                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>PaidTabsScreenForMobile(storeId:widget.store)), (route) => false);
+                      //Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>PaidTabsScreenForMobile(storeId:widget.store)), (route) => false);
 
-                      // if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
-                      //   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>PaidOrdersScreenForMobile(widget.store)), (route) => false);
-                      // }else {
-                      //   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>PaidTabsScreenForMobile(storeId:widget.store)), (route) => false);
-                      // }
+                      if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
+                        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>PaidOrdersScreenForMobile(widget.store)), (route) => false);
+                      }else {
+                        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>PaidTabsScreenForMobile(storeId:widget.store)), (route) => false);
+                      }
                     },
                     title: Text(
                       "Today Orders",

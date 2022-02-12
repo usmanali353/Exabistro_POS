@@ -372,7 +372,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                                             children: [
                                                               Text('Order ID: ',
                                                                 style: TextStyle(
-                                                                    fontSize: 30,
+                                                                    fontSize: 25,
                                                                     fontWeight: FontWeight.bold,
                                                                     color: Colors.white
                                                                 ),
@@ -381,7 +381,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                                                 //"01",
                                                                 orderList[index]['id']!=null?orderList[index]['id'].toString():"",
                                                                 style: TextStyle(
-                                                                    fontSize: 30,
+                                                                    fontSize: 25,
                                                                     color: blueColor,
                                                                     fontWeight: FontWeight.bold
                                                                 ),
@@ -416,7 +416,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                                         children: [
                                                           Text('Total: ',
                                                             style: TextStyle(
-                                                                fontSize: 20,
+                                                                fontSize: 16,
                                                                 fontWeight: FontWeight.bold,
                                                                 color: yellowColor
                                                             ),
@@ -430,7 +430,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                                                 //"Dine-In",
                                                                 widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
                                                                 style: TextStyle(
-                                                                    fontSize: 20,
+                                                                    fontSize: 16,
                                                                     fontWeight: FontWeight.bold,
                                                                     color: PrimaryColor
                                                                 ),
@@ -439,7 +439,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                                                 //"Dine-In",
                                                                 orderList[index]['grossTotal'].toStringAsFixed(0),
                                                                 style: TextStyle(
-                                                                    fontSize: 20,
+                                                                    fontSize: 16,
                                                                     fontWeight: FontWeight.bold,
                                                                     color: PrimaryColor
                                                                 ),
@@ -454,7 +454,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                                           children: [
                                                             Text('Table:',
                                                               style: TextStyle(
-                                                                  fontSize: 20,
+                                                                  fontSize: 16,
                                                                   fontWeight: FontWeight.bold,
                                                                   color: yellowColor
                                                               ),
@@ -466,7 +466,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                                               //"01",
                                                               orderList[index]['tableId']!=null?getTableName(orderList[index]['tableId']):"",
                                                               style: TextStyle(
-                                                                  fontSize: 20,
+                                                                  fontSize: 16,
                                                                   fontWeight: FontWeight.bold,
                                                                   color: PrimaryColor
                                                               ),
@@ -710,14 +710,14 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                 children: [
                                   Text('Order ID: ',
                                     style: TextStyle(
-                                        fontSize: 25,
+                                        fontSize: 22,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white
                                     ),
                                   ),
                                   Text(orders['id']!=null?orders['id'].toString():"",
                                     style: TextStyle(
-                                        fontSize: 25,
+                                        fontSize: 22,
                                         color: blueColor,
                                         fontWeight: FontWeight.bold
                                     ),
@@ -767,10 +767,10 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                       ),
                                       child: Center(
                                         child: AutoSizeText(
-                                          'Items:',
+                                          'Items',
                                           style: TextStyle(
                                               color: BackgroundColor,
-                                              fontSize: 22,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold
                                           ),
                                           maxLines: 1,
@@ -793,7 +793,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                       Center(
                                         child: Text(orders['orderItems'].length.toString(),
                                           style: TextStyle(
-                                              fontSize: 20,
+                                              fontSize: 16,
                                               color: PrimaryColor,
                                               fontWeight: FontWeight.bold
                                           ),
@@ -821,10 +821,10 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                       ),
                                       child: Center(
                                         child: AutoSizeText(
-                                          'Total: ',
+                                          'Total ',
                                           style: TextStyle(
                                               color: BackgroundColor,
-                                              fontSize: 22,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold
                                           ),
                                           maxLines: 2,
@@ -851,7 +851,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                             //"Dine-In",
                                             widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+": ":" ",
                                             style: TextStyle(
-                                                fontSize: 20,
+                                                fontSize: 16,
                                                 fontWeight: FontWeight.bold,
                                                 color: blueColor
                                             ),
@@ -860,7 +860,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                             //"Dine-In",
                                             orders["grossTotal"].toStringAsFixed(0),
                                             style: TextStyle(
-                                                fontSize: 20,
+                                                fontSize: 16,
                                                 fontWeight: FontWeight.bold,
                                                 color: blueColor
                                             ),
@@ -900,10 +900,10 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                       ),
                                       child: Center(
                                         child: AutoSizeText(
-                                          'Status:',
+                                          'Status',
                                           style: TextStyle(
                                               color: BackgroundColor,
-                                              fontSize: 22,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold
                                           ),
                                           maxLines: 1,
@@ -926,7 +926,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                       Center(
                                         child: Text( getStatus(orders!=null?orders['orderStatus']:null),
                                           style: TextStyle(
-                                              fontSize: 20,
+                                              fontSize: 16,
                                               color: PrimaryColor,
                                               fontWeight: FontWeight.bold
                                           ),
@@ -954,10 +954,10 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                       ),
                                       child: Center(
                                         child: AutoSizeText(
-                                          'Waiter:',
+                                          'Waiter',
                                           style: TextStyle(
                                               color: BackgroundColor,
-                                              fontSize: 22,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold
                                           ),
                                           maxLines: 1,
@@ -980,7 +980,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                       Center(
                                         child: Text( waiterName,
                                           style: TextStyle(
-                                              fontSize: 20,
+                                              fontSize: 16,
                                               color: PrimaryColor,
                                               fontWeight: FontWeight.bold
                                           ),
@@ -1009,10 +1009,10 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                       ),
                                       child: Center(
                                         child: AutoSizeText(
-                                          'Customer:',
+                                          'Customer',
                                           style: TextStyle(
                                               color: BackgroundColor,
-                                              fontSize: 22,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold
                                           ),
                                           maxLines: 1,
@@ -1035,7 +1035,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                       Center(
                                         child: Text( orders["visitingCustomer"]!=null?orders["visitingCustomer"]:customerName,
                                           style: TextStyle(
-                                              fontSize: 20,
+                                              fontSize: 16,
                                               color: PrimaryColor,
                                               fontWeight: FontWeight.bold
                                           ),
@@ -1065,10 +1065,10 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                         ),
                                         child: Center(
                                           child: AutoSizeText(
-                                            'Table#:',
+                                            'Table#',
                                             style: TextStyle(
                                                 color: BackgroundColor,
-                                                fontSize: 22,
+                                                fontSize: 16,
                                                 fontWeight: FontWeight.bold
                                             ),
                                             maxLines: 1,
@@ -1091,7 +1091,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                         Center(
                                           child: Text(orders['tableId']!=null?getTableName(orders['tableId']).toString():" N/A ",
                                             style: TextStyle(
-                                                fontSize: 20,
+                                                fontSize: 16,
                                                 color: PrimaryColor,
                                                 fontWeight: FontWeight.bold
                                             ),
@@ -1151,13 +1151,13 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                             child: Row(
                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                               children: [
-                                                FaIcon(FontAwesomeIcons.handHoldingUsd,color: yellowColor,),
+                                                //FaIcon(FontAwesomeIcons.handHoldingUsd,color: yellowColor,),
                                                 Text(
                                                   orders['orderItems']!=null?orders['orderItems'][i]['name']:"",
                                                   style: TextStyle(
                                                       color: BackgroundColor,
                                                       fontWeight: FontWeight.bold,
-                                                      fontSize: 22
+                                                      fontSize: 18
                                                   ),
                                                 ),
                                                 orders['orderItems'][i]["isRefunded"]!=null&&orders['orderItems'][i]["isRefunded"]==true?FaIcon(FontAwesomeIcons.handHoldingUsd, color: blueColor,):Container(),
@@ -1183,10 +1183,10 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                                   ),
                                                   child: Center(
                                                     child: AutoSizeText(
-                                                      'Unit Price: ',
+                                                      'Unit Price ',
                                                       style: TextStyle(
                                                           color: yellowColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
                                                       maxLines: 2,
@@ -1211,7 +1211,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                                       //cartList[index].sizeName!=null?cartList[index].sizeName:"N/A",
                                                       style: TextStyle(
                                                           color: blueColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
                                                       maxLines: 2,
@@ -1239,10 +1239,10 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                                   ),
                                                   child: Center(
                                                     child: AutoSizeText(
-                                                      'Quantity: ',
+                                                      'Quantity ',
                                                       style: TextStyle(
                                                           color: yellowColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
                                                       maxLines: 2,
@@ -1267,7 +1267,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                                       //cartList[index].sizeName!=null?cartList[index].sizeName:"N/A",
                                                       style: TextStyle(
                                                           color: blueColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
                                                       maxLines: 2,
@@ -1295,10 +1295,10 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                                   ),
                                                   child: Center(
                                                     child: AutoSizeText(
-                                                      'Size: ',
+                                                      'Size ',
                                                       style: TextStyle(
                                                           color: yellowColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
                                                       maxLines: 2,
@@ -1323,7 +1323,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                                       //cartList[index].sizeName!=null?cartList[index].sizeName:"N/A",
                                                       style: TextStyle(
                                                           color: blueColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
                                                       maxLines: 2,
@@ -1377,13 +1377,13 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                                       child: Column(
                                                         children: [
                                                           AutoSizeText(
-                                                            'Extras: ',
+                                                            'Extras ',
                                                             style: TextStyle(
                                                                 color: yellowColor,
-                                                                fontSize: 20,
+                                                                fontSize: 16,
                                                                 fontWeight: FontWeight.bold
                                                             ),
-                                                            maxLines: 2,
+                                                            maxLines: 1,
                                                           ),
                                                           Center(
                                                             child: Text(
@@ -1427,7 +1427,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                               children: [
                                                 Text(
-                                                  'Price: ',
+                                                  'Price ',
                                                   style: TextStyle(
                                                     color: BackgroundColor,
                                                     fontSize: 25,
@@ -1482,7 +1482,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                               .spaceBetween,
                           children: [
                             Text(
-                              "SubTotal: ",
+                              "SubTotal ",
                               style: TextStyle(
                                   fontSize:
                                   20,
@@ -1591,7 +1591,7 @@ class _KitchenTabViewState extends State<DiscountedOrdersScreenForMobile> with T
                               .spaceBetween,
                           children: [
                             Text(
-                              "Total: ",
+                              "Total ",
                               style: TextStyle(
                                   fontSize:
                                   20,

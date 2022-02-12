@@ -11,6 +11,7 @@ import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/Kitche
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/components/constants.dart';
 import 'package:exabistro_pos/model/Categories.dart';
+import 'package:exabistro_pos/model/ComplaintTypes.dart';
 import 'package:exabistro_pos/model/OrderById.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
@@ -45,6 +46,8 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
   List<bool> _selected = [];
   int quantity=5;
   bool isLoading=false;
+  List<ComplaintType> types=[];
+  List<String> complainTypes=[];
 
   @override
   void initState() {
@@ -73,6 +76,18 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
       for(int i=0;i<allTables.length;i++){
         if(allTables[i]['id'] == id) {
           name = allTables[i]['name'];
+        }
+      }
+      return name!=null?name:"-";
+    }else
+      return "-";
+  }
+  String getComplaintTypeById(int id){
+    String name;
+    if(id!=null&&types!=null){
+      for(int i=0;i<types.length;i++){
+        if(types[i].id == id) {
+          name = types[i].name;
         }
       }
       return name!=null?name:"-";
@@ -231,6 +246,17 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                   isLoading=true;
                 });
                 orderList.clear();
+                complainTypes.clear();
+
+                Network_Operations.getComplainTypeListByStoreId(context, token, widget.store["id"]).then((complaintTypes){
+                  setState(() {
+                    print(types.length);
+                    types=complaintTypes;
+                    for(int i=0;i<types.length;i++){
+                      complainTypes.add(types[i].name);
+                    }
+                  });
+                });
                 Network_Operations.getAllOrders(context, token,widget.store["id"]).then((value) {
                   setState(() {
                     isLoading=false;
@@ -323,6 +349,7 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                           height: 50,
                           //color: Colors.black38,
                           child: Center(
+
                             child: _buildChips(),
                           ),
                         ),
@@ -379,7 +406,7 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                                             children: [
                                                               Text('Order ID: ',
                                                                 style: TextStyle(
-                                                                    fontSize: 30,
+                                                                    fontSize: 25,
                                                                     fontWeight: FontWeight.bold,
                                                                     color: Colors.white
                                                                 ),
@@ -388,7 +415,7 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                                                 //"01",
                                                                 orderList[index]['id']!=null?orderList[index]['id'].toString():"",
                                                                 style: TextStyle(
-                                                                    fontSize: 30,
+                                                                    fontSize: 25,
                                                                     color: blueColor,
                                                                     fontWeight: FontWeight.bold
                                                                 ),
@@ -397,7 +424,7 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                                           ),
                                                           Row(
                                                             children: [
-                                                              orderList[index]["grossTotal"]==0.0||orderList[index]["netTotal"]==0.0?FaIcon(FontAwesomeIcons.handHoldingUsd, color: blueColor, size:30):FaIcon(FontAwesomeIcons.biking, color: yellowColor,size:30),
+                                                              orderList[index]["isRefunded"]!=null||orderList[index]["isRefunded"]==true?FaIcon(FontAwesomeIcons.handHoldingUsd, color: blueColor, size:30):FaIcon(FontAwesomeIcons.biking, color: yellowColor,size:30),
                                                               SizedBox(width: 7,),
                                                               orderList[index]["orderType"]==1? FaIcon(FontAwesomeIcons.utensils, color: blueColor, size:30):orderList[index]["orderType"]==2?FaIcon(FontAwesomeIcons.shoppingBag, color: blueColor,size:30):FaIcon(FontAwesomeIcons.biking, color: blueColor,size:30)
 
@@ -563,15 +590,14 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
       return "";
     }
   }
-
   Widget _buildChips() {
     List<Widget> chips = new List();
 
-    for (int i = 0; i < allTables.length; i++) {
+    for (int i = 0; i < types.length; i++) {
       _selected.add(false);
       FilterChip filterChip = FilterChip(
         selected: _selected[i],
-        label: Text(getTableName(allTables[i]["id"]), style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+        label: Text(getComplaintTypeById(types[i].id), style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
         // avatar: FlutterLogo(),
         elevation: 10,
         pressElevation: 5,
@@ -587,28 +613,18 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
             }
             _selected[i] = selected;
             if(_selected[i]){
-
               Utils.check_connectivity().then((result){
                 if(result){
                   orderList.clear();
-                  Network_Operations.getOrdersByTableId(context, token,allTables[i]["id"],widget.store["id"]).then((value) {
+                  Network_Operations.getAllOrdersByComplaintTypeId(context, token,types[i].id).then((value) {
                     setState(() {
-                      if(value!=null&&value.length>0){
-                        for(var order in value){
-                          if(order["orderStatus"]==2&&order["tableId"]!=null&&order["tableId"]==allTables[i]["id"]){
-                            orderList.add(order);
-                          }
-                        }
-                      }
+                      orderList=value;
                     });
                   });
                 }else{
                   Utils.showError(context, "Network Error");
                 }
               });
-
-
-
             }else{
               WidgetsBinding.instance
                   .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
@@ -630,6 +646,68 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
       children: chips,
     );
   }
+
+
+
+  // Widget _buildChips() {
+  //   List<Widget> chips = new List();
+  //
+  //   for (int i = 0; i < types.length; i++) {
+  //     _selected.add(false);
+  //     FilterChip filterChip = FilterChip(
+  //       selected: _selected[i],
+  //       label: Text(getComplaintTypeById(types[i].id), style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+  //       // avatar: FlutterLogo(),
+  //       elevation: 10,
+  //       pressElevation: 5,
+  //       //shadowColor: Colors.teal,
+  //       backgroundColor: yellowColor,
+  //       selectedColor: PrimaryColor,
+  //       onSelected: (bool selected) {
+  //         setState(() {
+  //           for(int j=0;j<_selected.length;j++){
+  //             if(_selected[j]){
+  //               _selected[j]=false;
+  //             }
+  //           }
+  //           _selected[i] = selected;
+  //           if(_selected[i]){
+  //             Utils.check_connectivity().then((result){
+  //               if(result){
+  //                 orderList.clear();
+  //                 Network_Operations.getAllOrdersByComplaintTypeId(context, token,types[i].id).then((value) {
+  //                   setState(() {
+  //                     orderList=value;
+  //                   });
+  //                 });
+  //               }else{
+  //                 Utils.showError(context, "Network Error");
+  //               }
+  //             });
+  //           }else{
+  //             WidgetsBinding.instance
+  //                 .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+  //           }
+  //
+  //         });
+  //       },
+  //     );
+  //
+  //     chips.add(Padding(
+  //         padding: EdgeInsets.symmetric(horizontal: 10),
+  //         child: filterChip
+  //     ));
+  //   }
+  //
+  //   return ListView(
+  //     // This next line does the trick.
+  //     scrollDirection: Axis.horizontal,
+  //     children: chips,
+  //   );
+  // }
+
+
+
   showAlertDialog(BuildContext context,int orderId) {
     showGeneralDialog(
         context: context,
@@ -665,6 +743,12 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
         orders["orderTaxes"].remove(orders["orderTaxes"].last);
       }
       orders["orderTaxes"].add({"taxName":"Discount","amount":orders["discountedPrice"]});
+    }
+    if(orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList()!=null&&orders["orderTaxes"].where((element)=>element["taxName"]=="Refunded Amount").toList().length>0){
+      orders["orderTaxes"].remove(orders["orderTaxes"].last);
+    }else
+    if(orders["refundedAmount"]!=null&&orders["refundedAmount"]!=0.0){
+      orders["orderTaxes"].add({"taxName":"Refunded Amount","amount":orders["refundedAmount"]});
     }
     return Scaffold(
         body: StatefulBuilder(
@@ -717,14 +801,14 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                 children: [
                                   Text('Order ID: ',
                                     style: TextStyle(
-                                        fontSize: 25,
+                                        fontSize: 22,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white
                                     ),
                                   ),
                                   Text(orders['id']!=null?orders['id'].toString():"",
                                     style: TextStyle(
-                                        fontSize: 25,
+                                        fontSize: 22,
                                         color: blueColor,
                                         fontWeight: FontWeight.bold
                                     ),
@@ -795,10 +879,10 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                       ),
                                       child: Center(
                                         child: AutoSizeText(
-                                          'Items:',
+                                          'Items',
                                           style: TextStyle(
                                               color: BackgroundColor,
-                                              fontSize: 22,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold
                                           ),
                                           maxLines: 1,
@@ -821,7 +905,7 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                       Center(
                                         child: Text(orders['orderItems'].length.toString(),
                                           style: TextStyle(
-                                              fontSize: 20,
+                                              fontSize: 16,
                                               color: PrimaryColor,
                                               fontWeight: FontWeight.bold
                                           ),
@@ -832,83 +916,86 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                 ],
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.all(2.0),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Expanded(
-                                    flex:2,
-                                    child: Container(
-                                      width: 90,
-                                      height: 30,
-                                      decoration: BoxDecoration(
-                                        color: yellowColor,
-                                        border: Border.all(color: yellowColor, width: 2),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Center(
-                                        child: AutoSizeText(
-                                          'Total: ',
-                                          style: TextStyle(
-                                              color: BackgroundColor,
-                                              fontSize: 22,
-                                              fontWeight: FontWeight.bold
+                            Visibility(
+                              visible:orders["tableId"]==null,
+                              child: Padding(
+                                padding: const EdgeInsets.all(2.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      flex:2,
+                                      child: Container(
+                                        width: 90,
+                                        height: 30,
+                                        decoration: BoxDecoration(
+                                          color: yellowColor,
+                                          border: Border.all(color: yellowColor, width: 2),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Center(
+                                          child: AutoSizeText(
+                                            'Total: ',
+                                            style: TextStyle(
+                                                color: BackgroundColor,
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.bold
+                                            ),
+                                            maxLines: 2,
                                           ),
-                                          maxLines: 2,
                                         ),
                                       ),
                                     ),
-                                  ),
-                                  SizedBox(width: 2,),
-                                  Expanded(
-                                    flex:3,
-                                    child: Container(
-                                      width: 90,
-                                      height: 30,
-                                      decoration: BoxDecoration(
-                                        border: Border.all(color: yellowColor, width: 2),
-                                        //color: BackgroundColor,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child:
-                                      Row(
-                                        mainAxisAlignment: MainAxisAlignment.center,
-                                        children: [
-                                          Text(
-                                            //"Dine-In",
-                                            widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+": ":" ",
-                                            style: TextStyle(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                                color: blueColor
+                                    SizedBox(width: 2,),
+                                    Expanded(
+                                      flex:3,
+                                      child: Container(
+                                        width: 90,
+                                        height: 30,
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: yellowColor, width: 2),
+                                          //color: BackgroundColor,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child:
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Text(
+                                              //"Dine-In",
+                                              widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+": ":" ",
+                                              style: TextStyle(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: blueColor
+                                              ),
                                             ),
-                                          ),
-                                          Text(
-                                            //"Dine-In",
-                                            orders["grossTotal"].toStringAsFixed(0),
-                                            style: TextStyle(
-                                                fontSize: 20,
-                                                fontWeight: FontWeight.bold,
-                                                color: blueColor
+                                            Text(
+                                              //"Dine-In",
+                                              orders["grossTotal"].toStringAsFixed(0),
+                                              style: TextStyle(
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: blueColor
+                                              ),
                                             ),
-                                          ),
-                                        ],
+                                          ],
+                                        ),
+                                        // Center(
+                                        //   child: AutoSizeText(
+                                        //     widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
+                                        //     style: TextStyle(
+                                        //         color: blueColor,
+                                        //         fontSize: 22,
+                                        //         fontWeight: FontWeight.bold
+                                        //     ),
+                                        //     maxLines: 2,
+                                        //   ),
+                                        // ),
                                       ),
-                                      // Center(
-                                      //   child: AutoSizeText(
-                                      //     widget.store["currencyCode"].toString()!=null?widget.store["currencyCode"].toString()+":":" ",
-                                      //     style: TextStyle(
-                                      //         color: blueColor,
-                                      //         fontSize: 22,
-                                      //         fontWeight: FontWeight.bold
-                                      //     ),
-                                      //     maxLines: 2,
-                                      //   ),
-                                      // ),
-                                    ),
-                                  )
-                                ],
+                                    )
+                                  ],
+                                ),
                               ),
                             ),
                             Padding(
@@ -928,10 +1015,10 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                       ),
                                       child: Center(
                                         child: AutoSizeText(
-                                          'Status:',
+                                          'Status',
                                           style: TextStyle(
                                               color: BackgroundColor,
-                                              fontSize: 22,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold
                                           ),
                                           maxLines: 1,
@@ -954,7 +1041,7 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                       Center(
                                         child: Text( getStatus(orders!=null?orders['orderStatus']:null),
                                           style: TextStyle(
-                                              fontSize: 20,
+                                              fontSize: 16,
                                               color: PrimaryColor,
                                               fontWeight: FontWeight.bold
                                           ),
@@ -982,10 +1069,10 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                       ),
                                       child: Center(
                                         child: AutoSizeText(
-                                          'Waiter:',
+                                          'Waiter',
                                           style: TextStyle(
                                               color: BackgroundColor,
-                                              fontSize: 22,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold
                                           ),
                                           maxLines: 1,
@@ -1008,7 +1095,7 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                       Center(
                                         child: Text( waiterName,
                                           style: TextStyle(
-                                              fontSize: 20,
+                                              fontSize: 16,
                                               color: PrimaryColor,
                                               fontWeight: FontWeight.bold
                                           ),
@@ -1037,10 +1124,10 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                       ),
                                       child: Center(
                                         child: AutoSizeText(
-                                          'Customer:',
+                                          'Customer',
                                           style: TextStyle(
                                               color: BackgroundColor,
-                                              fontSize: 22,
+                                              fontSize: 16,
                                               fontWeight: FontWeight.bold
                                           ),
                                           maxLines: 1,
@@ -1063,7 +1150,7 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                       Center(
                                         child: Text( orders["visitingCustomer"]!=null?orders["visitingCustomer"]:customerName,
                                           style: TextStyle(
-                                              fontSize: 20,
+                                              fontSize: 16,
                                               color: PrimaryColor,
                                               fontWeight: FontWeight.bold
                                           ),
@@ -1072,6 +1159,63 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                     ),
                                   )
                                 ],
+                              ),
+                            ),
+                            Visibility(
+                              visible: orders['orderType']==1,
+                              child: Padding(
+                                padding: const EdgeInsets.all(2.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Expanded(
+                                      flex:2,
+                                      child: Container(
+                                        width: 90,
+                                        height: 30,
+                                        decoration: BoxDecoration(
+                                          color: yellowColor,
+                                          border: Border.all(color: yellowColor, width: 2),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Center(
+                                          child: AutoSizeText(
+                                            'Table#',
+                                            style: TextStyle(
+                                                color: BackgroundColor,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.bold
+                                            ),
+                                            maxLines: 1,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 2,),
+                                    Expanded(
+                                      flex:3,
+                                      child: Container(
+                                        width: 90,
+                                        height: 30,
+                                        decoration: BoxDecoration(
+                                          border: Border.all(color: yellowColor, width: 2),
+                                          //color: BackgroundColor,
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child:
+                                        Center(
+                                          child: Text(orders['tableId']!=null?getTableName(orders['tableId']).toString():" N/A ",
+                                            style: TextStyle(
+                                                fontSize: 16,
+                                                color: PrimaryColor,
+                                                fontWeight: FontWeight.bold
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    )
+                                  ],
+                                ),
                               ),
                             ),
                             Visibility(
@@ -1131,6 +1275,76 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                 ),
                               ),
                             ),
+                            Visibility(
+                              visible: orders["refundReason"]!=null,
+                              child: Padding(
+                                padding: const EdgeInsets.all(2.0),
+                                child: InkWell(
+                                  onTap: (){
+                                    showDialog(
+                                        context: context,
+                                        builder: (cotext){
+                                          return AlertDialog(
+                                            title: Text("Refund Reason Detail"),
+                                            content: Text(orders["refundReason"]!=null?orders["refundReason"]:"N/A"),
+                                          );
+                                        }
+                                    );
+                                  },
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Expanded(
+                                        flex:2,
+                                        child: Container(
+                                          width: 90,
+                                          height: 30,
+                                          decoration: BoxDecoration(
+                                            color: yellowColor,
+                                            border: Border.all(color: yellowColor, width: 2),
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child: Center(
+                                            child: AutoSizeText(
+                                              'Refund Reason',
+                                              style: TextStyle(
+                                                  color: BackgroundColor,
+                                                  fontSize: 22,
+                                                  fontWeight: FontWeight.bold
+                                              ),
+                                              maxLines: 1,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(width: 2,),
+                                      Expanded(
+                                        flex:3,
+                                        child: Container(
+                                          width: 90,
+                                          height: 30,
+                                          decoration: BoxDecoration(
+                                            border: Border.all(color: yellowColor, width: 2),
+                                            //color: BackgroundColor,
+                                            borderRadius: BorderRadius.circular(8),
+                                          ),
+                                          child:
+                                          Center(
+                                            child: Text(orders["complaintTypeId"]!=null?getComplaintTypeById(orders["complaintTypeId"]):"N/A",
+                                              style: TextStyle(
+                                                  fontSize: 15,
+                                                  color: PrimaryColor,
+                                                  fontWeight: FontWeight.bold
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      )
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
                           ],
                         ),
                       ),
@@ -1179,13 +1393,13 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                             child: Row(
                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                               children: [
-                                                FaIcon(FontAwesomeIcons.handHoldingUsd,color: yellowColor,),
+                                                //FaIcon(FontAwesomeIcons.handHoldingUsd,color: yellowColor,),
                                                 Text(
                                                   orders['orderItems']!=null?orders['orderItems'][i]['name']:"",
                                                   style: TextStyle(
                                                       color: BackgroundColor,
                                                       fontWeight: FontWeight.bold,
-                                                      fontSize: 22
+                                                      fontSize: 16
                                                   ),
                                                 ),
                                                 orders['orderItems'][i]["isRefunded"]!=null&&orders['orderItems'][i]["isRefunded"]==true?FaIcon(FontAwesomeIcons.handHoldingUsd, color: blueColor,):Container(),
@@ -1211,13 +1425,13 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                                   ),
                                                   child: Center(
                                                     child: AutoSizeText(
-                                                      'Unit Price: ',
+                                                      'Unit Price',
                                                       style: TextStyle(
                                                           color: yellowColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
-                                                      maxLines: 2,
+                                                      maxLines: 1,
                                                     ),
                                                   ),
                                                 ),
@@ -1239,10 +1453,10 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                                       //cartList[index].sizeName!=null?cartList[index].sizeName:"N/A",
                                                       style: TextStyle(
                                                           color: blueColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
-                                                      maxLines: 2,
+                                                      maxLines: 1,
                                                     ),
                                                   ),
                                                 ),
@@ -1267,13 +1481,13 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                                   ),
                                                   child: Center(
                                                     child: AutoSizeText(
-                                                      'Quantity: ',
+                                                      'Quantity',
                                                       style: TextStyle(
                                                           color: yellowColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
-                                                      maxLines: 2,
+                                                      maxLines: 1,
                                                     ),
                                                   ),
                                                 ),
@@ -1323,13 +1537,13 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                                   ),
                                                   child: Center(
                                                     child: AutoSizeText(
-                                                      'Size: ',
+                                                      'Size',
                                                       style: TextStyle(
                                                           color: yellowColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
-                                                      maxLines: 2,
+                                                      maxLines: 1,
                                                     ),
                                                   ),
                                                 ),
@@ -1351,10 +1565,10 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                                       //cartList[index].sizeName!=null?cartList[index].sizeName:"N/A",
                                                       style: TextStyle(
                                                           color: blueColor,
-                                                          fontSize: 20,
+                                                          fontSize: 16,
                                                           fontWeight: FontWeight.bold
                                                       ),
-                                                      maxLines: 2,
+                                                      maxLines: 1,
                                                     ),
                                                   ),
                                                 ),
@@ -1405,13 +1619,13 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                                       child: Column(
                                                         children: [
                                                           AutoSizeText(
-                                                            'Extras: ',
+                                                            'Extras',
                                                             style: TextStyle(
                                                                 color: yellowColor,
-                                                                fontSize: 20,
+                                                                fontSize: 16,
                                                                 fontWeight: FontWeight.bold
                                                             ),
-                                                            maxLines: 2,
+                                                            maxLines: 1,
                                                           ),
                                                           Center(
                                                             child: Text(
@@ -1455,7 +1669,7 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                               children: [
                                                 Text(
-                                                  'Price: ',
+                                                  'Price',
                                                   style: TextStyle(
                                                     color: BackgroundColor,
                                                     fontSize: 25,
@@ -1510,7 +1724,7 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                               .spaceBetween,
                           children: [
                             Text(
-                              "SubTotal: ",
+                              "SubTotal",
                               style: TextStyle(
                                   fontSize:
                                   20,
@@ -1619,7 +1833,7 @@ class _KitchenTabViewState extends State<RefundedOrdersScreenForMobile> with Tic
                               .spaceBetween,
                           children: [
                             Text(
-                              "Total: ",
+                              "Total",
                               style: TextStyle(
                                   fontSize:
                                   20,
