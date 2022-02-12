@@ -131,14 +131,23 @@ class PaidTabsWidgetState extends State< OrdersHistoryTabsScreenForMobile> with 
 
                   ListTile(
                     onTap: (){
-                      Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>PaidTabsScreenForMobile(storeId:widget.storeId)), (route) => false);
+                      //Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>PaidTabsScreenForMobile(storeId:widget.store)), (route) => false);
 
-                      // if(widget.storeId["payOut"]!=null&&widget.storeId["payOut"]==true){
-                      //   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>PaidOrdersScreenForMobile(widget.storeId)), (route) => false);
-                      // }else {
-                      //   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>PaidTabsScreenForMobile(storeId:widget.storeId)), (route) => false);
-                      // }
+                      if(widget.storeId["payOut"]!=null&&widget.storeId["payOut"]==true){
+                        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>PaidOrdersScreenForMobile(widget.storeId)), (route) => false);
+                      }else {
+                        Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>PaidTabsScreenForMobile(storeId:widget.storeId)), (route) => false);
+                      }
                     },
+                    // onTap: (){
+                    //   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>PaidTabsScreenForMobile(storeId:widget.storeId)), (route) => false);
+                    //
+                    //   // if(widget.storeId["payOut"]!=null&&widget.storeId["payOut"]==true){
+                    //   //   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>PaidOrdersScreenForMobile(widget.storeId)), (route) => false);
+                    //   // }else {
+                    //   //   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>PaidTabsScreenForMobile(storeId:widget.storeId)), (route) => false);
+                    //   // }
+                    // },
                     title: Text(
                       "Today Orders",
                       style: TextStyle(

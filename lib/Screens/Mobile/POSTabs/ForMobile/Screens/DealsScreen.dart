@@ -287,8 +287,8 @@ class _DealsScreenState extends State<DealsScreen> {
                         return Dialog(
                           //backgroundColor: Colors.transparent,
                             child: Container(
-                                height: 420,
-                                width: 400,
+                                height: 470,
+                                width: 500,
                                 child: dealsPopupLayout(dealsList[index])
                             )
                         );
@@ -380,8 +380,8 @@ class _DealsScreenState extends State<DealsScreen> {
             }
             return Center(
               child: Container(
-                height: 420,
-                width: 400,
+                height: 470,
+                width: 500,
                 decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
                     image: DecorationImage(
@@ -429,7 +429,7 @@ class _DealsScreenState extends State<DealsScreen> {
                                         "Discounted Price: ",
                                         style: TextStyle(
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 25,
+                                            fontSize: 17,
                                             color: yellowColor),
                                       ),
                                       Row(
@@ -438,7 +438,7 @@ class _DealsScreenState extends State<DealsScreen> {
                                             "Rs: ",
                                             style: TextStyle(
                                                 fontWeight: FontWeight.bold,
-                                                fontSize: 25,
+                                                fontSize: 17,
                                                 color: yellowColor),
                                           ),
                                           Text(
@@ -447,7 +447,7 @@ class _DealsScreenState extends State<DealsScreen> {
                                                 : updatedPrice.toString(),
                                             style: TextStyle(
                                                 fontWeight: FontWeight.bold,
-                                                fontSize: 25,
+                                                fontSize: 17,
                                                 color: blueColor),
                                           ),
                                         ],
@@ -461,7 +461,7 @@ class _DealsScreenState extends State<DealsScreen> {
                                         "Actual Price: ",
                                         style: TextStyle(
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 25,
+                                            fontSize: 17,
                                             color: yellowColor),
                                       ),
                                       Row(
@@ -470,7 +470,7 @@ class _DealsScreenState extends State<DealsScreen> {
                                             "Rs: ",
                                             style: TextStyle(
                                                 fontWeight: FontWeight.bold,
-                                                fontSize: 25,
+                                                fontSize: 17,
                                                 color: yellowColor),
                                           ),
                                           Text(
@@ -478,7 +478,7 @@ class _DealsScreenState extends State<DealsScreen> {
                                             style: TextStyle(
                                                 decoration: TextDecoration.lineThrough,
                                                 fontWeight: FontWeight.bold,
-                                                fontSize: 25,
+                                                fontSize: 17,
                                                 color: blueColor),
                                           ),
                                         ],
@@ -499,7 +499,7 @@ class _DealsScreenState extends State<DealsScreen> {
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: yellowColor,
-                                fontSize: 28),
+                                fontSize: 22),
                           ),
                           subtitle: Text(
                             dealProducts
@@ -532,7 +532,7 @@ class _DealsScreenState extends State<DealsScreen> {
                                   "Quantity: ",
                                   style: TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 28,
+                                      fontSize: 22,
                                       color: yellowColor),
                                 ),
                                 Counter(
@@ -554,7 +554,7 @@ class _DealsScreenState extends State<DealsScreen> {
                           )),
                     ),
                     SizedBox(
-                      height: 15,
+                      height: 25,
                     ),
                     InkWell(
                       onTap: () {

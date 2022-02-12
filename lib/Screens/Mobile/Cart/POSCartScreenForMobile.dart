@@ -70,6 +70,7 @@ class _POSCartScreenForMobileState extends State<POSCartScreenForMobile> {
   List<int> cartCounter=[];
   final formKey= GlobalKey<FormState>();
   Timer t;
+  var nonServiceTaxesPrice=0.0,serviceBasedTaxes=0.0;
 
   @override
   void initState() {
@@ -780,36 +781,66 @@ class _POSCartScreenForMobileState extends State<POSCartScreenForMobile> {
                                           discountValue.clear();
                                           priceWithDiscount=0.0;
                                           deductedPrice=0.0;
+                                          nonServiceTaxesPrice=0.0;
+                                          serviceBasedTaxes=0.0;
                                           selectedDiscountType=null;
                                           selectedTable=tables[index]["name"];
                                           selectedTableId=tables[index]["id"];
                                           customerName.clear();
                                           customerPhone.clear();
                                           overallTotalPriceWithTax=overallTotalPrice;
+                                          serviceBasedTaxes=overallTotalPrice;
                                           if(orderTaxes!=null&&orderTaxes.length>0){
                                             var tempTaxList = orderTaxes.where((element) => element.dineIn);
                                             if(tempTaxList!=null&&tempTaxList.length>0){
                                               for(Tax t in tempTaxList.toList()){
                                                 setState(() {
-                                                  if(t.percentage!=null&&t.percentage!=0.0){
-                                                    var percentTax= overallTotalPrice/100*t.percentage;
-                                                    print(percentTax);
-                                                    totalTax=totalTax+percentTax;
-                                                    overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
+                                                  if(t.isService!=null&&t.isService==true){
+                                                    if(t.percentage!=null&&t.percentage!=0.0){
+                                                      var percentTax= overallTotalPrice/100*t.percentage;
+                                                      totalTax=totalTax+percentTax;
+                                                      serviceBasedTaxes=serviceBasedTaxes+percentTax;
+                                                      overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
+                                                    }
+                                                    if(t.price!=null&&t.price!=0.0){
+                                                      overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
+                                                      totalTax=totalTax+t.price;
+                                                      serviceBasedTaxes=serviceBasedTaxes+t.price;
+                                                    }
+                                                    typeBasedTaxes.add(t);
                                                   }
-                                                  if(t.price!=null&&t.price!=0.0){
-                                                    overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
-                                                    totalTax=totalTax+t.price;
-                                                  }
-                                                  typeBasedTaxes.add(t);
+
+
 
                                                   taxesList.add({
                                                     "TaxId": t.id
                                                   });
                                                 });
+
+
+                                              }
+                                              typeBasedTaxes.add(Tax(name: "Discount",price:0,percentage:0,isService:true));
+                                              typeBasedTaxes.add(Tax(name: "Net Total",price:overallTotalPriceWithTax,isService:true));
+
+                                              for(Tax t in tempTaxList.toList()){
+                                                setState(() {
+                                                  if(t.isService==null||t.isService==false){
+                                                    print("Non Service Taxes json "+t.toJson().toString());
+                                                    if(t.percentage!=null&&t.percentage!=0.0) {
+                                                      var percentTax = overallTotalPriceWithTax / 100 * t.percentage;
+                                                      nonServiceTaxesPrice=nonServiceTaxesPrice+percentTax;
+                                                      totalTax=totalTax+percentTax;
+                                                      overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
+                                                    }else if(t.price!=null&&t.price!=0.0){
+                                                      nonServiceTaxesPrice=nonServiceTaxesPrice+t.price;
+                                                      overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
+                                                      totalTax=totalTax+t.price;
+                                                    }
+                                                    typeBasedTaxes.add(t);
+                                                  }
+                                                });
                                               }
                                             }
-                                            print("Price with tax "+overallTotalPriceWithTax.toString());
                                           }
                                           if(discountService!="null"&&discountService=="true"){
                                             showDialog(context: context, builder:(BuildContext context){
@@ -3940,6 +3971,7 @@ class _POSCartScreenForMobileState extends State<POSCartScreenForMobile> {
 
   ///
   Widget DeliveryPopUp(){
+    var discountedValue=0.0;
     return Scaffold(
         body: StatefulBuilder(
             builder: (context,innersetState){
@@ -4008,71 +4040,71 @@ class _POSCartScreenForMobileState extends State<POSCartScreenForMobile> {
                                 ),
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: DropdownButtonFormField<String>(
-                                decoration: InputDecoration(
-                                  labelText: "Select Discount Type",
-                                  alignLabelWithHint: true,
-                                  labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                  enabledBorder: OutlineInputBorder(
-                                  ),
-                                  focusedBorder:  OutlineInputBorder(
-                                    borderSide: BorderSide(color:yellowColor),
-                                  ),
-                                ),
-
-                                value: selectedDiscountType,
-                                onChanged: (Value) {
-                                  innersetState(() {
-                                    selectedDiscountType = Value;
-                                    priceWithDiscount=overallTotalPrice;
-                                    deductedPrice=0.0;
-                                    if(typeBasedTaxes.last.name=="Discount"){
-                                      priceWithDiscount=overallTotalPrice;
-                                      typeBasedTaxes.remove(typeBasedTaxes.last);
-                                    }
-                                    if(discountValue.text.isNotEmpty){
-                                      if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                        var tempPercentage=(overallTotalPrice/100*double.parse(discountValue.text));
-                                        setState(() {
-                                          deductedPrice=tempPercentage;
-                                        });
-                                        priceWithDiscount=priceWithDiscount-tempPercentage+totalTax;
-                                        print("percent discount "+priceWithDiscount.toString());
-                                        typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(discountValue.text)));
-                                      }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
-                                        setState(() {
-                                          deductedPrice=double.parse(discountValue.text);
-                                        });
-                                        var tempSum=overallTotalPrice-double.parse(discountValue.text);
-                                        priceWithDiscount=tempSum+totalTax;
-                                        typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(discountValue.text)));
-                                      }
-                                    }else{
-                                      innersetState(() {
-                                        priceWithDiscount=overallTotalPriceWithTax;
-                                      });
-                                    }
-                                  });
-                                },
-                                items: discountType.map((value) {
-                                  return  DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Row(
-                                      children: <Widget>[
-                                        Text(
-                                          value,
-                                          style:  TextStyle(color: yellowColor,fontSize: 13),
-                                        ),
-                                        //user.icon,
-                                        //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ),
+                            // Padding(
+                            //   padding: const EdgeInsets.all(8.0),
+                            //   child: DropdownButtonFormField<String>(
+                            //     decoration: InputDecoration(
+                            //       labelText: "Select Discount Type",
+                            //       alignLabelWithHint: true,
+                            //       labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                            //       enabledBorder: OutlineInputBorder(
+                            //       ),
+                            //       focusedBorder:  OutlineInputBorder(
+                            //         borderSide: BorderSide(color:yellowColor),
+                            //       ),
+                            //     ),
+                            //
+                            //     value: selectedDiscountType,
+                            //     onChanged: (Value) {
+                            //       innersetState(() {
+                            //         selectedDiscountType = Value;
+                            //         priceWithDiscount=overallTotalPrice;
+                            //         deductedPrice=0.0;
+                            //         if(typeBasedTaxes.last.name=="Discount"){
+                            //           priceWithDiscount=overallTotalPrice;
+                            //           typeBasedTaxes.remove(typeBasedTaxes.last);
+                            //         }
+                            //         if(discountValue.text.isNotEmpty){
+                            //           if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
+                            //             var tempPercentage=(overallTotalPrice/100*double.parse(discountValue.text));
+                            //             setState(() {
+                            //               deductedPrice=tempPercentage;
+                            //             });
+                            //             priceWithDiscount=priceWithDiscount-tempPercentage+totalTax;
+                            //             print("percent discount "+priceWithDiscount.toString());
+                            //             typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(discountValue.text)));
+                            //           }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
+                            //             setState(() {
+                            //               deductedPrice=double.parse(discountValue.text);
+                            //             });
+                            //             var tempSum=overallTotalPrice-double.parse(discountValue.text);
+                            //             priceWithDiscount=tempSum+totalTax;
+                            //             typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(discountValue.text)));
+                            //           }
+                            //         }else{
+                            //           innersetState(() {
+                            //             priceWithDiscount=overallTotalPriceWithTax;
+                            //           });
+                            //         }
+                            //       });
+                            //     },
+                            //     items: discountType.map((value) {
+                            //       return  DropdownMenuItem<String>(
+                            //         value: value,
+                            //         child: Row(
+                            //           children: <Widget>[
+                            //             Text(
+                            //               value,
+                            //               style:  TextStyle(color: yellowColor,fontSize: 13),
+                            //             ),
+                            //             //user.icon,
+                            //             //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                            //           ],
+                            //         ),
+                            //       );
+                            //     }).toList(),
+                            //   ),
+                            // ),
                             Padding(
                               padding: EdgeInsets.all(8.0),
                               child: TextFormField(
@@ -4080,32 +4112,66 @@ class _POSCartScreenForMobileState extends State<POSCartScreenForMobile> {
                                 keyboardType: TextInputType.number,
                                 onChanged: (value){
                                   innersetState(() {
+                                    print(discountValue.text);
                                     print("Total Tax "+totalTax.toString());
-                                    priceWithDiscount=overallTotalPrice;
-                                    if(typeBasedTaxes.last.name=="Discount"){
-                                      //priceWithDiscount=overallTotalPriceWithTax;
-                                      typeBasedTaxes.remove(typeBasedTaxes.last);
-                                    }
+                                    priceWithDiscount=overallTotalPriceWithTax;
                                     if(value.isNotEmpty){
-                                      if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                        var tempPercentage=(overallTotalPrice/100*double.parse(value));
-                                        priceWithDiscount=(priceWithDiscount-tempPercentage)+totalTax;
-                                        setState(() {
-                                          deductedPrice=tempPercentage;
-                                        });
-                                        typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(value)));
-                                      }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
-                                        var tempSum=overallTotalPrice-double.parse(value);
-                                        setState(() {
-                                          deductedPrice=double.parse(discountValue.text);
-                                        });
-                                        priceWithDiscount=tempSum+totalTax;
-
-                                        typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(value)));
+                                      discountedValue=0.0;
+                                      // // if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
+                                      //   var tempPercentage=((priceWithDiscount-nonServiceTaxesPrice)/100)*double.parse(value);
+                                      //   priceWithDiscount=priceWithDiscount-tempPercentage;
+                                      //   priceWithDiscount=priceWithDiscount;
+                                      //   print("percentage"+tempPercentage.toString());
+                                      //   setState(() {
+                                      //     deductedPrice=tempPercentage;
+                                      //   });
+                                      //
+                                      //   for(int i=0;i<typeBasedTaxes.length;i++){
+                                      //     if(typeBasedTaxes[i].isService==null||typeBasedTaxes[i].isService==false){
+                                      //       if(typeBasedTaxes[i].price!=null&&typeBasedTaxes[i].price!=0.0){
+                                      //         priceWithDiscount=priceWithDiscount+typeBasedTaxes[i].price;
+                                      //       }else if(typeBasedTaxes[i].percentage!=null&&typeBasedTaxes[i].percentage!=0.0){
+                                      //         var tempPercentage = (priceWithDiscount/100)*typeBasedTaxes[i].percentage;
+                                      //         print("Service Tax "+tempPercentage.toString());
+                                      //         priceWithDiscount=priceWithDiscount+tempPercentage;
+                                      //       }
+                                      //     }
+                                      //   }
+                                      //   typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(value)));
+                                      // }else
+                                      print("Price with service charges only "+serviceBasedTaxes.toStringAsFixed(0));
+                                      print("Non Service Charges "+nonServiceTaxesPrice.toStringAsFixed(0));
+                                      print("Price with Discount before cash "+priceWithDiscount.toStringAsFixed(0));
+                                      var tempSum=serviceBasedTaxes-double.parse(value);
+                                      setState(() {
+                                        deductedPrice=double.parse(discountValue.text);
+                                      });
+                                      priceWithDiscount=tempSum;
+                                      discountedValue=priceWithDiscount;
+                                      typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Net Total").toList()[0])]=Tax(name: "Net Total",price: priceWithDiscount,isService:true);
+                                      print("Price with Discount after cash "+priceWithDiscount.toStringAsFixed(0));
+                                      // print("Price with Discount after service charges removal "+priceWithDiscount.toStringAsFixed(0));
+                                      for(int i=0;i<typeBasedTaxes.length;i++){
+                                        if(typeBasedTaxes[i].isService==null||typeBasedTaxes[i].isService==false){
+                                          if(typeBasedTaxes[i].price!=null&&typeBasedTaxes[i].price!=0.0){
+                                            priceWithDiscount=priceWithDiscount+typeBasedTaxes[i].price;
+                                          }else if(typeBasedTaxes[i].percentage!=null&&typeBasedTaxes[i].percentage!=0.0){
+                                            var tempPercentage = typeBasedTaxes[i].percentage*(priceWithDiscount/100);
+                                            print("Service Tax "+tempPercentage.toString());
+                                            //  typeBasedTaxes[i]=Tax(name: typeBasedTaxes[i].name,percentage: null,price: tempPercentage,isService:typeBasedTaxes[i].isService);
+                                            priceWithDiscount=priceWithDiscount+tempPercentage;
+                                            // discountedTax=discountedTax+tempPercentage;
+                                          }
+                                        }
                                       }
+
+                                      print("Price after Taxes "+priceWithDiscount.toStringAsFixed(0));
+                                      typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Discount").toList()[0])]=Tax(name: "Discount",price: double.parse(value),isService: true);
                                     }else{
                                       innersetState(() {
                                         priceWithDiscount=overallTotalPriceWithTax;
+                                        typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Net Total").toList()[0])]=Tax(name: "Net Total",price: overallTotalPriceWithTax-nonServiceTaxesPrice,isService:true);
+                                        typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Discount").toList()[0])]=Tax(name: "Discount",price: 0,percentage:0,isService: true);
                                       });
                                     }
 
@@ -4114,7 +4180,7 @@ class _POSCartScreenForMobileState extends State<POSCartScreenForMobile> {
                                 },
                                 decoration: InputDecoration(
                                   border: OutlineInputBorder(),
-                                  hintText: "Discount Amount / Percentage",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                  hintText: "Discount Amount",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ),
@@ -4210,14 +4276,25 @@ class _POSCartScreenForMobileState extends State<POSCartScreenForMobile> {
                                   ),
                                   Row(
                                     children: [
-                                      Text(
-                                        typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"].toString()+" "+typeBasedTaxes[index].price.toStringAsFixed(0):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"].toString()+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(0):widget.store["currencyCode"].toString()+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(0),style: TextStyle(
-                                          fontSize:
-                                          16,
-                                          color:
-                                          blueColor,
-                                          fontWeight:
-                                          FontWeight.bold),
+                                      Text((){
+                                        if(typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0){
+                                          return widget.store["currencyCode"].toString()+": "+typeBasedTaxes[index].price.toStringAsFixed(0);
+                                        }else if((typeBasedTaxes[index].isService==null||typeBasedTaxes[index].isService==false)&&typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&discountedValue>0){
+                                          var temp=(discountedValue)/100*typeBasedTaxes[index].percentage;
+                                          return widget.store["currencyCode"].toString()+": "+(temp).toStringAsFixed(0);
+                                        }else if((typeBasedTaxes[index].isService==null||typeBasedTaxes[index].isService==false)&&typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&priceWithDiscount==0){
+                                          var temp=(overallTotalPriceWithTax-nonServiceTaxesPrice)/100*typeBasedTaxes[index].percentage;
+                                          return widget.store["currencyCode"].toString()+": "+(temp).toStringAsFixed(0);
+                                        }else
+                                          return widget.store["currencyCode"].toString()+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(0);
+                                      }(),
+                                        style: TextStyle(
+                                            fontSize:
+                                            16,
+                                            color:
+                                            blueColor,
+                                            fontWeight:
+                                            FontWeight.bold),
                                       ),
                                     ],
                                   ),
@@ -4896,6 +4973,7 @@ class _POSCartScreenForMobileState extends State<POSCartScreenForMobile> {
 
   ///
   Widget TakeAwayPopUp(){
+    var discountedValue=0.0;
     return Scaffold(
         body: StatefulBuilder(
             builder: (context,innersetState){
@@ -4953,70 +5031,70 @@ class _POSCartScreenForMobileState extends State<POSCartScreenForMobile> {
                                 ),
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: DropdownButtonFormField<String>(
-                                decoration: InputDecoration(
-                                  labelText: "Select Discount Type",
-                                  alignLabelWithHint: true,
-                                  labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                  enabledBorder: OutlineInputBorder(
-                                  ),
-                                  focusedBorder:  OutlineInputBorder(
-                                    borderSide: BorderSide(color:yellowColor),
-                                  ),
-                                ),
-
-                                value: selectedDiscountType,
-                                onChanged: (Value) {
-                                  innersetState(() {
-                                    selectedDiscountType = Value;
-                                    // priceWithDiscount=overallTotalPrice;
-                                    deductedPrice=0.0;
-                                    if(typeBasedTaxes.last.name=="Discount"){
-                                      priceWithDiscount=overallTotalPrice;
-                                      typeBasedTaxes.remove(typeBasedTaxes.last);
-                                    }
-                                    if(discountValue.text.isNotEmpty){
-                                      if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                        var tempPercentage=(overallTotalPrice/100*double.parse(discountValue.text));
-                                        setState(() {
-                                          deductedPrice=tempPercentage;
-                                        });
-                                        priceWithDiscount=priceWithDiscount-tempPercentage+totalTax;
-                                        typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(discountValue.text)));
-                                      }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
-                                        setState(() {
-                                          deductedPrice=double.parse(discountValue.text);
-                                        });
-                                        var tempSum=overallTotalPrice-double.parse(discountValue.text);
-                                        priceWithDiscount=tempSum+totalTax;
-                                        typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(discountValue.text)));
-                                      }
-                                    }else{
-                                      innersetState(() {
-                                        priceWithDiscount=overallTotalPriceWithTax;
-                                      });
-                                    }
-                                  });
-                                },
-                                items: discountType.map((value) {
-                                  return  DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Row(
-                                      children: <Widget>[
-                                        Text(
-                                          value,
-                                          style:  TextStyle(color: yellowColor,fontSize: 13),
-                                        ),
-                                        //user.icon,
-                                        //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ),
+                            // Padding(
+                            //   padding: const EdgeInsets.all(8.0),
+                            //   child: DropdownButtonFormField<String>(
+                            //     decoration: InputDecoration(
+                            //       labelText: "Select Discount Type",
+                            //       alignLabelWithHint: true,
+                            //       labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                            //       enabledBorder: OutlineInputBorder(
+                            //       ),
+                            //       focusedBorder:  OutlineInputBorder(
+                            //         borderSide: BorderSide(color:yellowColor),
+                            //       ),
+                            //     ),
+                            //
+                            //     value: selectedDiscountType,
+                            //     onChanged: (Value) {
+                            //       innersetState(() {
+                            //         selectedDiscountType = Value;
+                            //         // priceWithDiscount=overallTotalPrice;
+                            //         deductedPrice=0.0;
+                            //         if(typeBasedTaxes.last.name=="Discount"){
+                            //           priceWithDiscount=overallTotalPrice;
+                            //           typeBasedTaxes.remove(typeBasedTaxes.last);
+                            //         }
+                            //         if(discountValue.text.isNotEmpty){
+                            //           if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
+                            //             var tempPercentage=(overallTotalPrice/100*double.parse(discountValue.text));
+                            //             setState(() {
+                            //               deductedPrice=tempPercentage;
+                            //             });
+                            //             priceWithDiscount=priceWithDiscount-tempPercentage+totalTax;
+                            //             typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(discountValue.text)));
+                            //           }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
+                            //             setState(() {
+                            //               deductedPrice=double.parse(discountValue.text);
+                            //             });
+                            //             var tempSum=overallTotalPrice-double.parse(discountValue.text);
+                            //             priceWithDiscount=tempSum+totalTax;
+                            //             typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(discountValue.text)));
+                            //           }
+                            //         }else{
+                            //           innersetState(() {
+                            //             priceWithDiscount=overallTotalPriceWithTax;
+                            //           });
+                            //         }
+                            //       });
+                            //     },
+                            //     items: discountType.map((value) {
+                            //       return  DropdownMenuItem<String>(
+                            //         value: value,
+                            //         child: Row(
+                            //           children: <Widget>[
+                            //             Text(
+                            //               value,
+                            //               style:  TextStyle(color: yellowColor,fontSize: 13),
+                            //             ),
+                            //             //user.icon,
+                            //             //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                            //           ],
+                            //         ),
+                            //       );
+                            //     }).toList(),
+                            //   ),
+                            // ),
                             Padding(
                               padding: EdgeInsets.all(8.0),
                               child: TextFormField(
@@ -5024,32 +5102,66 @@ class _POSCartScreenForMobileState extends State<POSCartScreenForMobile> {
                                 keyboardType: TextInputType.number,
                                 onChanged: (value){
                                   innersetState(() {
+                                    print(discountValue.text);
                                     print("Total Tax "+totalTax.toString());
-                                    priceWithDiscount=overallTotalPrice;
-                                    if(typeBasedTaxes.last.name=="Discount"){
-                                      //priceWithDiscount=overallTotalPriceWithTax;
-                                      typeBasedTaxes.remove(typeBasedTaxes.last);
-                                    }
+                                    priceWithDiscount=overallTotalPriceWithTax;
                                     if(value.isNotEmpty){
-                                      if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                        var tempPercentage=(overallTotalPrice/100*double.parse(value));
-                                        priceWithDiscount=priceWithDiscount-tempPercentage+totalTax;
-                                        setState(() {
-                                          deductedPrice=tempPercentage;
-                                        });
-                                        typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(value)));
-                                      }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
-                                        var tempSum=overallTotalPrice-double.parse(value);
-                                        setState(() {
-                                          deductedPrice=double.parse(discountValue.text);
-                                        });
-                                        priceWithDiscount=tempSum+totalTax;
-
-                                        typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(value)));
+                                      discountedValue=0.0;
+                                      // // if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
+                                      //   var tempPercentage=((priceWithDiscount-nonServiceTaxesPrice)/100)*double.parse(value);
+                                      //   priceWithDiscount=priceWithDiscount-tempPercentage;
+                                      //   priceWithDiscount=priceWithDiscount;
+                                      //   print("percentage"+tempPercentage.toString());
+                                      //   setState(() {
+                                      //     deductedPrice=tempPercentage;
+                                      //   });
+                                      //
+                                      //   for(int i=0;i<typeBasedTaxes.length;i++){
+                                      //     if(typeBasedTaxes[i].isService==null||typeBasedTaxes[i].isService==false){
+                                      //       if(typeBasedTaxes[i].price!=null&&typeBasedTaxes[i].price!=0.0){
+                                      //         priceWithDiscount=priceWithDiscount+typeBasedTaxes[i].price;
+                                      //       }else if(typeBasedTaxes[i].percentage!=null&&typeBasedTaxes[i].percentage!=0.0){
+                                      //         var tempPercentage = (priceWithDiscount/100)*typeBasedTaxes[i].percentage;
+                                      //         print("Service Tax "+tempPercentage.toString());
+                                      //         priceWithDiscount=priceWithDiscount+tempPercentage;
+                                      //       }
+                                      //     }
+                                      //   }
+                                      //   typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(value)));
+                                      // }else
+                                      print("Price with service charges only "+serviceBasedTaxes.toStringAsFixed(0));
+                                      print("Non Service Charges "+nonServiceTaxesPrice.toStringAsFixed(0));
+                                      print("Price with Discount before cash "+priceWithDiscount.toStringAsFixed(0));
+                                      var tempSum=serviceBasedTaxes-double.parse(value);
+                                      setState(() {
+                                        deductedPrice=double.parse(discountValue.text);
+                                      });
+                                      priceWithDiscount=tempSum;
+                                      discountedValue=priceWithDiscount;
+                                      typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Net Total").toList()[0])]=Tax(name: "Net Total",price: priceWithDiscount,isService:true);
+                                      print("Price with Discount after cash "+priceWithDiscount.toStringAsFixed(0));
+                                      // print("Price with Discount after service charges removal "+priceWithDiscount.toStringAsFixed(0));
+                                      for(int i=0;i<typeBasedTaxes.length;i++){
+                                        if(typeBasedTaxes[i].isService==null||typeBasedTaxes[i].isService==false){
+                                          if(typeBasedTaxes[i].price!=null&&typeBasedTaxes[i].price!=0.0){
+                                            priceWithDiscount=priceWithDiscount+typeBasedTaxes[i].price;
+                                          }else if(typeBasedTaxes[i].percentage!=null&&typeBasedTaxes[i].percentage!=0.0){
+                                            var tempPercentage = typeBasedTaxes[i].percentage*(priceWithDiscount/100);
+                                            print("Service Tax "+tempPercentage.toString());
+                                            //  typeBasedTaxes[i]=Tax(name: typeBasedTaxes[i].name,percentage: null,price: tempPercentage,isService:typeBasedTaxes[i].isService);
+                                            priceWithDiscount=priceWithDiscount+tempPercentage;
+                                            // discountedTax=discountedTax+tempPercentage;
+                                          }
+                                        }
                                       }
+
+                                      print("Price after Taxes "+priceWithDiscount.toStringAsFixed(0));
+                                      typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Discount").toList()[0])]=Tax(name: "Discount",price: double.parse(value),isService: true);
                                     }else{
                                       innersetState(() {
                                         priceWithDiscount=overallTotalPriceWithTax;
+                                        typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Net Total").toList()[0])]=Tax(name: "Net Total",price: overallTotalPriceWithTax-nonServiceTaxesPrice,isService:true);
+                                        typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Discount").toList()[0])]=Tax(name: "Discount",price: 0,percentage:0,isService: true);
                                       });
                                     }
 
@@ -5058,7 +5170,7 @@ class _POSCartScreenForMobileState extends State<POSCartScreenForMobile> {
                                 },
                                 decoration: InputDecoration(
                                   border: OutlineInputBorder(),
-                                  hintText: "Discount Amount / Percentage",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                  hintText: "Discount Amount",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ),
@@ -5156,15 +5268,20 @@ class _POSCartScreenForMobileState extends State<POSCartScreenForMobile> {
                                     children: [
                                       Text((){
                                         if(typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0){
-                                          return widget.store["currencyCode"].toString()+" "+typeBasedTaxes[index].price.toStringAsFixed(0);
-                                        }else if(typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1){
-                                          return widget.store["currencyCode"].toString()+": "+(typeBasedTaxes[index].percentage/100*overallTotalPrice).toStringAsFixed(0);
-                                        }
-                                        else
-                                          return widget.store["currencyCode"].toString()+": "+(typeBasedTaxes[index].percentage/100*overallTotalPrice).toStringAsFixed(0);
-                                      }()
-                                        // typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0?widget.store["currencyCode"].toString()+" "+typeBasedTaxes[index].price.toStringAsFixed(0):typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1?widget.store["currencyCode"].toString()+": "+(typeBasedTaxes[index].percentage/100*overallTotalPrice).toStringAsFixed(0):widget.store["currencyCode"].toString()+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(0)
-                                        ,style: TextStyle(
+                                          return widget.store["currencyCode"].toString()+": "+typeBasedTaxes[index].price.toStringAsFixed(0);
+                                        }else if((typeBasedTaxes[index].isService==null||typeBasedTaxes[index].isService==false)&&typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&discountedValue>0){
+                                          print("Price with Discount First If "+discountedValue.toStringAsFixed(0));
+                                          var temp=(discountedValue)/100*typeBasedTaxes[index].percentage;
+                                          return widget.store["currencyCode"].toString()+": "+(temp).toStringAsFixed(0);
+                                        }else if((typeBasedTaxes[index].isService==null||typeBasedTaxes[index].isService==false)&&typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&priceWithDiscount==0){
+                                          print("Price with Discount second If "+priceWithDiscount.toStringAsFixed(0));
+                                          var temp=(overallTotalPriceWithTax-nonServiceTaxesPrice)/100*typeBasedTaxes[index].percentage;
+                                          return widget.store["currencyCode"].toString()+": "+(temp).toStringAsFixed(0);
+                                        }else
+                                          return widget.store["currencyCode"].toString()+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(0);
+
+                                      }(),
+                                        style: TextStyle(
                                             fontSize:
                                             16,
                                             color:
@@ -6256,6 +6373,7 @@ class _POSCartScreenForMobileState extends State<POSCartScreenForMobile> {
     );
   }
   Widget DineInPopup(){
+    var discountedValue=0.0;
     return Scaffold(
         body: StatefulBuilder(
             builder: (context,innersetState){
@@ -6313,72 +6431,72 @@ class _POSCartScreenForMobileState extends State<POSCartScreenForMobile> {
                                 ),
                               ),
                             ),
-                            Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: DropdownButtonFormField<String>(
-                                decoration: InputDecoration(
-                                  labelText: "Select Discount Type",
-                                  alignLabelWithHint: true,
-                                  labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
-                                  enabledBorder: OutlineInputBorder(
-                                  ),
-                                  focusedBorder:  OutlineInputBorder(
-                                    borderSide: BorderSide(color:yellowColor),
-                                  ),
-                                ),
-
-                                value: selectedDiscountType,
-                                onChanged: (Value) {
-                                  innersetState(() {
-                                    selectedDiscountType = Value;
-                                    priceWithDiscount=overallTotalPrice;
-                                    deductedPrice=0.0;
-
-                                    if(typeBasedTaxes.last.name=="Discount"){
-                                      priceWithDiscount=overallTotalPrice;
-                                      typeBasedTaxes.remove(typeBasedTaxes.last);
-                                    }
-                                    if(discountValue.text.isNotEmpty){
-                                      if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                        var tempPercentage=(overallTotalPrice/100*double.parse(discountValue.text));
-                                        setState(() {
-                                          deductedPrice=tempPercentage;
-                                        });
-                                        priceWithDiscount=priceWithDiscount-tempPercentage+totalTax;
-                                        print("percent discount "+priceWithDiscount.toString());
-                                        typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(discountValue.text)));
-                                      }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
-                                        setState(() {
-                                          deductedPrice=double.parse(discountValue.text);
-                                        });
-                                        var tempSum=overallTotalPrice-double.parse(discountValue.text);
-                                        priceWithDiscount=tempSum+totalTax;
-                                        typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(discountValue.text)));
-                                      }
-                                    }else{
-                                      innersetState(() {
-                                        priceWithDiscount=overallTotalPriceWithTax;
-                                      });
-                                    }
-                                  });
-                                },
-                                items: discountType.map((value) {
-                                  return  DropdownMenuItem<String>(
-                                    value: value,
-                                    child: Row(
-                                      children: <Widget>[
-                                        Text(
-                                          value,
-                                          style:  TextStyle(color: yellowColor,fontSize: 13),
-                                        ),
-                                        //user.icon,
-                                        //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
-                                      ],
-                                    ),
-                                  );
-                                }).toList(),
-                              ),
-                            ),
+                            // Padding(
+                            //   padding: const EdgeInsets.all(8.0),
+                            //   child: DropdownButtonFormField<String>(
+                            //     decoration: InputDecoration(
+                            //       labelText: "Select Discount Type",
+                            //       alignLabelWithHint: true,
+                            //       labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                            //       enabledBorder: OutlineInputBorder(
+                            //       ),
+                            //       focusedBorder:  OutlineInputBorder(
+                            //         borderSide: BorderSide(color:yellowColor),
+                            //       ),
+                            //     ),
+                            //
+                            //     value: selectedDiscountType,
+                            //     onChanged: (Value) {
+                            //       innersetState(() {
+                            //         selectedDiscountType = Value;
+                            //         priceWithDiscount=overallTotalPrice;
+                            //         deductedPrice=0.0;
+                            //
+                            //         if(typeBasedTaxes.last.name=="Discount"){
+                            //           priceWithDiscount=overallTotalPrice;
+                            //           typeBasedTaxes.remove(typeBasedTaxes.last);
+                            //         }
+                            //         if(discountValue.text.isNotEmpty){
+                            //           if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
+                            //             var tempPercentage=(overallTotalPrice/100*double.parse(discountValue.text));
+                            //             setState(() {
+                            //               deductedPrice=tempPercentage;
+                            //             });
+                            //             priceWithDiscount=priceWithDiscount-tempPercentage+totalTax;
+                            //             print("percent discount "+priceWithDiscount.toString());
+                            //             typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(discountValue.text)));
+                            //           }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
+                            //             setState(() {
+                            //               deductedPrice=double.parse(discountValue.text);
+                            //             });
+                            //             var tempSum=overallTotalPrice-double.parse(discountValue.text);
+                            //             priceWithDiscount=tempSum+totalTax;
+                            //             typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(discountValue.text)));
+                            //           }
+                            //         }else{
+                            //           innersetState(() {
+                            //             priceWithDiscount=overallTotalPriceWithTax;
+                            //           });
+                            //         }
+                            //       });
+                            //     },
+                            //     items: discountType.map((value) {
+                            //       return  DropdownMenuItem<String>(
+                            //         value: value,
+                            //         child: Row(
+                            //           children: <Widget>[
+                            //             Text(
+                            //               value,
+                            //               style:  TextStyle(color: yellowColor,fontSize: 13),
+                            //             ),
+                            //             //user.icon,
+                            //             //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                            //           ],
+                            //         ),
+                            //       );
+                            //     }).toList(),
+                            //   ),
+                            // ),
                             Padding(
                               padding: EdgeInsets.all(8.0),
                               child: TextFormField(
@@ -6386,32 +6504,66 @@ class _POSCartScreenForMobileState extends State<POSCartScreenForMobile> {
                                 keyboardType: TextInputType.number,
                                 onChanged: (value){
                                   innersetState(() {
+                                    print(discountValue.text);
                                     print("Total Tax "+totalTax.toString());
-                                    priceWithDiscount=overallTotalPrice;
-                                    if(typeBasedTaxes.last.name=="Discount"){
-                                      //priceWithDiscount=overallTotalPriceWithTax;
-                                      typeBasedTaxes.remove(typeBasedTaxes.last);
-                                    }
+                                    priceWithDiscount=overallTotalPriceWithTax;
                                     if(value.isNotEmpty){
-                                      if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
-                                        var tempPercentage=(overallTotalPrice/100*double.parse(value));
-                                        priceWithDiscount=(priceWithDiscount-tempPercentage)+totalTax;
-                                        setState(() {
-                                          deductedPrice=tempPercentage;
-                                        });
-                                        typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(value)));
-                                      }else if(selectedDiscountType!=null&&selectedDiscountType=="Cash"){
-                                        var tempSum=overallTotalPrice-double.parse(value);
-                                        setState(() {
-                                          deductedPrice=double.parse(discountValue.text);
-                                        });
-                                        priceWithDiscount=tempSum+totalTax;
-
-                                        typeBasedTaxes.add(Tax(name: "Discount",price: double.parse(value)));
+                                      discountedValue=0.0;
+                                      // // if(selectedDiscountType!=null&&selectedDiscountType=="Percentage"){
+                                      //   var tempPercentage=((priceWithDiscount-nonServiceTaxesPrice)/100)*double.parse(value);
+                                      //   priceWithDiscount=priceWithDiscount-tempPercentage;
+                                      //   priceWithDiscount=priceWithDiscount;
+                                      //   print("percentage"+tempPercentage.toString());
+                                      //   setState(() {
+                                      //     deductedPrice=tempPercentage;
+                                      //   });
+                                      //
+                                      //   for(int i=0;i<typeBasedTaxes.length;i++){
+                                      //     if(typeBasedTaxes[i].isService==null||typeBasedTaxes[i].isService==false){
+                                      //       if(typeBasedTaxes[i].price!=null&&typeBasedTaxes[i].price!=0.0){
+                                      //         priceWithDiscount=priceWithDiscount+typeBasedTaxes[i].price;
+                                      //       }else if(typeBasedTaxes[i].percentage!=null&&typeBasedTaxes[i].percentage!=0.0){
+                                      //         var tempPercentage = (priceWithDiscount/100)*typeBasedTaxes[i].percentage;
+                                      //         print("Service Tax "+tempPercentage.toString());
+                                      //         priceWithDiscount=priceWithDiscount+tempPercentage;
+                                      //       }
+                                      //     }
+                                      //   }
+                                      //   typeBasedTaxes.add(Tax(name: "Discount",percentage: double.parse(value)));
+                                      // }else
+                                      print("Price with service charges only "+serviceBasedTaxes.toStringAsFixed(0));
+                                      print("Non Service Charges "+nonServiceTaxesPrice.toStringAsFixed(0));
+                                      print("Price with Discount before cash "+priceWithDiscount.toStringAsFixed(0));
+                                      var tempSum=serviceBasedTaxes-double.parse(value);
+                                      setState(() {
+                                        deductedPrice=double.parse(discountValue.text);
+                                      });
+                                      priceWithDiscount=tempSum;
+                                      discountedValue=priceWithDiscount;
+                                      typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Net Total").toList()[0])]=Tax(name: "Net Total",price: priceWithDiscount,isService:true);
+                                      print("Price with Discount after cash "+priceWithDiscount.toStringAsFixed(0));
+                                      // print("Price with Discount after service charges removal "+priceWithDiscount.toStringAsFixed(0));
+                                      for(int i=0;i<typeBasedTaxes.length;i++){
+                                        if(typeBasedTaxes[i].isService==null||typeBasedTaxes[i].isService==false){
+                                          if(typeBasedTaxes[i].price!=null&&typeBasedTaxes[i].price!=0.0){
+                                            priceWithDiscount=priceWithDiscount+typeBasedTaxes[i].price;
+                                          }else if(typeBasedTaxes[i].percentage!=null&&typeBasedTaxes[i].percentage!=0.0){
+                                            var tempPercentage = typeBasedTaxes[i].percentage*(priceWithDiscount/100);
+                                            print("Service Tax "+tempPercentage.toString());
+                                            //  typeBasedTaxes[i]=Tax(name: typeBasedTaxes[i].name,percentage: null,price: tempPercentage,isService:typeBasedTaxes[i].isService);
+                                            priceWithDiscount=priceWithDiscount+tempPercentage;
+                                            // discountedTax=discountedTax+tempPercentage;
+                                          }
+                                        }
                                       }
+
+                                      print("Price after Taxes "+priceWithDiscount.toStringAsFixed(0));
+                                      typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Discount").toList()[0])]=Tax(name: "Discount",price: double.parse(value),isService: true);
                                     }else{
                                       innersetState(() {
                                         priceWithDiscount=overallTotalPriceWithTax;
+                                        typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Net Total").toList()[0])]=Tax(name: "Net Total",price: overallTotalPriceWithTax-nonServiceTaxesPrice,isService:true);
+                                        typeBasedTaxes[typeBasedTaxes.indexOf(typeBasedTaxes.where((element) => element.name=="Discount").toList()[0])]=Tax(name: "Discount",price: 0,percentage:0,isService: true);
                                       });
                                     }
 
@@ -6420,7 +6572,7 @@ class _POSCartScreenForMobileState extends State<POSCartScreenForMobile> {
                                 },
                                 decoration: InputDecoration(
                                   border: OutlineInputBorder(),
-                                  hintText: "Discount Amount / Percentage",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                  hintText: "Discount Amount",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ),
@@ -6519,8 +6671,14 @@ class _POSCartScreenForMobileState extends State<POSCartScreenForMobile> {
                                       Text((){
                                         if(typeBasedTaxes[index].price!=null&&typeBasedTaxes[index].price!=0.0){
                                           return widget.store["currencyCode"].toString()+": "+typeBasedTaxes[index].price.toStringAsFixed(0);
-                                        }else if(typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&selectedDiscountType=="Percentage"&&discountValue.text.isNotEmpty&&index==typeBasedTaxes.length-1){
-                                          return widget.store["currencyCode"].toString()+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(0);
+                                        }else if((typeBasedTaxes[index].isService==null||typeBasedTaxes[index].isService==false)&&typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&discountedValue>0){
+                                          print("Price with Discount First If "+discountedValue.toStringAsFixed(0));
+                                          var temp=(discountedValue)/100*typeBasedTaxes[index].percentage;
+                                          return widget.store["currencyCode"].toString()+": "+(temp).toStringAsFixed(0);
+                                        }else if((typeBasedTaxes[index].isService==null||typeBasedTaxes[index].isService==false)&&typeBasedTaxes[index].percentage!=null&&typeBasedTaxes[index].percentage!=0.0&&priceWithDiscount==0){
+                                          print("Price with Discount second If "+priceWithDiscount.toStringAsFixed(0));
+                                          var temp=(overallTotalPriceWithTax-nonServiceTaxesPrice)/100*typeBasedTaxes[index].percentage;
+                                          return widget.store["currencyCode"].toString()+": "+(temp).toStringAsFixed(0);
                                         }else
                                           return widget.store["currencyCode"].toString()+": "+(overallTotalPrice/100*typeBasedTaxes[index].percentage).toStringAsFixed(0);
 
