@@ -951,31 +951,16 @@ class Utils{
                                                ]
                                            )
                                        ),
-                                       order["discountedPrice"]!=null&&order["discountedPrice"]!=0.0?pw.Container(
-                                           width: double.infinity,
-                                           child: pw.Row(
-                                               children: [
-                                                 pw.Expanded(
-                                                     child: pw.Text("Discount",style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
-                                                 ),
-                                                 pw.Text(
-                                                     order["discountedPrice"].toStringAsFixed(0),
-                                                     style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
-                                                 )
-                                               ]
-                                           )
-                                       ):pw.Container(),
-                                       for(int i=0;i<order["orderTaxes"].length;i++)
-                                         if(order["orderTaxes"][i]["taxName"]!="Discount")
+                                       for(int i=0;i<order["logicallyArrangedTaxes"].length;i++)
                                        pw.Container(
                                            width: double.infinity,
                                            child: pw.Row(
                                                children: [
                                                  pw.Expanded(
-                                                     child: pw.Text(order["orderTaxes"][i]["taxName"],style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
+                                                     child: pw.Text(order["logicallyArrangedTaxes"][i]["taxName"],style: pw.TextStyle(fontWeight: pw.FontWeight.bold))
                                                  ),
                                                  pw.Text(
-                                                     order["orderTaxes"][i]["amount"].toStringAsFixed(0),
+                                                     order["logicallyArrangedTaxes"][i]["amount"].toStringAsFixed(0),
                                                      style: pw.TextStyle(fontWeight: pw.FontWeight.bold)
                                                  )
                                                ]
