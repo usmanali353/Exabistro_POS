@@ -1277,16 +1277,15 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                           var percentTax = overallTotalPriceWithTax / 100 * t.percentage;
                                                           nonServiceTaxesPrice=nonServiceTaxesPrice+percentTax;
                                                           totalTax=totalTax+percentTax;
-                                                          overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
                                                         }else if(t.price!=null&&t.price!=0.0){
                                                           nonServiceTaxesPrice=nonServiceTaxesPrice+t.price;
-                                                          overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
                                                           totalTax=totalTax+t.price;
                                                         }
                                                         typeBasedTaxes.add(t);
                                                       }
                                                     });
                                                   }
+                                                  overallTotalPriceWithTax=overallTotalPriceWithTax+nonServiceTaxesPrice;
                                                 }
                                               }
                                               if(discountService!="null"&&discountService=="true"){
@@ -1408,16 +1407,15 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                           var percentTax = overallTotalPriceWithTax / 100 * t.percentage;
                                           nonServiceTaxesPrice=nonServiceTaxesPrice+percentTax;
                                           totalTax=totalTax+percentTax;
-                                          overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
                                         }else if(t.price!=null&&t.price!=0.0){
                                           nonServiceTaxesPrice=nonServiceTaxesPrice+t.price;
-                                          overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
                                           totalTax=totalTax+t.price;
                                         }
                                         typeBasedTaxes.add(t);
                                       }
                                     });
                                   }
+                                  overallTotalPriceWithTax=overallTotalPriceWithTax+nonServiceTaxesPrice;
                                 }
                               }
                             });
@@ -1568,16 +1566,15 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                           var percentTax = overallTotalPriceWithTax / 100 * t.percentage;
                                           nonServiceTaxesPrice=nonServiceTaxesPrice+percentTax;
                                           totalTax=totalTax+percentTax;
-                                          overallTotalPriceWithTax=overallTotalPriceWithTax+percentTax;
                                         }else if(t.price!=null&&t.price!=0.0){
                                           nonServiceTaxesPrice=nonServiceTaxesPrice+t.price;
-                                          overallTotalPriceWithTax=overallTotalPriceWithTax+t.price;
                                           totalTax=totalTax+t.price;
                                         }
                                         typeBasedTaxes.add(t);
                                       }
                                     });
                                   }
+                                  overallTotalPriceWithTax=overallTotalPriceWithTax+nonServiceTaxesPrice;
                                 }
                               }
 

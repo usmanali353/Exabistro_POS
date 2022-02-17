@@ -198,10 +198,10 @@ class Utils{
        PosColumn(text: '${orderObj['netTotal']}', width: 2, styles: PosStyles(bold: true)),
      ]);
      bytes+= ticket.hr();
-     for (var i = 0; i < orderObj['orderTaxes'].length; i++) {
+     for (var i = 0; i < orderObj["logicallyArrangedTaxes"].length; i++) {
        bytes+= ticket.row([
-         PosColumn(text: ' ${orderObj['orderTaxes'][i]['taxName']}', width: 10),
-         PosColumn(text: '${ orderObj['orderTaxes'][i]['amount']} ', width: 2),
+         PosColumn(text: ' ${orderObj["logicallyArrangedTaxes"][i]['taxName']}', width: 10),
+         PosColumn(text: '${ orderObj["logicallyArrangedTaxes"][i]['amount']} ', width: 2),
        ]);
        // bytes+= ticket.row([
        //   PosColumn(text: '${"Olives\n Mashroom"}', width: 12),
@@ -319,11 +319,10 @@ class Utils{
          PosColumn(text: '${orderObj['netTotal']}', width: 2, styles: PosStyles(bold: true)),
        ]);
        printer.hr();
-       for (var i = 0; i < orderObj['orderTaxes'].length; i++) {
-
+       for (var i = 0; i < orderObj["logicallyArrangedTaxes"].length; i++) {
          printer.row([
-           PosColumn(text: ' ${orderObj['orderTaxes'][i]['taxName']}', width: 10),
-           PosColumn(text: '${ orderObj['orderTaxes'][i]['amount']} ', width: 2),
+           PosColumn(text: ' ${orderObj["logicallyArrangedTaxes"][i]['taxName']}', width: 10),
+           PosColumn(text: '${ orderObj["logicallyArrangedTaxes"][i]['amount']} ', width: 2),
          ]);
          // printer.row([
          //   PosColumn(text: '${"Olives\n Mashroom"}', width: 12),
@@ -439,42 +438,6 @@ class Utils{
            }
          }
        }
-       printer.feed(1);
-       printer.hr();
-       // printer.row([
-       //   PosColumn(text: 'SubTotal', width: 10, styles: PosStyles(bold: true)),
-       //   PosColumn(text: '${orderObj['netTotal']}', width: 2, styles: PosStyles(bold: true)),
-       // ]);
-       // printer.hr();
-       // for (var i = 0; i < orderObj['orderTaxes'].length; i++) {
-       //   printer.row([
-       //     PosColumn(text: ' ${orderObj['orderTaxes'][i]['taxName']}', width: 10),
-       //     PosColumn(text: '${ orderObj['orderTaxes'][i]['amount']} ', width: 2),
-       //   ]);
-       //   // printer.row([
-       //   //   PosColumn(text: '${"Olives\n Mashroom"}', width: 12),
-       //   //   //PosColumn(text: '${ itemList[i]['price']} x ${itemList[i]['quantity']}', width: 4),
-       //   //
-       //   // ]);
-       // }
-       // if(orderObj["discountedPrice"]!=null&&orderObj["discountedPrice"]!=0.0)
-       //   printer.row([
-       //     PosColumn(text: ' ${"Discount"}', width: 10),
-       //     PosColumn(text: '${orderObj["discountedPrice"].toStringAsFixed(0)} ', width: 2),
-       //   ]);
-       // printer.hr();
-       //
-       // printer.row([
-       //   PosColumn(text: 'Total', width: 10, styles: PosStyles(bold: true)),
-       //   PosColumn(text: '${orderObj["discountedPrice"]!=null&&orderObj["discountedPrice"]!=0.0?(orderObj["grossTotal"]-orderObj["discountedPrice"]).toStringAsFixed(0):orderObj["grossTotal"].toStringAsFixed(0)}', width: 2, styles: PosStyles(bold: true)),
-       // ]);
-       // printer.hr();
-       // printer.feed(2);
-       // printer.text('Thank You',styles: PosStyles(align: PosAlign.center, bold: true));
-       // printer.text('Scan to Visit Our Website',styles: PosStyles(align: PosAlign.center, bold: true));
-       // printer.emptyLines(1);
-       // printer.qrcode("http://dev.exabistro.com/#/StoreMenu/${storeObj["id"]}");
-
        printer.cut();
        //printer.drawer();
 
