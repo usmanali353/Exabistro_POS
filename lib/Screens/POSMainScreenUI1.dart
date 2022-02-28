@@ -2193,7 +2193,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                       if(typeBasedTaxes[i].price!=null&&typeBasedTaxes[i].price!=0.0){
                                                         priceWithDiscount=priceWithDiscount+typeBasedTaxes[i].price;
                                                       }else if(typeBasedTaxes[i].percentage!=null&&typeBasedTaxes[i].percentage!=0.0){
-                                                        var tempPercentage = typeBasedTaxes[i].percentage*(priceWithDiscount/100);
+                                                        var tempPercentage = typeBasedTaxes[i].percentage*(discountedValue/100);
                                                         print("Service Tax "+tempPercentage.toString());
                                                         //  typeBasedTaxes[i]=Tax(name: typeBasedTaxes[i].name,percentage: null,price: tempPercentage,isService:typeBasedTaxes[i].isService);
                                                         priceWithDiscount=priceWithDiscount+tempPercentage;
@@ -3266,7 +3266,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                       if(typeBasedTaxes[i].price!=null&&typeBasedTaxes[i].price!=0.0){
                                                         priceWithDiscount=priceWithDiscount+typeBasedTaxes[i].price;
                                                       }else if(typeBasedTaxes[i].percentage!=null&&typeBasedTaxes[i].percentage!=0.0){
-                                                        var tempPercentage = typeBasedTaxes[i].percentage*(priceWithDiscount/100);
+                                                        var tempPercentage = typeBasedTaxes[i].percentage*(discountedValue/100);
                                                         print("Service Tax "+tempPercentage.toString());
                                                         //  typeBasedTaxes[i]=Tax(name: typeBasedTaxes[i].name,percentage: null,price: tempPercentage,isService:typeBasedTaxes[i].isService);
                                                         priceWithDiscount=priceWithDiscount+tempPercentage;
@@ -4723,7 +4723,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                       if(typeBasedTaxes[i].price!=null&&typeBasedTaxes[i].price!=0.0){
                                                         priceWithDiscount=priceWithDiscount+typeBasedTaxes[i].price;
                                                       }else if(typeBasedTaxes[i].percentage!=null&&typeBasedTaxes[i].percentage!=0.0){
-                                                        var tempPercentage = typeBasedTaxes[i].percentage*(priceWithDiscount/100);
+                                                        var tempPercentage = typeBasedTaxes[i].percentage*(discountedValue/100);
                                                         print("Service Tax "+tempPercentage.toString());
                                                       //  typeBasedTaxes[i]=Tax(name: typeBasedTaxes[i].name,percentage: null,price: tempPercentage,isService:typeBasedTaxes[i].isService);
                                                         priceWithDiscount=priceWithDiscount+tempPercentage;
