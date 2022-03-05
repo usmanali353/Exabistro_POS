@@ -15,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../Screens/RolesBaseStoreSelection.dart';
 import '../model/ComplaintTypes.dart';
+import '../model/Vendors.dart';
 
 class Network_Operations{
 
@@ -939,6 +940,52 @@ class Network_Operations{
     }catch(e){
       print(e);
       Utils.showError(context, "Unable to Fetch Complain Type Due to Some Error Contact Support");
+    }
+    return null;
+  }
+
+  static Future<bool> changeOrderStatus(BuildContext context,String token,dynamic OrderStatusData)async{
+
+    try{
+      Map<String,String> headers = {'Content-Type':'application/json','Authorization':'Bearer '+token};
+      var body=jsonEncode(
+          OrderStatusData
+      );
+
+      var response=await http.post(Uri.parse(Utils.baseUrl()+"orders/UpdateStatus"),headers: headers,body: body);
+
+      var data= jsonDecode(response.body);
+      print(response.body);
+      if(response.statusCode==200){
+        Utils.showSuccess(context, "Order Status Changed");
+        return true;
+      }
+      else{
+        print(response.body);
+        print(response.statusCode);
+        Utils.showError(context, "Please Try Again");
+        return false;
+      }
+    }catch(e){
+      Utils.showError(context, "Error Found: $e");
+      return false;
+    }
+    return null;
+  }
+  static Future<List<Vendors>> getRiderListByStoreId(BuildContext context,String token,int storeId)async{
+    try{
+      Map<String,String> headers = {'Authorization':'Bearer '+token};
+      var response=await http.get(Uri.parse(Utils.baseUrl()+"account/GetRiders/"+storeId.toString()),headers: headers);
+      var data= jsonDecode(response.body);
+      if(response.statusCode==200){
+        return Vendors.vendorsListFromJson(response.body);
+      }
+      else{
+        Utils.showError(context, "Please Try Again");
+        return null;
+      }
+    }catch(e){
+      Utils.showError(context, "Error Found: $e");
     }
     return null;
   }

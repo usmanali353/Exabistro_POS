@@ -10,6 +10,7 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../model/Vendors.dart';
 import 'KitchenOrdersDetails.dart';
 
 
@@ -37,8 +38,9 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
   bool selectedCategory = false;
   List<bool> _selected = [];
   int quantity=5;
-
-
+  List<Vendors> riderList=[];
+  List<String> riderNames=[];
+  Vendors selectedRider;
   
 
   @override
@@ -96,6 +98,20 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                     }
                     //orderList = value;
                   });
+                });
+                Network_Operations.getRiderListByStoreId(context,token,widget.store["id"]).then((value){
+                  if(value!=null){
+                    setState(() {
+                      riderList = value;
+                      if(riderList!=null&&riderList.length>0){
+                        for(int i=0;i<riderList.length;i++){
+                          if(riderList[i].user!=null&&riderList[i].user.firstName!=null){
+                            riderNames.add((riderList[i].user.firstName+" "+riderList[i].user.lastName.toString()));
+                          }
+                        }
+                      }
+                    });
+                  }
                 });
                 Network_Operations.getTableList(context,token,widget.store["id"])
                     .then((value) {
@@ -580,28 +596,6 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                               ),
                               Row(
                                   children: [
-                                    orders["orderStatus"]>=5||orders["orderType"]==2?Padding(
-                                      padding: const EdgeInsets.only(bottom: 16.0,right: 8.0),
-                                      child: InkWell(
-                                          onTap: (){
-                                            Navigator.pop(context);
-                                            showDialog(
-                                                context: context,
-                                                builder: (context){
-                                                  return Dialog(
-                                                    backgroundColor: Colors.transparent,
-                                                    child: Container(
-                                                      width: 400,
-                                                      height: 370,
-                                                      child: payoutDialog(orders),
-                                                    ),
-                                                  );
-                                                }
-                                            );
-                                           // Utils.buildInvoice(orders,widget.store,customerName);
-                                          },
-                                          child: FaIcon(FontAwesomeIcons.cashRegister, color: blueColor, size: 30,)),
-                                    ):Container(),
                                     orders["orderStatus"]==1?InkWell(
                                       child: FaIcon(FontAwesomeIcons.solidTimesCircle, color: blueColor, size: 30,),
                                       onTap: (){
@@ -617,6 +611,119 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                         });
                                       },
                                     ):Container(),
+                                    orders["orderStatus"]!=7?Padding(
+                                        padding: const EdgeInsets.only(bottom: 16.0,right: 8.0,left: 8.0),
+                                      child: InkWell(
+                                        child: FaIcon(FontAwesomeIcons.history, color: blueColor, size: 30,),
+                                        onTap: (){
+                                           if(orders["orderStatus"]==1){
+                                             var orderStatusData={
+                                               "Id":orders['id'],
+                                               "status":3,
+                                             };
+                                             Navigator.pop(context);
+                                             Network_Operations.changeOrderStatus(context, token, orderStatusData).then((value){
+                                               if(value){
+                                                 setState(() {
+                                                   WidgetsBinding.instance
+                                                       .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                                                 });
+                                                 Utils.showSuccess(this.context, "Order Status Changed");
+                                               }else{
+                                                 Utils.showError(this.context, "Please Try Again");
+                                               }
+                                             });
+                                           }
+                                           if(orders["orderStatus"]==3){
+                                             var orderStatusData={
+                                               "Id":orders['id'],
+                                               "status":4,
+                                             };
+
+                                             Navigator.pop(context);
+                                             Network_Operations.changeOrderStatus(context, token, orderStatusData).then((value){
+                                               if(value){
+                                                 setState(() {
+                                                   WidgetsBinding.instance
+                                                       .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                                                 });
+                                                 Utils.showSuccess(this.context, "Order Status Changed");
+                                               }else{
+                                                 Utils.showError(this.context, "Please Try Again");
+                                               }
+                                             });
+                                           }
+                                           if(orders["orderStatus"]==4){
+                                             var orderStatusData={
+                                               "Id":orders['id'],
+                                               "status":5,
+                                             };
+                                             Navigator.pop(context);
+                                             Network_Operations.changeOrderStatus(context, token, orderStatusData).then((value){
+                                               if(value){
+                                                 setState(() {
+                                                   WidgetsBinding.instance
+                                                       .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                                                 });
+                                                 Utils.showSuccess(this.context, "Order Status Changed");
+                                               }else{
+                                                 Utils.showError(this.context, "Please Try Again");
+                                               }
+                                             });
+                                           }
+                                           if(orders["orderStatus"]==5){
+                                              if(orders["orderType"]==1||orders["orderType"]==2){
+                                                Navigator.pop(context);
+                                                showDialog(
+                                                    context: context,
+                                                    builder: (context){
+                                                      return Dialog(
+                                                        backgroundColor: Colors.transparent,
+                                                        child: Container(
+                                                          width: 400,
+                                                          height: 370,
+                                                          child: payoutDialog(orders),
+                                                        ),
+                                                      );
+                                                    }
+                                                );
+                                              }else{
+                                                Navigator.pop(context);
+                                                showDialog(
+                                                    context: context,
+                                                    builder: (context){
+                                                      return Dialog(
+                                                        backgroundColor: Colors.transparent,
+                                                        child: Container(
+                                                          width: 400,
+                                                          height: 350,
+                                                          child: AssignRiderDialog(orders),
+                                                        ),
+                                                      );
+                                                    }
+                                                );
+                                              }
+                                           }
+                                           if(orders["orderStatus"]==6){
+                                             Navigator.pop(context);
+                                             showDialog(
+                                                 context: context,
+                                                 builder: (context){
+                                                   return Dialog(
+                                                     backgroundColor: Colors.transparent,
+                                                     child: Container(
+                                                       width: 400,
+                                                       height: 370,
+                                                       child: payoutDialog(orders),
+                                                     ),
+                                                   );
+                                                 }
+                                             );
+                                           }
+                                        },
+                                      ),
+                                    )
+                                    :Container(),
                                     Padding(
                                       padding: const EdgeInsets.only(left:8.0),
                                       child: InkWell(
@@ -643,7 +750,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                             //color: yellowColor,
                             child: Column(
                               children: [
-                                Padding(
+                                orders["orderType"]!=1? Padding(
                                   padding: const EdgeInsets.all(2.0),
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -696,7 +803,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                       )
                                     ],
                                   ),
-                                ),
+                                ):Container(),
                                 Padding(
                                   padding: const EdgeInsets.all(2.0),
                                   child: Row(
@@ -1654,7 +1761,6 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
   TextEditingController amountPaid=TextEditingController();
   Widget payoutDialog(dynamic orders){
     int totalAmount=int.parse(orders["grossTotal"].toStringAsFixed(0));
-
     int balance= 0;
     return Scaffold(
       body: StatefulBuilder(
@@ -1778,15 +1884,17 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                   "PaymentType": 1,
                                   "OrderStatus": 7,
                                 };
+                                Navigator.pop(context);
                                 Network_Operations.payCashOrder(this.context,token, payCash).then((isPaid){
                                   if(isPaid){
-                                    WidgetsBinding.instance
-                                        .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                                    setState(() {
+                                      WidgetsBinding.instance
+                                          .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                                    });
                                     Utils.showSuccess(this.context,"Payment Successful");
                                   }else{
                                     Utils.showError(this.context,"Problem in Making Payment");
                                   }
-                                  Navigator.pop(context);
                                 });
                               }
                             },
@@ -1803,6 +1911,150 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                               ),
                             ),
                           )
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              ],
+            );
+          }
+      ),
+    );
+  }
+  TextEditingController assignRider=TextEditingController();
+  Widget AssignRiderDialog(dynamic orders){
+    return Scaffold(
+      body: StatefulBuilder(
+          builder: (context,innersetState){
+            return ListView(
+              children: [
+                Center(
+                  child: Container(
+                    width: 400,
+                    height: 350,
+                    child: Container(
+                      decoration: BoxDecoration(
+                          image: DecorationImage(
+                            fit: BoxFit.fill,
+                            //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
+                            image: AssetImage('assets/bb.jpg'),
+                          )
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: MediaQuery.of(context).size.width,
+                            height: 40,
+                            color: yellowColor,
+                            child: Center(child: Text("Assign Rider",style: TextStyle(fontSize: 25,fontWeight: FontWeight.bold,color: BackgroundColor),)),
+
+                          ),
+                          Form(
+                            key: formKey,
+                            child: Column(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.only(top:16.0,left:16.0,right:16.0),
+                                  child: TextFormField(
+                                    controller: assignRider,
+                                    textInputAction: TextInputAction.go,
+                                    keyboardType: TextInputType.number,
+                                    autofocus: true,
+                                    validator: (value) {
+                                      if (value == null || value.isEmpty) {
+                                        return 'Estimated Time is Required';
+                                      }
+                                      return null;
+                                    },
+                                    decoration: InputDecoration(
+                                      border: OutlineInputBorder(),
+                                      hintText: "Estimated Time",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                    ),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(16.0),
+                                  child: DropdownButtonFormField<Vendors>(
+                                    decoration: InputDecoration(
+                                      labelText: "Select Driver",
+                                      alignLabelWithHint: true,
+                                      labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
+                                      enabledBorder: OutlineInputBorder(
+                                      ),
+                                      focusedBorder:  OutlineInputBorder(
+                                        borderSide: BorderSide(color:yellowColor),
+                                      ),
+                                    ),
+
+                                    value: selectedRider,
+                                    onChanged: (value) {
+                                      innersetState(() {
+                                        this.selectedRider=value;
+                                      });
+                                    },
+                                    items: riderList.map((value) {
+                                      return  DropdownMenuItem<Vendors>(
+                                        value: value,
+                                        child: Row(
+                                          children: <Widget>[
+                                            Text(
+                                              value.user.firstName+" "+value.user.lastName.toString(),
+                                              style:  TextStyle(color: yellowColor,fontSize: 13),
+                                            ),
+                                            //user.icon,
+                                            //SizedBox(width: MediaQuery.of(context).size.width*0.71,),
+                                          ],
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                ),
+                                InkWell(
+                                  onTap: (){
+                                    if(!formKey.currentState.validate()){
+
+                                    }else{
+                                      var orderStatusData={
+                                        "Id":orders['id'],
+                                        "status":6,
+                                        "driverId": selectedRider.user.id,
+                                        "EstimatedDeliveryTime":int.parse(assignRider.text),
+                                        //  "EstimatedPrepareTime":20,
+                                        //  "ActualPrepareTime": 15,
+                                        "ActualDriverDepartureTime":DateTime.now().toString().substring(11,16)
+                                      };
+                                      Navigator.pop(context);
+                                      Network_Operations.changeOrderStatus(context, token, orderStatusData).then((value){
+                                        if(value){
+                                          setState(() {
+                                            WidgetsBinding.instance
+                                                .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                                          });
+                                          Utils.showSuccess(this.context, "Order Status Changed");
+                                        }else{
+                                          Utils.showError(this.context, "Please Try Again");
+                                        }
+                                      });
+                                    }
+                                  },
+                                  child: Card(
+                                    elevation: 8,
+                                    child: Container(
+                                      width: 230,
+                                      height: 50,
+                                      decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(4),
+                                          color: yellowColor
+                                      ),
+                                      child: Center(child: Text("Proceed",style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
+                                    ),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
+
                         ],
                       ),
                     ),
