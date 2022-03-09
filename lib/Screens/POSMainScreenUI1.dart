@@ -2525,22 +2525,19 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                 });
                                               });
                                               if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
-                                                var payCash ={
-                                                  "orderid": jsonDecode(orderPlaced)["id"],
-                                                  "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
-                                                  "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
-                                                  "Comment": null,
-                                                  "PaymentType": 1,
-                                                  "OrderStatus": 7,
-                                                };
-                                                Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
-                                                  if(isPaid){
-                                                    
-                                                    Utils.showSuccess(this.context,"Payment Successful");
-                                                  }else{
-                                                    Utils.showError(this.context,"Problem in Making Payment");
-                                                  }
-                                                });
+                                                showDialog(
+                                                    context: this.context,
+                                                    builder: (context){
+                                                      return Dialog(
+                                                        backgroundColor: Colors.transparent,
+                                                        child: Container(
+                                                          width: 400,
+                                                          height: 370,
+                                                          child: payoutDialog(orderPlaced),
+                                                        ),
+                                                      );
+                                                    }
+                                                );
 
                                               }
                                               Utils.showSuccess(this.context,"Order Placed successfully");
@@ -2975,22 +2972,19 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                       });
                                     });
                                     if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
-                                      var payCash ={
-                                        "orderid": jsonDecode(orderPlaced)["id"],
-                                        "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
-                                        "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
-                                        "Comment": null,
-                                        "PaymentType": 1,
-                                        "OrderStatus": 7,
-                                      };
-                                      Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
-                                        if(isPaid){
-                                          
-                                          Utils.showSuccess(this.context,"Payment Successful");
-                                        }else{
-                                          Utils.showError(this.context,"Problem in Making Payment");
-                                        }
-                                      });
+                                      showDialog(
+                                          context: this.context,
+                                          builder: (context){
+                                            return Dialog(
+                                              backgroundColor: Colors.transparent,
+                                              child: Container(
+                                                width: 400,
+                                                height: 370,
+                                                child: payoutDialog(orderPlaced),
+                                              ),
+                                            );
+                                          }
+                                      );
 
                                     }
                                     Utils.showSuccess(this.context,"Order Placed successfully");
@@ -3604,21 +3598,19 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                 });
                                               });
                                               if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
-                                                var payCash ={
-                                                  "orderid": jsonDecode(orderPlaced)["id"],
-                                                  "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
-                                                  "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
-                                                  "Comment": null,
-                                                  "PaymentType": 1,
-                                                  "OrderStatus": 7,
-                                                };
-                                                Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
-                                                  if(isPaid){
-                                                    Utils.showSuccess(this.context,"Payment Successful");
-                                                  }else{
-                                                    Utils.showError(this.context,"Problem in Making Payment");
-                                                  }
-                                                });
+                                                showDialog(
+                                                    context: this.context,
+                                                    builder: (context){
+                                                      return Dialog(
+                                                        backgroundColor: Colors.transparent,
+                                                        child: Container(
+                                                          width: 400,
+                                                          height: 370,
+                                                          child: payoutDialog(orderPlaced),
+                                                        ),
+                                                      );
+                                                    }
+                                                );
                                                 
                                               }
                                               Utils.showSuccess(this.context,"Order Placed successfully");
@@ -3850,21 +3842,19 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                         });
                                                       });
                                                       if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
-                                                        var payCash ={
-                                                          "orderid": jsonDecode(orderPlaced)["id"],
-                                                          "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
-                                                          "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
-                                                          "Comment": null,
-                                                          "PaymentType": 1,
-                                                          "OrderStatus": 7,
-                                                        };
-                                                        Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
-                                                          if(isPaid){
-                                                            Utils.showSuccess(this.context,"Payment Successful");
-                                                          }else{
-                                                            Utils.showError(this.context,"Problem in Making Payment");
-                                                          }
-                                                        });
+                                                        showDialog(
+                                                            context: this.context,
+                                                            builder: (context){
+                                                              return Dialog(
+                                                                backgroundColor: Colors.transparent,
+                                                                child: Container(
+                                                                  width: 400,
+                                                                  height: 370,
+                                                                  child: payoutDialog(orderPlaced),
+                                                                ),
+                                                              );
+                                                            }
+                                                        );
                                                         
                                                       }
                                                       Utils.showSuccess(this.context,"Order Placed successfully");
@@ -4295,21 +4285,19 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                           });
                                                         });
                                                         if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
-                                                          var payCash ={
-                                                            "orderid": jsonDecode(orderPlaced)["id"],
-                                                            "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
-                                                            "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
-                                                            "Comment": null,
-                                                            "PaymentType": 1,
-                                                            "OrderStatus": 7,
-                                                          };
-                                                          Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
-                                                            if(isPaid){
-                                                              Utils.showSuccess(this.context,"Payment Successful");
-                                                            }else{
-                                                              Utils.showError(this.context,"Problem in Making Payment");
-                                                            }
-                                                          });
+                                                          showDialog(
+                                                              context: this.context,
+                                                              builder: (context){
+                                                                return Dialog(
+                                                                  backgroundColor: Colors.transparent,
+                                                                  child: Container(
+                                                                    width: 400,
+                                                                    height: 370,
+                                                                    child: payoutDialog(orderPlaced),
+                                                                  ),
+                                                                );
+                                                              }
+                                                          );
                                                           
                                                         }
                                                         Utils.showSuccess(this.context,"Order Placed successfully");
@@ -5080,21 +5068,19 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                 });
                                               });
                                               if(widget.store["payOut"]!=null&&widget.store["payOut"]==true){
-                                                var payCash ={
-                                                  "orderid": jsonDecode(orderPlaced)["id"],
-                                                  "CashPay": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
-                                                  "Balance": overallTotalPriceWithTax==0.0?overallTotalPriceWithTax:overallTotalPriceWithTax,
-                                                  "Comment": null,
-                                                  "PaymentType": 1,
-                                                  "OrderStatus": 7,
-                                                };
-                                                Network_Operations.payCashOrder(this.context, prefs.getString("token"), payCash).then((isPaid){
-                                                  if(isPaid){
-                                                    Utils.showSuccess(this.context,"Payment Successful");
-                                                  }else{
-                                                    Utils.showError(this.context,"Problem in Making Payment");
-                                                  }
-                                                });
+                                                showDialog(
+                                                    context: this.context,
+                                                    builder: (context){
+                                                      return Dialog(
+                                                        backgroundColor: Colors.transparent,
+                                                        child: Container(
+                                                          width: 400,
+                                                          height: 370,
+                                                          child: payoutDialog(orderPlaced),
+                                                        ),
+                                                      );
+                                                    }
+                                                );
                                                 
                                               }
                                               Utils.showSuccess(this.context,"Order Placed successfully");
@@ -5848,6 +5834,172 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  TextEditingController amountPaid=TextEditingController();
+  Widget payoutDialog(dynamic orders){
+    print("Placed Order "+orders.toString());
+    int totalAmount=int.parse(jsonDecode(orders)["result"]["grossTotal"].toStringAsFixed(0));
+    int balance= 0;
+    return Scaffold(
+      body: StatefulBuilder(
+          builder: (context,innersetState){
+            return ListView(
+              children: [
+                Center(
+                  child: Container(
+                    width: 400,
+                    height: 370,
+                    child: Container(
+                      decoration: BoxDecoration(
+                          image: DecorationImage(
+                            fit: BoxFit.fill,
+                            //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
+                            image: AssetImage('assets/bb.jpg'),
+                          )
+                      ),
+                      child: Column(
+                        children: [
+                          Container(
+                            width: MediaQuery.of(context).size.width,
+                            height: 40,
+                            color: yellowColor,
+                            child: Center(child: Text("Payout",style: TextStyle(fontSize: 25,fontWeight: FontWeight.bold,color: BackgroundColor),)),
+
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.only(top:16.0,left:16.0,right:16.0),
+                            child: Container(
+                              width: MediaQuery.of(context).size.width/0.9,
+                              height: 70,
+                              decoration: BoxDecoration(
+                                  color: BackgroundColor,
+                                  border: Border.all(color: yellowColor, width: 2),
+                                  borderRadius: BorderRadius.circular(9)
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text("Total Amount",style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: yellowColor),),
+                                    Text(totalAmount.toString(),style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: PrimaryColor),),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                          ),
+                          Form(
+                            key: formKey,
+                            child: Padding(
+                              padding: const EdgeInsets.only(top:16.0,left:16.0,right:16.0),
+                              child: TextFormField(
+
+                                controller: amountPaid,
+                                textInputAction: TextInputAction.go,
+                                keyboardType: TextInputType.number,
+                                autofocus: true,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Amount is Required';
+                                  }else if(int.parse(value)<totalAmount){
+                                    return "Paid Amount should be greater then equal to total Amount";
+                                  }
+                                  return null;
+                                },
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  hintText: "Amount Paid",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
+                                onChanged: (value){
+                                  innersetState(() {
+                                    if(value.isNotEmpty) {
+                                      balance =
+                                      (int.parse(amountPaid.text)-totalAmount);
+                                    }else{
+                                      balance=0;
+                                    }
+                                  });
+
+                                },
+
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(16.0),
+                            child: Container(
+                              width: MediaQuery.of(context).size.width/0.9,
+                              height: 70,
+                              decoration: BoxDecoration(
+                                  color: BackgroundColor,
+                                  border: Border.all(color: yellowColor, width: 2),
+                                  borderRadius: BorderRadius.circular(9)
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text("Balance",style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: yellowColor),),
+                                    Text(balance.toStringAsFixed(0),style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: PrimaryColor),),
+                                  ],
+                                ),
+                              ),
+                            ),
+
+                          ),
+                          InkWell(
+                            onTap: (){
+                              if(!formKey.currentState.validate()){
+
+                              }else{
+                                var payCash ={
+                                  "orderid": jsonDecode(orders)["id"],
+                                  "CashPay": jsonDecode(orders)["result"]["grossTotal"],
+                                  "Balance": jsonDecode(orders)["result"]["grossTotal"],
+                                  "Comment": null,
+                                  "PaymentType": 1,
+                                  "OrderStatus": 7,
+                                };
+                                Navigator.pop(context);
+                                Network_Operations.payCashOrder(this.context,token, payCash).then((isPaid){
+                                  if(isPaid){
+                                    setState(() {
+                                      // WidgetsBinding.instance
+                                      //     .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                                    });
+                                    Utils.showSuccess(this.context,"Payment Successful");
+                                  }else{
+                                    Utils.showError(this.context,"Problem in Making Payment");
+                                  }
+                                });
+                              }
+                            },
+                            child: Card(
+                              elevation: 8,
+                              child: Container(
+                                width: 230,
+                                height: 50,
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(4),
+                                    color: yellowColor
+                                ),
+                                child: Center(child: Text("Payout",style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              ],
+            );
+          }
       ),
     );
   }
