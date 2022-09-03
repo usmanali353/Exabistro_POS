@@ -1,0 +1,357 @@
+{
+  "store_screen": {
+    "store": "butik",
+    "city": "By",
+    "role": "Rolle",
+    "appbar_title": "Vælg Filial",
+    "open": "Åben",
+    "close": "når"
+  },
+  "loading_screen": {
+    "text": "Indlæser..."
+  },
+  "button": {
+    "cancel": "Afbestille",
+    "change_language": "Skift sprog"
+  },
+  "language": {
+    "name": {
+      "en": "English",
+      "da": "Danish",
+      "ur": "اردو",
+      "ar": "العربية"
+    },
+    "selected_message": "Det valgte sprog er {language}",
+    "selection": {
+      "message": "Vælg venligst et sprog fra listen",
+      "title": "Valg af sprog"
+    }
+  },
+  "main_screen": {
+    "menu": "spisekort",
+    "overall": "samlet set",
+    "cart": "Vogn",
+    "total": "i alt",
+    "takeaway_btn": "Tag væk",
+    "delivery_btn": "Levering",
+    "products_tab": "Produkter",
+    "deals_tab": "Tilbud"
+  },
+  "product_popup": {
+    "select_size": "Vælg størrelse",
+    "quantity": "Kvantitet",
+    "price": "Pris",
+    "addToCard_btn": "Tilføj til kurv"
+  },
+
+  "deals_popup": {
+    "discounted_price": "Udsalgspris",
+    "actual_price": "Faktisk pris",
+    "products": "Produkter",
+    "quantity": "Kvantitet",
+    "addToCard_btn": "Tilføj til kurv"
+  },
+
+  "cart_items": {
+    "unit_price": "Pris per stk",
+    "quantity": "Kvantitet",
+    "size": "Størrelse",
+    "price": "Pris"
+  },
+
+  "dineIn_popup": {
+    "dineInLabel": "Bestil for at spise ind",
+    "customer_name_hint": "Kundenavn *",
+    "customer_phone_hint": "Kunde telefon *",
+    "discount_amount_hint": "Rabatbeløb",
+    "sub_total": "Sub-Total",
+    "total": "i alt",
+    "submitOrder_btn": "Indsend ordre"
+  },
+  "takeAway_popup": {
+    "takeAwayLabel": "Bestil for Tag væk",
+    "customer_name_hint": "Kundenavn *",
+    "customer_phone_hint": "Kunde telefon *",
+    "discount_amount_hint": "Rabatbeløb",
+    "sub_total": "Sub-Total",
+    "total": "i alt",
+    "submitOrder_btn": "Indsend ordre"
+  },
+  "delivery_popup": {
+    "deliveryLabel": "Placer ordre til levering",
+    "customer_name_hint": "Kundenavn *",
+    "customer_address_hint": "Kundeadresse *",
+    "customer_phone_hint": "Kunde telefon *",
+    "discount_amount_hint": "Rabatbeløb",
+    "sub_total": "Sub-Total",
+    "total": "i alt",
+    "submitOrder_btn": "Indsend ordre"
+  },
+
+
+
+  "unpaid_today_orders": {
+    "unpaid_orders_label": "Ubetalte ordrer",
+    "total_orders": "Samlede ordrer",
+    "orders": "Madbestillinger",
+    "total": "i alt: ",
+    "table": "Tabel: ",
+    "order_id": "Order ID"
+  },
+  "unpaid_today_orders_popup": {
+    "items": "Genstande",
+    "total": "i alt",
+    "status": "Status",
+    "waiter": "Tjener",
+    "customer": "Kunde",
+    "table_number": "Tabel#",
+    "sub_total": "Sub-Total",
+    "unit_price": "Pris per stk",
+    "quantity": "Kvantitet",
+    "extras": "Toppings",
+    "size": "Størrelse",
+    "price": "Pris",
+    "payout": "Udbetaling",
+    "total_amount": "Total beløb",
+    "amount_paid": "Betalt beløb",
+    "balance": "Balance",
+    "assign_rider": "Tildel rytter",
+    "estimated_time": "Forventet tid",
+    "select_driver": "Vælg Driver",
+    "proceed": "Fortsæt"
+  },
+  "paid_today_orders": {
+    "paid_orders_label": "Betalte ordrer",
+    "total_orders": "Samlede ordrer",
+    "orders": "Madbestillinger",
+    "total": "i alt: ",
+    "table": "Tabel: ",
+    "refund_reason": "Årsag til tilbagebetaling"
+  },
+  "paid_today_orders_popup": {
+    "items": "Genstande",
+    "total": "i alt",
+    "status": "Status",
+    "waiter": "Tjener",
+    "customer": "Kunde",
+    "table_number": "Tabel#",
+    "sub_total": "Sub-Total",
+    "unit_price": "Pris per stk",
+    "quantity": "Kvantitet",
+    "extras": "Toppings",
+    "size": "Størrelse",
+    "price": "Pris",
+    "payout": "Udbetaling",
+    "total_amount": "Total beløb",
+    "amount_paid": "Betalt beløb",
+    "balance": "Balance",
+    "assign_rider": "Tildel rytter",
+    "estimated_time": "Forventet tid",
+    "select_driver": "Vælg Driver",
+    "proceed": "Fortsæt",
+    "refund_reason": "Årsag til tilbagebetaling",
+    "refund_items": "Tilbagebetaling af varer",
+    "select_reason_type": "Vælg Årsagstype",
+    "select_predefined_reason": "Vælg Foruddefineret årsag",
+    "reason_of_refund": "Årsag til tilbagebetaling",
+    "cash_amount_to_refund": "Kontantbeløb til tilbagebetaling",
+    "refund_btn": "Tilbagebetale"
+
+  },
+
+  "delivered_orders_history": {
+    "delivered_orders_label": "Leverede ordrer",
+    "total_orders": "Samlede ordrer",
+    "total": "i alt: ",
+    "table": "Tabel: "
+  },
+
+  "delivered_orders_history_popup": {
+    "refund_reason_details": "Oplysninger om tilbagebetalingsårsag",
+    "items": "Genstande",
+    "total": "i alt",
+    "status": "Status",
+    "waiter": "Tjener",
+    "customer": "Kunde",
+    "table_number": "Tabel#",
+    "sub_total": "Sub-Total",
+    "unit_price": "Pris per stk",
+    "quantity": "Kvantitet",
+    "extras": "Toppings",
+    "size": "Størrelse",
+    "price": "Pris",
+    "refund_reason": "Årsag til tilbagebetaling"
+  },
+
+  "cancelled_orders_history": {
+    "cancelled_orders_label": "Annullerede ordrer",
+    "total_orders": "Samlede ordrer",
+    "total": "i alt: ",
+    "table": "Tabel: "
+
+  },
+  "cancelled_orders_history_popup": {
+    "items": "Genstande",
+    "total": "i alt",
+    "status": "Status",
+    "waiter": "Tjener",
+    "customer": "Kunde",
+    "table_number": "Tabel#",
+    "sub_total": "Sub-Total",
+    "unit_price": "Pris per stk",
+    "quantity": "Kvantitet",
+    "extras": "Toppings",
+    "size": "Størrelse",
+    "price": "Pris"
+  },
+
+  "discounted_orders_history": {
+    "discounted_orders_label": "Rabatterede ordrer",
+    "total_orders": "Samlede ordrer",
+    "total": "i alt: ",
+    "table": "Tabel: "
+
+  },
+  "discounted_orders_history_popup": {
+    "items": "Genstande",
+    "total": "i alt",
+    "status": "Status",
+    "waiter": "Tjener",
+    "customer": "Kunde",
+    "table_number": "Tabel#",
+    "sub_total": "Sub-Total",
+    "unit_price": "Pris per stk",
+    "quantity": "Kvantitet",
+    "extras": "Toppings",
+    "size": "Størrelse",
+    "price": "Pris"
+
+  },
+
+  "refunded_orders_history": {
+    "refunded_orders_label": "Refunderede ordrer",
+    "total_orders": "Samlede ordrer",
+    "total": "i alt: ",
+    "table": "Tabel: "
+
+  },
+  "refunded_orders_history_popup": {
+    "items": "Genstande",
+    "total": "i alt",
+    "status": "Status",
+    "waiter": "Tjener",
+    "customer": "Kunde",
+    "table_number": "Tabel#",
+    "sub_total": "Sub-Total",
+    "unit_price": "Pris per stk",
+    "quantity": "Kvantitet",
+    "extras": "Toppings",
+    "size": "Størrelse",
+    "price": "Pris",
+    "refund_reason": "Årsag til tilbagebetaling"
+
+  },
+
+  "shift_report": {
+    "session_number": "Session#",
+    "opening_balance": "Åbnings balance",
+    "closing_balance": "Slutsaldo",
+    "time": "Tid",
+    "user": "Bruger"
+  },
+  "drawer_items": {
+    "home": "Hjem",
+    "today_orders": "Bestillinger i dag",
+    "shift_report": "Skift rapport",
+    "orders_history": "Ordrehistorie",
+    "logout": "Log ud"
+  },
+  "buttons": {
+    "signIn": "Log ind",
+    "submit": "Indsend",
+    "save": "Gemme",
+    "add_to_cart": "Tilføj til kurv",
+    "checkout": "Tjek ud",
+    "get_direction": "Få retning",
+    "cancel": "Afbestille"
+  },
+  "SignIn_screen": {
+    "welcom_title": "Velkommen",
+    "title2": "Log ind for at fortsætte",
+    "emailTitle": "E-mail",
+    "passwordTitle": "Adgangskode"
+  },
+
+  "alert_dialog": {
+    "cancel": "Afbestille",
+    "delete": "Slet",
+    "add_from_cache": "Tilføj fra cache",
+    "notice": "Varsel",
+    "content": "Data er tilgængelige i din cache, vil du tilføje?",
+    "edit_extras": "Rediger ekstramateriale",
+    "update_toppings": "Opdater toppings",
+    "payout": "Udbetaling",
+    "total_amount": "Total beløb",
+    "amount_paid": "Betalt beløb",
+    "balance": "Balance",
+    "payout_btn": "Udbetaling"
+  },
+
+  "error_messages": {
+    "token_expire_please_login_again": "Token udløber! Log venligst på igen",
+    "login_successful": "Login lykkedes",
+    "your_password_is_incorrect": "Dit kodeord er forkert",
+    "not_connected_to_internet": "Ikke forbundet til internettet",
+    "this_app_is_only_for_employees": "Denne app er kun for medarbejdere",
+    "please_enter_valid_email_address": "Indtast venligst gyldig e-mailadresse",
+    "error_found": "Fejl fundet",
+    "no_offline_data": "Ingen offline data",
+    "you_are_in_offline_mode": "Du er i offlinetilstand",
+    "please_try_again": "Prøv igen",
+    "unable_to_fetch_orders": "Kan ikke hente ordrer",
+    "unable_to_fetch_tables": "Kan ikke hente tabeller",
+    "unable_to_fetch_deals": "Kan ikke hente tilbud",
+    "unable_to_fetch_additional": "Kan ikke hente toppings",
+    "unable_to_fetch_taxes": "Kan ikke hente skatter",
+    "unable_to_fetch_available_tables": "Kan ikke hente tilgængelige tabeller",
+    "unable_to_filter_orders_by_tables": "Kan ikke filtrere ordrer efter tabeller",
+    "unable_to_fetch_info": "Kan ikke hente oplysninger",
+    "order_delivered_and_cash_paid": "Ordre leveret og kontant betalt",
+    "unable_to_fetch_current_shift": "Kan ikke hente aktuelt skift",
+    "data_not_found_or_error_found": "Data ikke fundet eller fejl fundet",
+    "unable_to_refund_order": "Ordren kunne ikke refunderes",
+    "unable_to_cancel_order": "Ordren kunne ikke annulleres",
+    "unable_to_fetch_complaint_type": "Kan ikke hente klagetype",
+    "order_status_changed": "Ordrestatus ændret"
+  },
+
+  "in_app_errors": {
+    "item_deleted": "Vare slettet",
+    "unable_to_update": "Kan ikke opdatere",
+    "updated_to_cart_successfully": "Opdateret til indkøbskurv med succes",
+    "added_to_cart_successfully": "Føjet til indkøbskurven",
+    "some_error_occur": "Der opstår en fejl",
+    "your_order_stored_offline": "Din ordre gemt offline",
+    "payment_successful": "Betaling lykkedes",
+    "problem_in_making_payment": "Problem med at foretage betaling",
+    "order_placed_successfully": "Ordren afgivet med succes",
+    "unable_to_place Order": "Kan ikke afgive ordre",
+    "provide_all_required_information": "Giv alle nødvendige oplysninger",
+    "quantity_successfully_updated": "Mængde blev opdateret",
+
+    "order_cancelled": "Ordren er blevet annulleret",
+
+
+    "refunded_successfully": "Refunderet med succes",
+    "unable_to_refund": "Kan ikke refunderes",
+    "email_is_required": "E-mail er påkrævet",
+    "email_format_is_invalid": "E-mail-formatet er ugyldigt",
+    "password_is_Required": "Adgangskode er påkrævet",
+    "Password must contain atleast one lower case,Upper case and special characters": "Adgangskoden skal indeholde mindst én lille bogstav, store bogstaver og specialtegn",
+
+    "veg": "Veg",
+    "non_veg": "Ikke-Veg",
+    "allergic_description": "Allergisk beskrivelse "
+  }
+
+}

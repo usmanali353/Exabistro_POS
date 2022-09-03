@@ -1,9 +1,11 @@
 import 'package:esc_pos_bluetooth/esc_pos_bluetooth.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
-import 'package:exabistro_pos/components/constants.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bluetooth_basic/flutter_bluetooth_basic.dart';
 import 'package:esc_pos_printer/esc_pos_printer.dart';
+
+import '../Utils/constants.dart';
 
 class AddPrinterDialog extends StatefulWidget {
  String printerType;

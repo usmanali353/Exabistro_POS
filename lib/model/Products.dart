@@ -30,13 +30,17 @@ class Products {
     this.isFavourite,
     this.storeName,
     this.orderCount,
-    this.totalQuantityOrdered
+    this.totalQuantityOrdered,
+    this.allergic_description,
+    this.isVeg
     // this.additionalItems,
     // this.baseSections,
     // this.orderItems,
   });
 
 //  List<dynamic> productIngredients;
+  dynamic isVeg;
+  String allergic_description;
   int id;
   String name;
   String storeName;
@@ -79,7 +83,9 @@ class Products {
     productSizes: json["productSizes"],
     ingredients: json["ingredients"],//json["ingredients"] == null ? null : List<dynamic>.from(json["ingredients"].map((x) => Ingredient.fromJson(x))),
     orderCount: json["orderCount"],
-    totalQuantityOrdered: json["totalQuantityOrdered"]
+    totalQuantityOrdered: json["totalQuantityOrdered"],
+      isVeg:json["isVeg"],
+      allergic_description:json["allergic_description"]
     //productSizes: List<ProductSize>.from(json["productSizes"].map((x) => ProductSize.fromJson(x))),
     // additionalItems: List<dynamic>.from(json["additionalItems"].map((x) => x)),
     // baseSections: List<dynamic>.from(json["baseSections"].map((x) => x)),
@@ -101,6 +107,8 @@ class Products {
     "categoryId": categoryId,
     "subCategoryId": subCategoryId,
     "productSizes": productSizes,
+    "isVeg":isVeg,
+    "allergic_description":allergic_description
     // "productSizes": List<dynamic>.from(productSizes.map((x) => x.toJson())),
 
   };

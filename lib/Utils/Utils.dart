@@ -4,20 +4,26 @@ import 'package:api_cache_manager/models/cache_db_model.dart';
 import 'package:api_cache_manager/utils/cache_manager.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:esc_pos_printer/esc_pos_printer.dart';
-import 'package:exabistro_pos/components/constants.dart';
+
 import 'package:exabistro_pos/model/OrderById.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:intl/intl.dart';
+import 'package:logging_bugfender/logging_bugfender.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
+import 'constants.dart';
+
 class Utils{
+  static LoggingBugfenderListener _loggingBugfenderListener;
    static String baseUrl(){
-     return "http://173.212.235.106:8500/api/";
+    // return "http://173.212.235.106:8500/api/";
+     return "http://173.212.235.106:1200/api/";
    }
    static Future<bool> check_connectivity () async{
      bool result = await InternetConnectionChecker().hasConnection;
@@ -57,6 +63,7 @@ class Utils{
    }
    static void showSuccess(BuildContext context,String message){
      Flushbar(
+       messageSize: 20,
        backgroundColor: Colors.green,
        duration: Duration(seconds: 3),
        message: message,
@@ -65,6 +72,7 @@ class Utils{
    }
    static void showError(BuildContext context,String message){
      Flushbar(
+       messageSize: 20,
        backgroundColor: Colors.red,
        duration: Duration(seconds: 3),
        message: message,
@@ -538,7 +546,7 @@ class Utils{
        body: Center(
          child: Container(
            width: 400,
-           height: 130,
+           height: LocalizedApp.of(context).delegate.currentLocale.languageCode=="ur"||LocalizedApp.of(context).delegate.currentLocale.languageCode=="ar"?166:130,
            child: Card(
              elevation: 8,
              child: InkWell(
@@ -565,10 +573,10 @@ class Utils{
                          mainAxisAlignment: MainAxisAlignment.center,
                          children: [
                            Text(
-                             'Session#: ',
+                             translate("shift_report.session_number")+" ",
                              style: TextStyle(
                                color: Colors.white,
-                               fontSize: 25,
+                               fontSize:  LocalizedApp.of(context).delegate.currentLocale.languageCode=="ur"||LocalizedApp.of(context).delegate.currentLocale.languageCode=="ar"?20:25,
                                fontWeight: FontWeight.w700,
                                //fontStyle: FontStyle.italic,
                              ),
@@ -591,7 +599,7 @@ class Utils{
                        child: Row(
                          children: [
                            Text(
-                             'Opening Balance: ',
+                             translate("shift_report.opening_balance")+": ",
                              style: TextStyle(
                                color: yellowColor,
                                fontSize: 17,
@@ -617,7 +625,7 @@ class Utils{
                        child: Row(
                          children: [
                            Text(
-                             'Closing Balance: ',
+                             translate("shift_report.closing_balance")+": ",
                              style: TextStyle(
                                color: yellowColor,
                                fontSize: 17,
@@ -643,7 +651,7 @@ class Utils{
                        child: Row(
                          children: [
                            Text(
-                             'Time: ',
+                             translate("shift_report.time")+": ",
                              style: TextStyle(
                                color: yellowColor,
                                fontSize: 17,
@@ -669,7 +677,7 @@ class Utils{
                        child: Row(
                          children: [
                            Text(
-                             'User: ',
+                             translate("shift_report.user")+": ",
                              style: TextStyle(
                                color: yellowColor,
                                fontSize: 17,
@@ -976,5 +984,16 @@ class Utils{
      ));
      await Printing.layoutPdf(
          onLayout: (PdfPageFormat format) async => doc.save());
+   }
+   
+   static log(String key,dynamic value){
+     try{
+       if(_loggingBugfenderListener==null){
+         _loggingBugfenderListener=LoggingBugfenderListener("VxTMWv8AzBVLM7rGd1kSQaoGgMKaj09U",enableAndroidLogcatLogging: false,enableCrashReporting: false,enableUIEventLogging: false,bugfenderPrintStrategy: PlainTextPrintStrategy());
+       }
+       _loggingBugfenderListener.setCustomData(key, value);
+     }catch(e){
+       throw e;
+     }
    }
 }

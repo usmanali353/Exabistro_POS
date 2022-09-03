@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_gifimage/flutter_gifimage.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 
 class LoadingScreen extends StatefulWidget {
   @override
@@ -31,7 +32,7 @@ class _LoadingScreenState extends State<LoadingScreen> with TickerProviderStateM
             ),
           ),
           Center(
-            child: Text("Loading...",style:TextStyle(fontSize: 30)),
+            child: Text(translate("loading_screen.text"),style:TextStyle(fontSize: 30)),
           )
         ],
       ),

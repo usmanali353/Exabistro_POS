@@ -4,16 +4,18 @@ import 'package:auto_size_text/auto_size_text.dart';
 import 'package:esc_pos_bluetooth/esc_pos_bluetooth.dart';
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/KitchenOrdersDetails.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
-import 'package:exabistro_pos/components/constants.dart';
+
 import 'package:exabistro_pos/model/Categories.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter_bluetooth_basic/flutter_bluetooth_basic.dart';
 
+import '../../Utils/constants.dart';
 import '../../model/ComplaintTypes.dart';
 
 
@@ -62,30 +64,31 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
 
     WidgetsBinding.instance
         .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
-    if (Platform.isAndroid) {
-      bluetoothManager.state.listen((val) {
-        print('state = $val');
-        if (!mounted) return;
-        if (val == 12) {
-          print('on');
-          printerManager.startScan(Duration(seconds: 2));
-          printerManager.scanResults.listen((printers) {
-            setState(() {
-              this.printer=printers;
-            });
-          });
-        } else if (val == 10) {
-          print('off');
-        }
-      });
-    } else {
-      printerManager.startScan(Duration(seconds: 2));
-      printerManager.scanResults.listen((printers) {
-        setState(() {
-          this.printer=printers;
-        });
-      });
-    }
+    // if (Platform.isAndroid) {
+    //   bluetoothManager.state.listen((val) {
+    //     print('state = $val');
+    //     if (!mounted) return;
+    //     if (val == 12) {
+    //       print('on');
+    //       printerManager.startScan(Duration(seconds: 2));
+    //       printerManager.scanResults.listen((printers) {
+    //         setState(() {
+    //           this.printer=printers;
+    //         });
+    //       });
+    //     } else if (val == 10) {
+    //       print('off');
+    //     }
+    //   });
+    // }
+    // else {
+    //   printerManager.startScan(Duration(seconds: 2));
+    //   printerManager.scanResults.listen((printers) {
+    //     setState(() {
+    //       this.printer=printers;
+    //     });
+    //   });
+    // }
 
 
     SharedPreferences.getInstance().then((value) {
@@ -169,8 +172,6 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
           onRefresh: (){
             return Utils.check_connectivity().then((result){
               if(result){
-                print("Height "+MediaQuery.of(context).size.height.toString());
-                print("Width "+MediaQuery.of(context).size.width.toString());
                 orderList.clear();
                 complainTypes.clear();
                 Network_Operations.getComplainTypeListByStoreId(context, token, widget.store["id"]).then((complaintTypes){
@@ -199,7 +200,7 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                 setState(() {
                   isListVisible=false;
                 });
-                Utils.showError(context, "Network Error");
+                Utils.showError(context, translate("error_messages.not_connected_to_internet"));
               }
             });
           },
@@ -253,7 +254,9 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                           padding: const EdgeInsets.only(left: 14, right: 14),
                                           child: Row(
                                             children: [
-                                              Text("Total Orders: ",
+                                              Text(
+                                                //"Total Orders: ",
+                                                translate("delivered_orders_history.total_orders"),
                                                 style: TextStyle(
                                                     fontSize: 25,
                                                     color: yellowColor,
@@ -292,7 +295,7 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                       // childAspectRatio: MediaQuery.of(context).size.height<900?3:4 ,
                                       crossAxisSpacing: 10,
                                       mainAxisSpacing: 10,
-                                      mainAxisExtent: 100
+                                    mainAxisExtent: LocalizedApp.of(context).delegate.currentLocale.languageCode=="ur"||LocalizedApp.of(context).delegate.currentLocale.languageCode=="ar"?110:100,
                                   ),
                                   itemCount: orderList!=null?orderList.length:0,
                                   itemBuilder: (context, index){
@@ -388,7 +391,9 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                                     children: [
                                                       Row(
                                                         children: [
-                                                          Text('Total: ',
+                                                          Text(
+                                                            //'Total: ',
+                                                            translate("delivered_orders_history.total"),
                                                             style: TextStyle(
                                                                 fontSize: 20,
                                                                 fontWeight: FontWeight.bold,
@@ -426,7 +431,9 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                                         visible: orderList[index]['orderType']==1,
                                                         child: Row(
                                                           children: [
-                                                            Text('Table: ',
+                                                            Text(
+                                                              //'Table: ',
+                                                              translate("delivered_orders_history.table"),
                                                               style: TextStyle(
                                                                   fontSize: 20,
                                                                   fontWeight: FontWeight.bold,
@@ -571,7 +578,7 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                     });
                   });
                 }else{
-                  Utils.showError(context, "Network Error");
+                  Utils.showError(context, translate("error_messages.not_connected_to_internet"));
                 }
               });
 
@@ -736,7 +743,8 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Total: ',
+                                              //'Total: ',
+                                              translate("delivered_orders_history_popup.total"),
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -853,7 +861,8 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Status:',
+                                              //'Status:',
+                                              translate("delivered_orders_history_popup.status"),
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -961,7 +970,8 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Waiter:',
+                                              //'Waiter:',
+                                              translate("delivered_orders_history_popup.waiter"),
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -1016,7 +1026,8 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Customer:',
+                                              //'Customer:',
+                                              translate("delivered_orders_history_popup.customer"),
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -1072,7 +1083,8 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                             ),
                                             child: Center(
                                               child: AutoSizeText(
-                                                'Table#:',
+                                                //'Table#:',
+                                                translate("delivered_orders_history_popup.table_number"),
                                                 style: TextStyle(
                                                     color: BackgroundColor,
                                                     fontSize: 22,
@@ -1120,7 +1132,10 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                             context: context,
                                             builder: (cotext){
                                               return AlertDialog(
-                                                title: Text("Refund Reason Detail"),
+                                                title: Text(
+                                                    //"Refund Reason Detail",
+                                                  translate("delivered_orders_history_popup.refund_reason_details"),
+                                                ),
                                                 content: Text(orders["refundReason"]!=null?orders["refundReason"]:"N/A"),
                                               );
                                             }
@@ -1141,7 +1156,8 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                               ),
                                               child: Center(
                                                 child: AutoSizeText(
-                                                  'Refund Reason',
+                                                  //'Refund Reason',
+                                                  translate("delivered_orders_history_popup.refund_reason"),
                                                   style: TextStyle(
                                                       color: BackgroundColor,
                                                       fontSize: 22,
@@ -1196,7 +1212,8 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                                 .spaceBetween,
                                             children: [
                                               Text(
-                                                "SubTotal: ",
+                                                //"SubTotal: ",
+                                                translate("delivered_orders_history_popup.sub_total"),
                                                 style: TextStyle(
                                                     fontSize:
                                                     20,
@@ -1311,7 +1328,8 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                                 .spaceBetween,
                                             children: [
                                               Text(
-                                                "Total: ",
+                                                //"Total: ",
+                                                translate("delivered_orders_history_popup.total"),
                                                 style: TextStyle(
                                                     fontSize:
                                                     20,
@@ -1432,7 +1450,8 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                                       ),
                                                       child: Center(
                                                         child: AutoSizeText(
-                                                          'Unit Price: ',
+                                                          //'Unit Price: ',
+                                                          translate("delivered_orders_history_popup.unit_price"),
                                                           style: TextStyle(
                                                               color: yellowColor,
                                                               fontSize: 20,
@@ -1488,7 +1507,8 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                                       ),
                                                       child: Center(
                                                         child: AutoSizeText(
-                                                          'Quantity: ',
+                                                          //'Quantity: ',
+                                                          translate("delivered_orders_history_popup.quantity"),
                                                           style: TextStyle(
                                                               color: yellowColor,
                                                               fontSize: 20,
@@ -1544,7 +1564,8 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                                       ),
                                                       child: Center(
                                                         child: AutoSizeText(
-                                                          'Size: ',
+                                                          //'Size: ',
+                                                          translate("delivered_orders_history_popup.size"),
                                                           style: TextStyle(
                                                               color: yellowColor,
                                                               fontSize: 20,
@@ -1626,7 +1647,8 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                                           child: Column(
                                                             children: [
                                                               AutoSizeText(
-                                                                'Extras: ',
+                                                                //'Extras: ',
+                                                                translate("delivered_orders_history_popup.extras"),
                                                                 style: TextStyle(
                                                                     color: yellowColor,
                                                                     fontSize: 20,
@@ -1676,7 +1698,8 @@ class _KitchenTabViewState extends State<DeliveredScreenForTablet> with TickerPr
                                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                   children: [
                                                     Text(
-                                                      'Price: ',
+                                                      //'Price: ',
+                                                      translate("delivered_orders_history_popup.price"),
                                                       style: TextStyle(
                                                         color: BackgroundColor,
                                                         fontSize: 25,

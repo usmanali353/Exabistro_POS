@@ -8,7 +8,7 @@ import 'package:exabistro_pos/Screens/Orders/HistoryTabsComponents.dart';
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/PaidTabsComponents.dart';
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/PaidOrdersList.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
-import 'package:exabistro_pos/components/constants.dart';
+
 import 'package:exabistro_pos/model/Additionals.dart';
 import 'package:exabistro_pos/model/CartItems.dart';
 import 'package:exabistro_pos/model/Categories.dart';
@@ -24,12 +24,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_counter/flutter_counter.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
+import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
+import '../Utils/constants.dart';
 import 'LoadingScreen.dart';
 
 class POSMainScreenUI1 extends StatefulWidget {
@@ -41,7 +44,7 @@ class POSMainScreenUI1 extends StatefulWidget {
 }
 
 class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
-  List<Categories> subCategories = [];
+  List<Categories> subCategories = [],categories=[];
   List<dynamic> dealsList = [],taxesList=[];
   List<Products> products = [];
   String categoryName = "",userId="";
@@ -59,7 +62,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
   dynamic ordersList;
   List<dynamic> toppingList = [], orderItems = [],tables=[];
   List<String> topping = [];
-
+  List<bool> _selected=[];
   var nonServiceTaxesPrice=0.0,serviceBasedTaxes=0.0;
   var currentDailySession;
   APICacheDBModel offlineData;
@@ -135,9 +138,28 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
               if((int.parse(sub[i].startTime.substring(0,2)) <= TimeOfDay.now().hour ||
                   int.parse(sub[i].endTime.substring(0,2)) >= TimeOfDay.now().hour) &&
                   int.parse(sub[i].startTime.substring(3,5)) <= TimeOfDay.now().minute){
-                subCategories.add(sub[i]);
+                categories.add(sub[i]);
               }
             }
+            List<String> lst = prefs.getStringList("reorderedcategories${widget.store["id"].toString()}");
+            if(lst!=null&&lst.length>0&&categories != null && categories.length > 0){
+              this.subCategories= lst.map(
+                    (String indx) => sub
+                    .where((Categories item) => int.parse(indx) == item.id)
+                    .first,
+              ).toList();
+              if(categories.length>subCategories.length){
+                int additionalElements=categories.length-subCategories.length;
+                List<Categories> reversedList =  List.from(categories.reversed);
+
+                for(int i= 0;i<additionalElements;i++){
+                  subCategories.add(reversedList[i]);
+                }
+              }
+            }else{
+              subCategories.addAll(categories);
+            }
+
             categoryName = subCategories[0].name;
             Network_Operations.getProduct(
                 context,
@@ -148,7 +170,27 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
               setState(() {
                 if (p != null && p.length > 0) {
                   isLoading = false;
-                  products.addAll(p);
+                  List<String> lst = prefs.getStringList("reorderedproducts${subCategories[0].id.toString()}");
+
+                  if(lst!=null&&lst.length>0){
+                    this.products= lst.map(
+                          (String indx) => p
+                          .where((Products item) => int.parse(indx) == item.id)
+                          .first,
+                    ).toList();
+                    if(p.length>products.length){
+                      int additionalElements=p.length-products.length;
+                      List<Products> reversedList =  List.from(p.reversed);
+
+                      for(int i= 0;i<additionalElements;i++){
+                        products.add(reversedList[i]);
+                      }
+                    }
+                  }else{
+                    products.addAll(p);
+                  }
+
+                  //products.sort((x,y)=>y.orderCount.compareTo(x.orderCount));
                 } else
                   isLoading = false;
                 setState(() {
@@ -156,10 +198,34 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                 });
                 Network_Operations.getAllDeals(
                     context, prefs.getString("token"), widget.store["id"],endDate: DateTime.now(),startDate: DateTime.now().subtract(Duration(days: 365)))
-                    .then((dealsList) {
+                    .then((deals) {
                   setState(() {
-                    if (dealsList.length > 0) {
-                      this.dealsList.addAll(dealsList);
+                    List<String> lst = prefs.getStringList("reordereddeals${widget.store["id"].toString()}");
+                    if(lst!=null&&lst.length>0&&deals!=null&&deals.length>0){
+                      try{
+                        this.dealsList= lst.map(
+                              (String indx) => deals
+                              .where((dynamic item) => int.parse(indx) == item["id"])
+                              .first,
+                        ).toList();
+                        print("Length of Api Deals: "+(deals.length>dealsList.length).toString());
+                        if(deals.length>dealsList.length){
+                          int additionalElements=deals.length-dealsList.length;
+                          print("additional Elements: "+additionalElements.toString());
+                          var reversedList =  List.from(deals.reversed);
+
+                          for(int i= 0;i<additionalElements;i++){
+                            dealsList.add(reversedList[i]);
+                          }
+                        }
+                      }catch(e){
+                        this.dealsList.addAll(deals);
+                      }
+
+                    }else{
+                      if (deals.length > 0) {
+                        this.dealsList.addAll(deals);
+                      }
                     }
                   });
                 });
@@ -196,7 +262,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
 
           } else {
             isLoading = false;
-            Utils.showError(context, "No Categories Found");
+            Utils.showSuccess(context, translate("in_app_errors.unable_to_place Order"));
           }
         });
     });
@@ -269,7 +335,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                  }
                },
                title: Text(
-                 "Today Orders",
+                 translate("drawer_items.today_orders"),
                  style: TextStyle(
                    color: blueColor,
                    fontSize: 22,
@@ -284,7 +350,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                  Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>OrdersHistoryTabsScreen(storeId:widget.store)), (route) => false);
                },
                title: Text(
-                 "Order History",
+                 translate("drawer_items.orders_history"),
                  style: TextStyle(
                      color: blueColor,
                      fontSize: 22,
@@ -307,7 +373,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                              backgroundColor: Colors.transparent,
                              child: Container(
                                width: 400,
-                               height: 130,
+                               height:  LocalizedApp.of(context).delegate.currentLocale.languageCode=="ur"||LocalizedApp.of(context).delegate.currentLocale.languageCode=="ar"?166:130,
                                child: Utils.shiftReportDialog(context,value.last),
                              ),
                            ) ;
@@ -318,7 +384,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                  });
                },
                title: Text(
-                 "Shift Report",
+                 translate("drawer_items.shift_report"),
                  style: TextStyle(
                      color: blueColor,
                      fontSize: 22,
@@ -337,7 +403,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                  });
                },
                title: Text(
-                 "Logout",
+                 translate("drawer_items.logout"),
                  style: TextStyle(
                      color: blueColor,
                      fontSize: 22,
@@ -377,7 +443,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                     backgroundColor: yellowColor,
                     centerTitle: true,
                     title: Text(
-                      "Menu",
+                        translate("main_screen.menu"),
                       style: TextStyle(
                           color: BackgroundColor,
                           fontWeight: FontWeight.bold,
@@ -386,78 +452,216 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                     ),
                   ),
                   Expanded(
-                    child: ListView.builder(
-                      //scrollDirection: Axis.horizontal,
-                        itemCount:subCategories!=null?subCategories.length:0,
-                        itemBuilder: (context, index){
-                          return Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: InkWell(
-                              onTap: (){
-                                Network_Operations.getProduct(
-                                    context,
-                                    subCategories[index]
-                                        .id,
-                                    widget.store["id"],
-                                    "")
-                                    .then((p) {
-                                  setState(() {
-                                    if (p != null &&
-                                        p.length > 0) {
-                                      categoryName =
-                                          subCategories[index]
-                                              .name;
-                                      products.clear();
-                                      products.addAll(p);
-                                    }
-                                  });
-                                });
-                              },
-                              child: Container(
-                                width: 180,
-                                height: 85,
-                                decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(8),
-                                    image: DecorationImage(
-                                      image: NetworkImage(subCategories[index]
-                                          .image !=
-                                          null
-                                          ? subCategories[index].image
-                                          : "http://anokha.world/images/not-found.png"),
-                                      fit: BoxFit.cover,
-                                    )),
-                                child:  Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.black54,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child:  Center(
-                                    child: AutoSizeText(
-                                      subCategories!=null&&subCategories.length>0&&subCategories[index].name!=null?subCategories[index].name:"",
-                                      style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.bold
-                                      ),
-                                      maxLines: 1,
-                                    ),
-                                  ),
-                                  // Center(
-                                  //   child: Text(
-                                  //     "CATEGORY",
-                                  //     textAlign: TextAlign.center,
-                                  //     style: TextStyle(
-                                  //         fontSize: 19,
-                                  //         color: Colors.white,
-                                  //         fontWeight: FontWeight.bold),
-                                  //   ),
-                                  // ),
-                                ),
+                    child: ReorderableListView.builder(
+                      itemCount:subCategories!=null?subCategories.length:0,
+                      itemBuilder:(BuildContext context,int index){
+                        return Padding(
+                          key: ValueKey(subCategories[index].id),
+                          padding: const EdgeInsets.all(8.0),
+                          child: InkWell(
+                            onTap: (){
+                              Network_Operations.getProduct(
+                                  context,
+                                  subCategories[index]
+                                      .id,
+                                  widget.store["id"],
+                                  "")
+                                  .then((p) {
+                                setState(() {
+                                  if (p != null &&
+                                      p.length > 0) {
+                                    categoryName =
+                                        subCategories[index]
+                                            .name;
 
+                                    SharedPreferences.getInstance().then((prefs){
+                                      List<String> lst = prefs.getStringList("reorderedproducts${subCategories[index].id.toString()}");
+                                      products.clear();
+                                      if(lst!=null&&lst.length>0){
+                                        this.products= lst.map(
+                                              (String indx) => p
+                                              .where((Products item) => int.parse(indx) == item.id)
+                                              .first,
+                                        ).toList();
+                                        if(p.length>products.length){
+                                          int additionalElements=p.length-products.length;
+                                          List<Products> reversedList =  List.from(p.reversed);
+
+                                          for(int i= 0;i<additionalElements;i++){
+                                            products.add(reversedList[i]);
+                                          }
+                                        }
+                                      }else{
+                                        products.addAll(p);
+                                      }
+                                    });
+
+                                  }
+                                });
+                              });
+                            },
+                            child: Container(
+                              width: 180,
+                              height: 85,
+                              decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(8),
+                                  image: DecorationImage(
+                                    image: NetworkImage(subCategories[index]
+                                        .image !=
+                                        null
+                                        ? subCategories[index].image
+                                        : "http://anokha.world/images/not-found.png"),
+                                    fit: BoxFit.cover,
+                                  )),
+                              child:  Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.black54,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child:  Center(
+                                  child: AutoSizeText(
+                                    subCategories!=null&&subCategories.length>0&&subCategories[index].name!=null?subCategories[index].name:"",
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 22,
+                                        fontWeight: FontWeight.bold
+                                    ),
+                                    maxLines: 1,
+                                  ),
+                                ),
+                                // Center(
+                                //   child: Text(
+                                //     "CATEGORY",
+                                //     textAlign: TextAlign.center,
+                                //     style: TextStyle(
+                                //         fontSize: 19,
+                                //         color: Colors.white,
+                                //         fontWeight: FontWeight.bold),
+                                //   ),
+                                // ),
                               ),
+
                             ),
-                          );
-                        }),
+                          ),
+                        );
+                      },
+                      onReorder: (oldIndex,newIndex){
+                        setState(() {
+                          // showDialog(context: context,
+                          //     builder: (context){
+                          //        return Dialog(
+                          //           backgroundColor: Colors.transparent,
+                          //          child: Container(
+                          //            width: 400,
+                          //            height: 300,
+                          //            child: Scaffold(
+                          //              body: StatefulBuilder(
+                          //                builder: (context,innersetState){
+                          //                  return ListView(
+                          //                    children: [
+                          //                      Center(
+                          //                        child: Container(
+                          //                          width: 400,
+                          //                          height: 300,
+                          //                          child: Container(
+                          //                            decoration: BoxDecoration(
+                          //                                image: DecorationImage(
+                          //                                  fit: BoxFit.fill,
+                          //                                  //colorFilter: new ColorFilter.mode(Colors.white.withOpacity(0.7), BlendMode.dstATop),
+                          //                                  image: AssetImage('assets/bb.jpg'),
+                          //                                )
+                          //                            ),
+                          //                            child:Form(
+                          //                              key: formKey,
+                          //                              child: Column(
+                          //                                children: [
+                          //                                  Padding(
+                          //                                    padding: const EdgeInsets.only(top:16.0,left:16.0,right:16.0),
+                          //                                    child: TextFormField(
+                          //                                      controller: email,
+                          //                                      textInputAction: TextInputAction.next,
+                          //                                      keyboardType: TextInputType.emailAddress,
+                          //                                      autofocus: true,
+                          //                                      validator: (value) {
+                          //                                        if (value == null || value.isEmpty) {
+                          //                                          return 'Email is Required';
+                          //                                        }
+                          //                                        return null;
+                          //                                      },
+                          //                                      decoration: InputDecoration(
+                          //                                        border: OutlineInputBorder(),
+                          //                                        hintText: translate("unpaid_today_orders_popup.amount_paid"),
+                          //                                        hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                          //                                      ),
+                          //                                    ),
+                          //                                  ),
+                          //                                  Padding(
+                          //                                    padding: const EdgeInsets.only(top:16.0,left:16.0,right:16.0),
+                          //                                    child: TextFormField(
+                          //                                      controller: password,
+                          //                                      textInputAction: TextInputAction.go,
+                          //                                      keyboardType: TextInputType.visiblePassword,
+                          //                                      autofocus: true,
+                          //                                      validator: (value) {
+                          //                                        if (value == null || value.isEmpty) {
+                          //                                          return 'Password is Required';
+                          //                                        }
+                          //                                        return null;
+                          //                                      },
+                          //                                      decoration: InputDecoration(
+                          //                                        border: OutlineInputBorder(),
+                          //                                        hintText: translate("unpaid_today_orders_popup.amount_paid"),
+                          //                                        hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                          //                                      ),
+                          //                                    ),
+                          //                                  ),
+                          //                                  InkWell(
+                          //                                    onTap: (){
+                          //
+                          //                                    },
+                          //                                    child: Padding(
+                          //                                      padding: EdgeInsets.all(16),
+                          //                                      child: Card(
+                          //                                        elevation: 8,
+                          //                                        child: Container(
+                          //                                          width: 230,
+                          //                                          height: 50,
+                          //                                          decoration: BoxDecoration(
+                          //                                              borderRadius: BorderRadius.circular(4),
+                          //                                              color: yellowColor
+                          //                                          ),
+                          //                                          child: Center(child: Text(translate("unpaid_today_orders_popup.payout"),style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
+                          //                                        ),
+                          //                                      ),
+                          //                                    ),
+                          //                                  )
+                          //                                ],
+                          //                              ),
+                          //                            )
+                          //                          ),
+                          //                        ),
+                          //                      )
+                          //                    ],
+                          //                  );
+                          //                },
+                          //              ),
+                          //            ),
+                          //          ),
+                          //        );
+                          //     }
+                          // );
+                          if (newIndex > oldIndex) {
+                            newIndex = newIndex - 1;
+                          }
+                          final element = subCategories.removeAt(oldIndex);
+                          subCategories.insert(newIndex, element);
+                          print("reorderedcategories${widget.store["id"].toString()}");
+                           SharedPreferences.getInstance().then((prefs){
+                             prefs.setStringList("reorderedcategories${widget.store["id"].toString()}", subCategories.map((m) => m.id.toString()).toList());
+                           });
+                        });
+                      },
+                        ),
                   ),
                 ],
               )
@@ -471,21 +675,72 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                     flex: 8,
                     child: Column(
                       children: [
-                        AppBar(
-                          backgroundColor: yellowColor,
-                          centerTitle: true,
-                          automaticallyImplyLeading: false,
-                          title: Text(
-                            categoryName,
-                            style: TextStyle(
-                                color: BackgroundColor,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 30
+                        // AppBar(
+                        //   actions: [
+                        //     Expanded(
+                        //       child: Container(
+                        //         height: 50,
+                        //         //color: Colors.black38,
+                        //         child: Center(
+                        //           child: _buildChips(),
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   ],
+                        //   backgroundColor: yellowColor,
+                        //   //centerTitle: true,
+                        //   //automaticallyImplyLeading: false,
+                        //   title: Text(
+                        //     categoryName,
+                        //     style: TextStyle(
+                        //         color: BackgroundColor,
+                        //         fontWeight: FontWeight.bold,
+                        //         fontSize: 30
+                        //     ),
+                        //   ),
+                        // ),
+                        Container(
+                          color:yellowColor,
+                          height: 58,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 20, right: 20, top: 8, bottom: 8),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                              Text(
+                                  categoryName,
+                                  style: TextStyle(
+                                      color: BackgroundColor,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 30
+                                  ),
+                                ),
+                                    Container(
+                                      height: 50,
+                                      width: 200,
+                                      //color: Colors.black38,
+                                      child: Center(
+                                        child: _buildChips(),
+                                      ),
+                                    ),
+
+                              ],
                             ),
                           ),
                         ),
                         Expanded(
-                            child: GridView.builder(
+                            child: ReorderableGridView.builder(
+                              onReorder: (oldIndex,newIndex){
+                                setState(() {
+                                  final element = products.removeAt(oldIndex);
+                                  products.insert(newIndex, element);
+                                  int id= subCategories.where((element) => element.name==categoryName).toList()[0].id;
+                                  print("reorderedproducts${id.toString()}");
+                                  SharedPreferences.getInstance().then((prefs){
+                                    prefs.setStringList("reorderedproducts${id.toString()}", products.map((m) => m.id.toString()).toList());
+                                  });
+                                });
+                              },
                                 gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
                                     maxCrossAxisExtent: 203,
                                     //childAspectRatio: 5 / 6,
@@ -496,6 +751,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                 itemCount: products!=null?products.length:0,
                                 itemBuilder: (context, index){
                                   return InkWell(
+                                    key: ValueKey(products[index].id),
                                     onTap: (){
                                       showDialog(
                                           context: context,
@@ -591,11 +847,23 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                  dealsList!=null&&dealsList.length>0?Expanded(
                     flex: 1,
                     child:
-                    ListView.builder(
+                    ReorderableListView.builder(
+                        onReorder: (oldIndex,newIndex){
+                          if (newIndex > oldIndex) {
+                            newIndex = newIndex - 1;
+                          }
+                          final element = dealsList.removeAt(oldIndex);
+                          dealsList.insert(newIndex, element);
+                          print("reordereddeals${widget.store["id"].toString()}");
+                          SharedPreferences.getInstance().then((prefs){
+                            prefs.setStringList("reordereddeals${widget.store["id"].toString()}", dealsList.map((m) => m["id"].toString()).toList());
+                          });
+                        },
                         scrollDirection: Axis.horizontal,
                         itemCount:dealsList!=null?dealsList.length:0,
                         itemBuilder: (context, index){
                           return Padding(
+                            key: ValueKey(dealsList[index]["id"]),
                             padding: const EdgeInsets.all(8.0),
                             child: InkWell(
                               onTap: (){
@@ -605,7 +873,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                       return Dialog(
                                           backgroundColor: Colors.transparent,
                                           child: Container(
-                                              height: 430,
+                                              height: LocalizedApp.of(context).delegate.currentLocale.languageCode=="ar"||LocalizedApp.of(context).delegate.currentLocale.languageCode=="ur"?460:430,
                                               width: 400,
                                               child: dealsPopupLayout(dealsList[index])
                                           )
@@ -670,7 +938,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                       centerTitle: true,
                       automaticallyImplyLeading: false,
                       title: Text(
-                        "Cart",
+                        //"Cart",
+                        translate("main_screen.cart"),
                         style: TextStyle(
                             color: BackgroundColor,
                             fontWeight: FontWeight.bold,
@@ -710,7 +979,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                           print(cartList[index].id);
                                           sqlite_helper()
                                               .deleteProductsById(cartList[index].id);
-                                          Utils.showSuccess(context, "item deleted");
+                                         Utils.showSuccess(context, translate("in_app_errors.item_deleted"));
                                           sqlite_helper().getcart1().then((value) {
                                             setState(() {
                                               cartCounter.clear();
@@ -785,7 +1054,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                     ),
                                                     child: Center(
                                                       child: AutoSizeText(
-                                                        'Unit Price: ',
+                                                        //'Unit Price: ',
+                                                        translate("cart_items.unit_price"),
                                                         style: TextStyle(
                                                             color: yellowColor,
                                                             fontSize: 22,
@@ -832,7 +1102,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                     ),
                                                     child: Center(
                                                       child: AutoSizeText(
-                                                        'Quantity: ',
+                                                        //'Quantity: ',
+                                                        translate("cart_items.quantity"),
                                                         style: TextStyle(
                                                             color: yellowColor,
                                                             fontSize: 22,
@@ -899,7 +1170,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                                     });
                                                                   });
                                                                 }else{
-                                                                  Utils.showError(context,"Unable to Update");
+                                                                  Utils.showSuccess(context, translate("in_app_errors.unable_to_update"));
                                                                 }
                                                               });
                                                             }
@@ -930,7 +1201,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                     ),
                                                     child: Center(
                                                       child: AutoSizeText(
-                                                        'Size: ',
+                                                        //'Size: ',
+                                                        translate("cart_items.size"),
                                                         style: TextStyle(
                                                             color: yellowColor,
                                                             fontSize: 22,
@@ -1085,7 +1357,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                 children: [
                                                   AutoSizeText(
-                                                    'Price',
+                                                    //'Price',
+                                                    translate("cart_items.price"),
                                                     style: TextStyle(
                                                         color: BackgroundColor,
                                                         fontSize: 25,
@@ -1158,7 +1431,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                 .spaceBetween,
                             children: [
                               Text(
-                                "TOTAL ",
+                                //"TOTAL ",
+                                translate("main_screen.total"),
                                 style: TextStyle(
                                     fontSize: 25,
                                     color: Colors.white,
@@ -1495,7 +1769,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                             ),
                             child:  Center(
                               child: AutoSizeText(
-                                'Take-Away',
+                                //'Take-Away',
+                                translate("main_screen.takeaway_btn"),
                                 style: TextStyle(
                                     color: BackgroundColor,
                                     fontSize: 28,
@@ -1654,7 +1929,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                             ),
                             child:  Center(
                               child: AutoSizeText(
-                                'Delivery',
+                                //'Delivery',
+                                translate("main_screen.delivery_btn"),
                                 style: TextStyle(
                                     color: BackgroundColor,
                                     fontSize: 28,
@@ -1708,7 +1984,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
             }
             return Center(
               child: Container(
-                height: 430,
+                height: LocalizedApp.of(context).delegate.currentLocale.languageCode=="ar"||LocalizedApp.of(context).delegate.currentLocale.languageCode=="ur"?460:430,
                 width: 400,
                 decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(8),
@@ -1754,7 +2030,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        "Discounted Price: ",
+                                        //"Discounted Price: ",
+                                        translate("deals_popup.discounted_price"),
                                         style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 25,
@@ -1763,7 +2040,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                       Row(
                                         children: [
                                           Text(
-                                            "Rs: ",
+                                            widget.store["currencyCode"]+": ",
                                             style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 25,
@@ -1786,7 +2063,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
                                       Text(
-                                        "Actual Price: ",
+                                        //"Actual Price: ",
+                                        translate("deals_popup.actual_price"),
                                         style: TextStyle(
                                             fontWeight: FontWeight.bold,
                                             fontSize: 25,
@@ -1795,7 +2073,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                       Row(
                                         children: [
                                           Text(
-                                            "Rs: ",
+                                            widget.store["currencyCode"]+": ",
                                             style: TextStyle(
                                                 fontWeight: FontWeight.bold,
                                                 fontSize: 25,
@@ -1823,7 +2101,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                         padding: const EdgeInsets.all(0.0),
                         child: ListTile(
                           title: Text(
-                            "Products",
+                            //"Products",
+                            translate("deals_popup.products"),
                             style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: yellowColor,
@@ -1857,7 +2136,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  "Quantity: ",
+                                  //"Quantity: ",
+                                  translate("deals_popup.quantity"),
                                   style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                       fontSize: 28,
@@ -1923,8 +2203,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                               });
                             });
                             Navigator.of(context).pop();
-                            Utils.showSuccess(context, "Updated to Cart successfully");
-                          }else{
+                           Utils.showSuccess(context, translate("in_app_errors.updated_to_cart_successfully"));                          }else{
                             sqlite_helper()
                                 .create_cart(CartItems(
                                 productId: null,
@@ -1962,11 +2241,10 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                   });
                                 });
                                 Navigator.of(context).pop();
-                                Utils.showSuccess(
-                                    context, "Added to Cart successfully");
+                                Utils.showSuccess(context, translate("in_app_errors.added_to_cart_successfully"));
                               } else {
                                 Navigator.of(context).pop();
-                                Utils.showError(context, "Some Error Occur");
+                                Utils.showSuccess(context, translate("in_app_errors.some_error_occur"));
                               }
                             });
                           }
@@ -1983,7 +2261,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                               borderRadius: BorderRadius.circular(4)),
                           child: Center(
                             child: Text(
-                              "Add To Cart",
+                              //"Add To Cart",
+                              translate("deals_popup.addToCard_btn"),
                               style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 30,
@@ -2027,7 +2306,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                       color: yellowColor,
                       child: Center(
                         child: Text(
-                          "Place Order For Delivery",
+                          //"Place Order For Delivery",
+                          translate("delivery_popup.deliveryLabel"),
                           style: TextStyle(
                               fontSize: 25,
                               color: Colors.white,
@@ -2051,7 +2331,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             controller: customerName,
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(),
-                                              hintText: "Customer Name*",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                              hintText: //"Customer Name*",
+                                              translate("delivery_popup.customer_name_hint"),
+                                              hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ),
@@ -2061,7 +2343,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             controller: customerAddress,
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(),
-                                              hintText: "Customer Address*",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                              hintText: //"Customer Address*",
+                                              translate("delivery_popup.customer_address_hint"),
+                                              hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ),
@@ -2138,7 +2422,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             decoration: InputDecoration(
 
                                               border: OutlineInputBorder(),
-                                              hintText: "Customer Phone# *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                              hintText: //"Customer Phone# *",
+                                              translate("delivery_popup.customer_phone_hint"),
+                                              hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ),
@@ -2217,7 +2503,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             },
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(),
-                                              hintText: "Discount Amount",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                              hintText: //"Discount Amount",
+                                              translate("delivery_popup.discount_amount_hint"),
+                                              hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ),
@@ -2239,7 +2527,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                   .spaceBetween,
                                               children: [
                                                 Text(
-                                                  "SubTotal: ",
+                                                  //"SubTotal: ",
+                                                  translate("delivery_popup.sub_total"),
                                                   style: TextStyle(
                                                       fontSize:
                                                       20,
@@ -2356,7 +2645,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                   .spaceBetween,
                                               children: [
                                                 Text(
-                                                  "Total: ",
+                                                  //"Total: ",
+                                                  translate("delivery_popup.total"),
                                                   style: TextStyle(
                                                       fontSize:
                                                       20,
@@ -2492,7 +2782,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                           });
                                         });
                                         Navigator.of(context).pop();
-                                        Utils.showSuccess(this.context, "Your Order Stored Offline");
+                                       Utils.showSuccess(context, translate("in_app_errors.your_order_stored_offline"));
                                       }
                                       else if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
                                         SharedPreferences.getInstance().then((prefs){
@@ -2540,18 +2830,18 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                 );
 
                                               }
-                                              Utils.showSuccess(this.context,"Order Placed successfully");
+                                              Utils.showSuccess(context, translate("in_app_errors.order_placed_successfully"));
                                             }else{
                                               setState(() {
                                                 isLoading=false;
                                               });
-                                              Utils.showError(this.context,"Unable to Place Order");
+                                              Utils.showSuccess(context, translate("in_app_errors.unable_to_place Order"));
                                             }
                                           });
                                         });
                                       }
                                     }else{
-                                      Utils.showError(this.context,"Provide all Required Information");
+                                      Utils.showSuccess(context, translate("in_app_errors.provide_all_required_information"));
                                     }
                                   },
                                   child: Card(
@@ -2565,7 +2855,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                       ),
                                       child: Center(
                                         child: Text(
-                                          "Submit Order",
+                                          //"Submit Order",
+                                          translate("delivery_popup.submitOrder_btn"),
                                           style: TextStyle(
                                               fontSize: 25,
                                               color: Colors.white,
@@ -2615,7 +2906,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                       color: yellowColor,
                       child: Center(
                         child: Text(
-                          "Place Order For Delivery",
+                          //"Place Order For Delivery",
+                          translate("delivery_popup.deliveryLabel"),
                           style: TextStyle(
                               fontSize: 25,
                               color: Colors.white,
@@ -2640,7 +2932,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             controller: customerName,
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(),
-                                              hintText: "Customer Name*",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                              hintText: //"Customer Name*",
+                                              translate("delivery_popup.customer_name_hint"),
+                                              hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ),
@@ -2651,7 +2945,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             keyboardType: TextInputType.phone,
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(),
-                                              hintText: "Customer Phone# *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                              hintText: //"Customer Phone# *",
+                                              translate("delivery_popup.customer_phone_hint"),
+                                              hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ),
@@ -2661,7 +2957,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             controller: customerAddress,
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(),
-                                              hintText: "Customer Address *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                              hintText: //"Customer Address *",
+                                              translate("delivery_popup.customer_address_hint"),
+                                              hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ),
@@ -2684,7 +2982,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                   .spaceBetween,
                                               children: [
                                                 Text(
-                                                  "SubTotal: ",
+                                                  //"SubTotal: ",
+                                                  translate("delivery_popup.sub_total"),
                                                   style: TextStyle(
                                                       fontSize:
                                                       20,
@@ -2799,7 +3098,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                   .spaceBetween,
                                               children: [
                                                 Text(
-                                                  "Total: ",
+                                                  //"Total: ",
+                                                  translate("delivery_popup.total"),
                                                   style: TextStyle(
                                                       fontSize:
                                                       20,
@@ -2939,7 +3239,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                 });
                               });
                               Navigator.of(context).pop();
-                              Utils.showSuccess(this.context, "Your Order Stored Offline");
+                             Utils.showSuccess(context, translate("in_app_errors.your_order_stored_offline"));
                             }
                             else if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
                               SharedPreferences.getInstance().then((prefs){
@@ -2987,18 +3287,18 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                       );
 
                                     }
-                                    Utils.showSuccess(this.context,"Order Placed successfully");
+                                    Utils.showSuccess(context, translate("in_app_errors.order_placed_successfully"));
                                   }else{
                                     setState(() {
                                       isLoading=false;
                                     });
-                                    Utils.showError(this.context,"Unable to Place Order");
+                                    Utils.showSuccess(context, translate("in_app_errors.unable_to_place Order"));
                                   }
                                 });
                               });
                             }
                           }else{
-                            Utils.showError(this.context,"Provide all Required Information");
+                            Utils.showSuccess(context, translate("in_app_errors.provide_all_required_information"));
                           }
                         },
                         child: Card(
@@ -3012,7 +3312,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                             ),
                             child: Center(
                               child: Text(
-                                "Submit Order",
+                                //"Submit Order",
+                                translate("delivery_popup.submitOrder_btn"),
                                 style: TextStyle(
                                     fontSize: 25,
                                     color: Colors.white,
@@ -3031,6 +3332,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
       ),
     );
   }
+
   var discountType=["Cash","Percentage"];
   var priceWithDiscount=0.0,deductedPrice=0.0;
   String selectedType="Payment",selectedDiscountType;
@@ -3060,7 +3362,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                       color: yellowColor,
                       child: Center(
                         child: Text(
-                          "Place Order For Take-Away",
+                          //"Place Order For Take-Away",
+                          translate("takeAway_popup.takeAwayLabel"),
                           style: TextStyle(
                               fontSize: 25,
                               color: Colors.white,
@@ -3130,7 +3433,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             controller: customerName,
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(),
-                                              hintText: "Customer Name*",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                              hintText: //"Customer Name*",
+                                              translate("takeAway_popup.customer_name_hint"),
+                                              hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ),
@@ -3141,7 +3446,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             keyboardType: TextInputType.phone,
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(),
-                                              hintText: "Customer Phone# *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                              hintText: //"Customer Phone# *",
+                                              translate("takeAway_popup.customer_phone_hint"),
+                                              hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ),
@@ -3284,7 +3591,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             },
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(),
-                                              hintText: "Discount Amount",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                              hintText: //"Discount Amount",
+                                              translate("takeAway_popup.discount_amount_hint"),
+                                              hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ),
@@ -3308,7 +3617,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                     .spaceBetween,
                                                 children: [
                                                   Text(
-                                                    "SubTotal: ",
+                                                    //"SubTotal: ",
+                                                    translate("takeAway_popup.sub_total"),
                                                     style: TextStyle(
                                                         fontSize:
                                                         20,
@@ -3428,7 +3738,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                     .spaceBetween,
                                                 children: [
                                                   Text(
-                                                    "Total: ",
+                                                    //"Total: ",
+                                                    translate("takeAway_popup.total"),
                                                     style: TextStyle(
                                                         fontSize:
                                                         20,
@@ -3565,7 +3876,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                         });
 
                                         Navigator.of(context).pop();
-                                        Utils.showSuccess(this.context, "Your Order Stored Offline");
+                                       Utils.showSuccess(context, translate("in_app_errors.your_order_stored_offline"));
                                       }
                                       else if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
                                         SharedPreferences.getInstance().then((prefs){
@@ -3613,9 +3924,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                 );
                                                 
                                               }
-                                              Utils.showSuccess(this.context,"Order Placed successfully");
+                                              Utils.showSuccess(context, translate("in_app_errors.order_placed_successfully"));
                                             }else{
-                                              Utils.showError(this.context,"Unable to Place Order");
+                                              Utils.showSuccess(context, translate("in_app_errors.unable_to_place Order"));
                                             }
                                           });
                                         });
@@ -3632,7 +3943,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                       ),
                                       child: Center(
                                         child: Text(
-                                          "Submit Order",
+                                          //"Submit Order",
+                                          translate("takeAway_popup.submitOrder_btn"),
                                           style: TextStyle(
                                               fontSize: 25,
                                               color: Colors.white,
@@ -3680,7 +3992,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                       color: yellowColor,
                       child: Center(
                         child: Text(
-                          "Place Order For Take-Away",
+                          //"Place Order For Take-Away",
+                          translate("takeAway_popup.takeAwayLabel"),
                           style: TextStyle(
                               fontSize: 25,
                               color: Colors.white,
@@ -3705,7 +4018,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             controller: customerName,
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(),
-                                              hintText: "Customer Name*",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                              hintText: //"Customer Name*",
+                                              translate("takeAway_popup.customer_name_hint"),
+                                              hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ),
@@ -3716,7 +4031,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             keyboardType: TextInputType.phone,
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(),
-                                              hintText: "Customer Phone# *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                              hintText: //"Customer Phone# *",
+                                              translate("takeAway_popup.customer_phone_hint"),
+                                              hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ),
@@ -3809,7 +4126,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                 });
 
                                                 Navigator.of(context).pop();
-                                                Utils.showSuccess(this.context, "Your Order Stored Offline");
+                                               Utils.showSuccess(context, translate("in_app_errors.your_order_stored_offline"));
                                               }
                                               else if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
                                                 SharedPreferences.getInstance().then((prefs){
@@ -3857,9 +4174,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                         );
                                                         
                                                       }
-                                                      Utils.showSuccess(this.context,"Order Placed successfully");
+                                                      Utils.showSuccess(context, translate("in_app_errors.order_placed_successfully"));
                                                     }else{
-                                                      Utils.showError(this.context,"Unable to Place Order");
+                                                      Utils.showSuccess(context, translate("in_app_errors.unable_to_place Order"));
                                                     }
                                                   });
                                                 });
@@ -3876,7 +4193,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                 ),
                                                 child: Center(
                                                   child: Text(
-                                                    "Submit Order",
+                                                    //"Submit Order",
+                                                    translate("takeAway_popup.submitOrder_btn"),
                                                     style: TextStyle(
                                                         fontSize: 25,
                                                         color: Colors.white,
@@ -3906,7 +4224,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                   .spaceBetween,
                                               children: [
                                                 Text(
-                                                  "SubTotal: ",
+                                                  //"SubTotal: ",
+                                                  translate("takeAway_popup.sub_total"),
                                                   style: TextStyle(
                                                       fontSize:
                                                       20,
@@ -4021,7 +4340,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                   .spaceBetween,
                                               children: [
                                                 Text(
-                                                  "Total: ",
+                                                  //"Total: ",
+                                                  translate("takeAway_popup.total"),
                                                   style: TextStyle(
                                                       fontSize:
                                                       20,
@@ -4080,6 +4400,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
       ),
     );
   }
+
   Widget orderPopupHorizontalDineInWithOutDiscount(){
     return Scaffold(
       backgroundColor: Colors.white.withOpacity(0.1),
@@ -4104,7 +4425,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                       color: yellowColor,
                       child: Center(
                         child: Text(
-                          "Place Order For Dine-In",
+                          //"Place Order For Dine-In",
+                          translate("dineIn_popup.dineInLabel"),
                           style: TextStyle(
                               fontSize: 25,
                               color: Colors.white,
@@ -4129,7 +4451,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             controller: customerName,
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(),
-                                              hintText: "Customer Name*",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                              hintText:  translate("dineIn_popup.customer_name_hint"),
+                                              hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ),
@@ -4140,7 +4463,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             keyboardType: TextInputType.phone,
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(),
-                                              hintText: "Customer Phone# *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                              hintText: //"Customer Phone# *",
+                                              translate("dineIn_popup.customer_phone_hint"),
+                                              hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ),
@@ -4164,7 +4489,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                               }
 
                                               dynamic order = {
-                                                "DineInEndTime":DateFormat("HH:mm:ss").format(DateTime.now().add(Duration(hours: 1))),
+                                               "DineInEndTime":LocalizedApp.of(context).delegate.currentLocale.languageCode!="ar"?DateFormat("HH:mm:ss").format(DateTime.now().add(Duration(hours: 1))):DateFormat("HH:mm:ss","en").format(DateTime.now().add(Duration(hours: 1))),
                                                 "DailySessionNo": currentDailySession!=null?currentDailySession:7,
                                                 "TableId":selectedTableId!=null?selectedTableId:null,
                                                 "storeId":widget.store["id"],
@@ -4234,7 +4559,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                   });
                                                 });
                                                 Navigator.of(context).pop();
-                                                Utils.showSuccess(this.context, "Your Order Stored Offline");
+                                               Utils.showSuccess(context, translate("in_app_errors.your_order_stored_offline"));
                                               }
                                               else if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
                                                 var exists = await Utils.checkOfflineDataExists("addOrderStaff");
@@ -4300,9 +4625,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                           );
                                                           
                                                         }
-                                                        Utils.showSuccess(this.context,"Order Placed successfully");
+                                                        Utils.showSuccess(context, translate("in_app_errors.order_placed_successfully"));
                                                       }else{
-                                                        Utils.showError(this.context,"Unable to Place Order");
+                                                        Utils.showSuccess(context, translate("in_app_errors.unable_to_place Order"));
                                                       }
                                                     });
                                                   });
@@ -4322,7 +4647,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                 ),
                                                 child: Center(
                                                   child: Text(
-                                                    "Submit Order",
+                                                    //"Submit Order",
+                                                    translate("dineIn_popup.submitOrder_btn"),
                                                     style: TextStyle(
                                                         fontSize: 25,
                                                         color: Colors.white,
@@ -4352,7 +4678,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                   .spaceBetween,
                                               children: [
                                                 Text(
-                                                  "SubTotal: ",
+                                                  //"SubTotal: ",
+                                                  translate("dineIn_popup.sub_total"),
                                                   style: TextStyle(
                                                       fontSize:
                                                       20,
@@ -4467,7 +4794,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                   .spaceBetween,
                                               children: [
                                                 Text(
-                                                  "Total: ",
+                                                  //"Total: ",
+                                                  translate("dineIn_popup.total"),
                                                   style: TextStyle(
                                                       fontSize:
                                                       20,
@@ -4526,9 +4854,6 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
       ),
     );
   }
-
-
-
   Widget orderPopUpHorizontalDineIn(){
     var discountedValue=0.0;
     return Scaffold(
@@ -4555,7 +4880,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                       color: yellowColor,
                       child: Center(
                         child: Text(
-                          "Place Order For Dine-In",
+                          //"Place Order For Dine-In",
+                          translate("dineIn_popup.dineInLabel"),
                           style: TextStyle(
                               fontSize: 25,
                               color: Colors.white,
@@ -4579,7 +4905,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             controller: customerName,
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(),
-                                              hintText: "Customer Name *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                              hintText: //"Customer Name *",
+                                              translate("dineIn_popup.customer_name_hint"),
+                                              hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ),
@@ -4590,7 +4918,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             keyboardType: TextInputType.phone,
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(),
-                                              hintText: "Customer Phone# *",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                              hintText: //"Customer Phone# *",
+                                              translate("dineIn_popup.customer_phone_hint"),
+                                              hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ),
@@ -4735,7 +5065,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                             },
                                             decoration: InputDecoration(
                                               border: OutlineInputBorder(),
-                                              hintText: "Discount Amount",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                              hintText: //"Discount Amount",
+                                              translate("dineIn_popup.discount_amount_hint"),
+                                              hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                             ),
                                           ),
                                         ),
@@ -4759,7 +5091,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                     .spaceBetween,
                                                 children: [
                                                   Text(
-                                                    "SubTotal: ",
+                                                    //"SubTotal: ",
+                                                    translate("dineIn_popup.sub_total"),
                                                     style: TextStyle(
                                                         fontSize:
                                                         20,
@@ -4879,7 +5212,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                     .spaceBetween,
                                                 children: [
                                                   Text(
-                                                    "Total: ",
+                                                    //"Total: ",
+                                                    translate("dineIn_popup.total"),
                                                     style: TextStyle(
                                                         fontSize:
                                                         20,
@@ -4947,7 +5281,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                     }
 
                                     dynamic order = {
-                                      "DineInEndTime":DateFormat("HH:mm:ss").format(DateTime.now().add(Duration(hours: 1))),
+                                      "DineInEndTime":LocalizedApp.of(context).delegate.currentLocale.languageCode!="ar"?DateFormat("HH:mm:ss").format(DateTime.now().add(Duration(hours: 1))):DateFormat("HH:mm:ss","en").format(DateTime.now().add(Duration(hours: 1))),
                                       "DailySessionNo": currentDailySession!=null?currentDailySession:7,
                                       "TableId":selectedTableId!=null?selectedTableId:null,
                                       "storeId":widget.store["id"],
@@ -5017,7 +5351,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                         });
                                       });
                                       Navigator.of(context).pop();
-                                      Utils.showSuccess(this.context, "Your Order Stored Offline");
+                                     Utils.showSuccess(context, translate("in_app_errors.your_order_stored_offline"));
                                     }
                                     else if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
                                       var exists = await Utils.checkOfflineDataExists("addOrderStaff");
@@ -5083,9 +5417,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                                 );
                                                 
                                               }
-                                              Utils.showSuccess(this.context,"Order Placed successfully");
+                                              Utils.showSuccess(context, translate("in_app_errors.order_placed_successfully"));
                                             }else{
-                                              Utils.showError(this.context,"Unable to Place Order");
+                                              Utils.showSuccess(context, translate("in_app_errors.unable_to_place Order"));
                                             }
                                           });
                                         });
@@ -5105,7 +5439,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                       ),
                                       child: Center(
                                         child: Text(
-                                          "Submit Order",
+                                          //"Submit Order",
+                                          translate("dineIn_popup.submitOrder_btn"),
                                           style: TextStyle(
                                               fontSize: 25,
                                               color: Colors.white,
@@ -5131,7 +5466,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
   }
   var productPopupHeight=330.0;
   Widget productsPopupLayout(Products product) {
-    print(product.toJson().toString());
+    print(product.allergic_description);
     var count = 1;
     var price=0.0;
     var discountedPrice=0.0;
@@ -5204,21 +5539,26 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                         height: 50,
                         color: yellowColor,
                         child:  Padding(
-                          padding: const EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.only(bottom: 10, left: 5, right: 5, top: 0),
                           child: Row(
                             crossAxisAlignment: CrossAxisAlignment.end,
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              IconButton(
-                                icon: Icon(
-                                  Icons.clear,
-                                  size: 40,
-                                  color: yellowColor,
+                             product.allergic_description!=null&&product.allergic_description.isNotEmpty? IconButton(
+                                icon: FaIcon(
+                                  FontAwesomeIcons.infoCircle,
+                                  size: 35,
+                                  color: blueColor,
                                 ),
-                                // onPressed: () {
-                                //   Navigator.of(context).pop();
-                                // },
-                              ),
+                                onPressed: () {
+                                    showDialog(context: context, builder:(BuildContext context){
+                                      return AlertDialog(
+                                        title:Text(translate("in_app_errors.allergic_description")),
+                                        content: Text(product.allergic_description),
+                                      );
+                                    });
+                                },
+                              ):Container(),
                               Text(product.name,
                                 style: TextStyle(
                                     color: Colors.white,
@@ -5227,9 +5567,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                 ),
                               ),
                               IconButton(
-                                icon: Icon(
-                                  Icons.clear,
-                                  size: 40,
+                                icon: FaIcon(
+                                  FontAwesomeIcons.times,
+                                  size: 35,
                                   color: Colors.red,
                                 ),
                                 onPressed: () {
@@ -5245,7 +5585,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                         padding: const EdgeInsets.only(top:16.0,left:16,right:16),
                         child: DropdownButtonFormField<dynamic>(
                           decoration: InputDecoration(
-                            labelText: "Select Size",
+                            labelText: //"Select Size",
+                            translate("product_popup.select_size"),
                             alignLabelWithHint: true,
                             labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
                             enabledBorder: OutlineInputBorder(
@@ -5316,7 +5657,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                         ),
                       ),
                       ListTile(
-                        title: Text("Quantity",
+                        title: Text(
+                          //"Quantity",
+                          translate("product_popup.quantity"),
                           style: TextStyle(
                               color: blueColor,
                               fontWeight: FontWeight.w500,
@@ -5470,14 +5813,14 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                       selectedSizeObj["discountedPrice"]==0.0?
                       Center(
                           child: Text(
-                            "Price:  ${totalprice==0.0?price.toString():totalprice.toString()}",
+                           translate("product_popup.price")+": "+"${totalprice==0.0?price.toString():totalprice.toString()}",
                             style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold, color:blueColor),)
                       ):Center(
                         child: RichText(
                           textAlign: TextAlign.center,
                           text: (
                               TextSpan(
-                                  text: "Price",
+                                  text:  translate("product_popup.price"),
                                   style: TextStyle(fontSize: 35, fontWeight: FontWeight.bold, color:yellowColor),
                                   children: [
                                     TextSpan(
@@ -5543,8 +5886,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                 });
                               });
                               Navigator.of(context).pop();
-                              Utils.showSuccess(context, "Updated to Cart successfully");
-                            }else{
+                             Utils.showSuccess(context, translate("in_app_errors.updated_to_cart_successfully"));                            }else{
 
                               sqlite_helper()
                                   .create_cart(CartItems(
@@ -5581,11 +5923,10 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                     });
                                   });
                                   Navigator.of(context).pop();
-                                  Utils.showSuccess(
-                                      context, "Added to Cart successfully");
+                                  Utils.showSuccess(context, translate("in_app_errors.added_to_cart_successfully"));
                                 } else {
                                   Navigator.of(context).pop();
-                                  Utils.showError(context, "Some Error Occur");
+                                  Utils.showSuccess(context, translate("in_app_errors.some_error_occur"));
                                 }
                               });
                             }
@@ -5603,7 +5944,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                 borderRadius: BorderRadius.circular(4)),
                             child: Center(
                               child: Text(
-                                "Add To Cart",
+                                translate("product_popup.addToCard_btn"),
                                 style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 30,
@@ -5621,24 +5962,26 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
       ),
     );
   }
+
+
   showAlertDialog(BuildContext context,APICacheDBModel data) {
 
     // set up the buttons
     Widget remindButton = TextButton(
-      child: Text("Cancel"),
+      child: Text(translate("alert_dialog.cancel"),),
       onPressed:  () {
         Navigator.pop(context);
       },
     );
     Widget cancelButton = TextButton(
-      child: Text("Delete"),
+      child: Text(translate("alert_dialog.delete"),),
       onPressed:  () async{
         Utils.deleteOfflineData("addOrderStaff");
         Navigator.pop(context);
       },
     );
     Widget launchButton = TextButton(
-      child: Text("Add From Cache"),
+      child: Text(translate("alert_dialog.add_from_cache"),),
       onPressed:  () async {
         print(jsonDecode(data.syncData).length);
         for(int i=0;i<jsonDecode(data.syncData).length;i++)
@@ -5656,9 +5999,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
               };
               bool isPaid = await Network_Operations.payCashOrder(this.context, token, payCash);
               if(isPaid){
-                Utils.showSuccess(this.context,"Payment Successful");
+                Utils.showSuccess(context, translate("in_app_errors.payment_successful"));
               }else{
-                Utils.showError(this.context,"Problem in Making Payment");
+                Utils.showSuccess(context, translate("in_app_errors.problem_in_making_payment"));
               }
 
             }
@@ -5671,8 +6014,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
 
     // set up the AlertDialog
     AlertDialog alert = AlertDialog(
-      title: Text("Notice"),
-      content: Text("Data is Available in your Cache do you want to add?"),
+      title: Text(translate("alert_dialog.notice"),),
+      content: Text(translate("alert_dialog.content"),),
       actions: [
         remindButton,
         cancelButton,
@@ -5715,7 +6058,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                       color: yellowColor,
                       child: Center(
                         child: Text(
-                          "Edit Extras",
+                          translate("alert_dialog.edit_extras"),
                           style: TextStyle(
                               fontWeight: FontWeight.bold,
                               fontSize: 30,
@@ -5765,7 +6108,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                       padding: const EdgeInsets.all(8.0),
                       child: MaterialButton(
                           color: yellowColor,
-                          child: Text("Update Topping",style: TextStyle(color: Colors.white),),
+                          child: Text(translate("alert_dialog.update_toppings"),style: TextStyle(color: Colors.white),),
                           elevation: 5.0,
                           onPressed:(){
                             innerSetState(() {
@@ -5794,7 +6137,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                     sqlite_helper().updatePriceAndQuantity(item.id, (item.price*item.quantity)+priceOfTopping, item.quantity).then((updatedItemsCount){
                                       if(updatedItemsCount!=null&&updatedItemsCount>0){
                                         Navigator.pop(context);
-                                        Utils.showSuccess(context,"Quantity Successfully Updated");
+                                        Utils.showSuccess(context, translate("in_app_errors.quantity_successfully_updated"));
                                         sqlite_helper().getcart1().then((value) {
                                           setState(() {
                                             cartCounter.clear();
@@ -5817,7 +6160,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
 
                                         });
                                       }else{
-                                        Utils.showError(context,"Unable to Update");
+                                        Utils.showSuccess(context, translate("in_app_errors.unable_to_update"));
                                       }
                                     });
                                   }
@@ -5839,6 +6182,8 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
   }
 
   TextEditingController amountPaid=TextEditingController();
+  TextEditingController email=TextEditingController();
+  TextEditingController password=TextEditingController();
   Widget payoutDialog(dynamic orders){
     print("Placed Order "+orders.toString());
     int totalAmount=int.parse(jsonDecode(orders)["result"]["grossTotal"].toStringAsFixed(0));
@@ -5866,7 +6211,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                             width: MediaQuery.of(context).size.width,
                             height: 40,
                             color: yellowColor,
-                            child: Center(child: Text("Payout",style: TextStyle(fontSize: 25,fontWeight: FontWeight.bold,color: BackgroundColor),)),
+                            child: Center(child: Text(translate("alert_dialog.payout"),style: TextStyle(fontSize: 25,fontWeight: FontWeight.bold,color: BackgroundColor),)),
 
                           ),
                           Padding(
@@ -5884,7 +6229,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text("Total Amount",style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: yellowColor),),
+                                    Text(translate("alert_dialog.total_amount"),style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: yellowColor),),
                                     Text(totalAmount.toString(),style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: PrimaryColor),),
                                   ],
                                 ),
@@ -5912,7 +6257,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                 },
                                 decoration: InputDecoration(
                                   border: OutlineInputBorder(),
-                                  hintText: "Amount Paid",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                  hintText: translate("alert_dialog.amount_paid"),hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                 ),
                                 onChanged: (value){
                                   innersetState(() {
@@ -5944,7 +6289,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text("Balance",style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: yellowColor),),
+                                    Text(translate("alert_dialog.balance"),style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: yellowColor),),
                                     Text(balance.toStringAsFixed(0),style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: PrimaryColor),),
                                   ],
                                 ),
@@ -5972,9 +6317,9 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                       // WidgetsBinding.instance
                                       //     .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
                                     });
-                                    Utils.showSuccess(this.context,"Payment Successful");
+                                    Utils.showSuccess(context, translate("in_app_errors.payment_successful"));
                                   }else{
-                                    Utils.showError(this.context,"Problem in Making Payment");
+                                    Utils.showSuccess(context, translate("in_app_errors.problem_in_making_payment"));
                                   }
                                 });
                               }
@@ -5988,7 +6333,7 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
                                     borderRadius: BorderRadius.circular(4),
                                     color: yellowColor
                                 ),
-                                child: Center(child: Text("Payout",style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
+                                child: Center(child: Text(translate("alert_dialog.payout_btn"),style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
                               ),
                             ),
                           )
@@ -6004,5 +6349,130 @@ class _POSMainScreenUI1State extends State<POSMainScreenUI1> {
     );
   }
 
+  Widget _buildChips() {
+    List<Widget> chips = new List();
+    List<String> foodTypes=[translate("in_app_errors.veg"),translate("in_app_errors.non_veg")];
+    for (int i = 0; i < 2; i++) {
+      _selected.add(false);
+      FilterChip filterChip = FilterChip(
+        selected: _selected[i],
+        label: Text(foodTypes[i], style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+        // avatar: FlutterLogo(),
+        elevation: 10,
+        pressElevation: 5,
+        //shadowColor: Colors.teal,
+        backgroundColor: Colors.red,
+        selectedColor: Colors.lightGreen,
+        onSelected: (bool selected) {
+          setState(() {
+            for(int j=0;j<_selected.length;j++){
+              if(_selected[j]){
+                _selected[j]=false;
+              }
+            }
+            _selected[i] = selected;
+            if(_selected[i]){
+              if(i==0){
+                print(subCategories[subCategories.indexOf(subCategories.where((element) => element.name==categoryName).toList()[0])].id.toString());
+                Network_Operations.getProduct(
+                    context,
+                    subCategories[subCategories.indexOf(subCategories.where((element) => element.name==categoryName).toList()[0])]
+                        .id,
+                    widget.store["id"],
+                    "")
+                    .then((p) {
+                  setState(() {
+                    if (p != null && p.length > 0) {
+                      products.clear();
+                      for(int i=0;i<p.length;i++){
+                        if(p[i].isVeg!=null&&p[i].isVeg){
+                          products.add(p[i]);
+                        }
+                      }
+                      categoryName = subCategories[subCategories.indexOf(subCategories.where((element) => element.name==categoryName).toList()[0])].name;
+                      print(categoryName);
 
+                    }
+                  });
+                });
+              }else{
+                Network_Operations.getProduct(
+                    context,
+                    subCategories[subCategories.indexOf(subCategories.where((element) => element.name==categoryName).toList()[0])]
+                        .id,
+                    widget.store["id"],
+                    "")
+                    .then((p) {
+                  setState(() {
+                    if (p != null && p.length > 0) {
+                      products.clear();
+                      for(int i=0;i<p.length;i++){
+                        if(p[i].isVeg==null||!p[i].isVeg){
+                          products.add(p[i]);
+                        }
+                      }
+                      categoryName = subCategories[subCategories.indexOf(subCategories.where((element) => element.name==categoryName).toList()[0])].name;
+                      print(categoryName);
+
+                    }
+                  });
+                });
+              }
+
+            }else{
+              Network_Operations.getProduct(
+                  context,
+                  subCategories[subCategories.indexOf(subCategories.where((element) => element.name==categoryName).toList()[0])]
+                      .id,
+                  widget.store["id"],
+                  "")
+                  .then((p) {
+                setState(() {
+                  if (p != null && p.length > 0) {
+                    products.clear();
+                    SharedPreferences.getInstance().then((prefs){
+                      List<String> lst = prefs.getStringList("reorderedproducts${subCategories[subCategories.indexOf(subCategories.where((element) => element.name==categoryName).toList()[0])]
+                          .id.toString()}");
+                      products.clear();
+                      if(lst!=null&&lst.length>0){
+                        this.products= lst.map(
+                              (String indx) => p
+                              .where((Products item) => int.parse(indx) == item.id)
+                              .first,
+                        ).toList();
+                        if(p.length>products.length){
+                          int additionalElements=p.length-products.length;
+                          List<Products> reversedList =  List.from(p.reversed);
+
+                          for(int i= 0;i<additionalElements;i++){
+                            products.add(reversedList[i]);
+                          }
+                        }
+                      }else{
+                        products.addAll(p);
+                      }
+                    });
+                    categoryName = subCategories[subCategories.indexOf(subCategories.where((element) => element.name==categoryName).toList()[0])].name;
+                    print(categoryName);
+                  }
+                });
+              });
+            }
+
+          });
+        },
+      );
+
+      chips.add(Padding(
+          padding: EdgeInsets.symmetric(horizontal: 10),
+          child: filterChip
+      ));
+    }
+
+    return ListView(
+      // This next line does the trick.
+      scrollDirection: Axis.horizontal,
+      children: chips,
+    );
+  }
 }

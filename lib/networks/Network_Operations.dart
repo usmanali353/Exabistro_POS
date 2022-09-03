@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:developer';
 import 'package:api_cache_manager/models/cache_db_model.dart';
 import 'package:api_cache_manager/utils/cache_manager.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -7,19 +8,21 @@ import 'package:exabistro_pos/model/Products.dart';
 import 'package:exabistro_pos/model/Stores.dart';
 import 'package:exabistro_pos/model/Tax.dart';
 import 'package:exabistro_pos/networks/sqlite_helper.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:http/http.dart' as http;
 import 'package:exabistro_pos/Utils/Utils.dart';
 import 'package:exabistro_pos/model/Categories.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../Screens/Mobile/RolesBaseStoreSelection.dart';
 import '../Screens/RolesBaseStoreSelection.dart';
 import '../model/ComplaintTypes.dart';
 import '../model/Vendors.dart';
 
 class Network_Operations{
 
-  static Future signIn(BuildContext context,String email,String password) async {
+  static Future signIn(BuildContext context,String email,String password,bool isTablet) async {
     var body=jsonEncode({"email":email,"password":password});
     try{
       List rolesAndStores =[],restaurantList=[];
@@ -40,7 +43,7 @@ class Network_Operations{
           }
           var claims = Utils.parseJwt(jsonDecode(cacheData.syncData)['token']);
           if(DateTime.fromMillisecondsSinceEpoch(int.parse(claims['exp'].toString()+"000")).isBefore(DateTime.now())){
-            Utils.showError(context, "Token Expire Please Login Again");
+            Utils.showError(context, translate("error_messages.token_expire_please_login_again"),);
             return false;
           }else {
             if (passData.syncData == password) {
@@ -56,20 +59,28 @@ class Network_Operations{
                 prefs.setString("discountService",jsonDecode(cacheData.syncData)["user"]["discountService"].toString());
                 prefs.setString("waiveOffService", jsonDecode(cacheData.syncData)["user"]["waiveOffService"].toString());
               });
-              Utils.showSuccess(context, "Login Successful");
-                  Navigator.pushAndRemoveUntil(context,
-                      MaterialPageRoute(builder: (context) =>
-                          RoleBaseStoreSelection(rolesAndStores)), (
-                          Route<dynamic> route) => false);
+              Utils.showSuccess(context, translate("error_messages.login_successful"));
+              if(isTablet){
+                Navigator.pushAndRemoveUntil(context,
+                    MaterialPageRoute(builder: (context) =>
+                        RoleBaseStoreSelection(rolesAndStores)), (
+                        Route<dynamic> route) => false);
+              }else{
+                Navigator.pushAndRemoveUntil(context,
+                    MaterialPageRoute(builder: (context) =>
+                        RoleBaseStoreSelectionForMobile(rolesAndStores)), (
+                        Route<dynamic> route) => false);
+              }
+
                   return true;
             }else{
-              Utils.showError(context, "Your Password is Incorrect");
+              Utils.showError(context, translate("error_messages.your_password_is_incorrect"));
               return false;
             }
           }
 
         }else{
-          Utils.showError(context,"Not Connected to Internet");
+          Utils.showError(context, translate("error_messages.not_connected_to_internet"));
           return false;
         }
       }
@@ -99,7 +110,7 @@ class Network_Operations{
               prefs.setString("waiveOffService", jsonDecode(response.body)["user"]["waiveOffService"].toString());
               // prefs.setString('isCustomer', claims['IsCustomerOnly']);
             });
-            Utils.showSuccess(context, "Login Successful");
+            Utils.showSuccess(context, translate("error_messages.login_successful"));
 
             APICacheDBModel cacheDBModel = new APICacheDBModel(
                 key: "response"+email, syncData: response.body);
@@ -107,17 +118,27 @@ class Network_Operations{
             APICacheDBModel cacheDBModel1 = new APICacheDBModel(
                 key: "password"+email, syncData: password);
             await APICacheManager().addCacheData(cacheDBModel1);
-
-            Navigator.pushAndRemoveUntil(context,
-                //MaterialPageRoute(builder: (context) => DashboardScreen()), (
-                MaterialPageRoute(builder: (context) => RoleBaseStoreSelection(rolesAndStores)), (
-                    Route<dynamic> route) => false);
+            if(isTablet){
+              Navigator.pushAndRemoveUntil(context,
+                  MaterialPageRoute(builder: (context) =>
+                      RoleBaseStoreSelection(rolesAndStores)), (
+                      Route<dynamic> route) => false);
+            }else{
+              Navigator.pushAndRemoveUntil(context,
+                  MaterialPageRoute(builder: (context) =>
+                      RoleBaseStoreSelectionForMobile(rolesAndStores)), (
+                      Route<dynamic> route) => false);
+            }
           }else {
-            Utils.showError(context, "This App is only for Employees");
+            Utils.showError(context, translate("error_messages.this_app_is_only_for_employees"));
           }
         }
         else{
-
+          if(response.body!=null&&response.body.isNotEmpty){
+            Utils.log("LoginApi",{"status":response.statusCode,"error_msg":response.body});
+          }else{
+            Utils.log("LoginApi","LoginApi is throwing "+response.statusCode.toString());
+          }
           Utils.showError(context, "${response.body}");
           return false;
         }
@@ -125,7 +146,7 @@ class Network_Operations{
     }catch(e) {
 
       print(e);
-      Utils.showError(context, "Please Enter Valid Email Address");
+      Utils.showError(context, translate("error_messages.please_enter_valid_email_address"));
     }
   }
   static Future<dynamic> getRoles(BuildContext context)async{
@@ -140,7 +161,7 @@ class Network_Operations{
         return null;
       }
     }catch(e){
-      Utils.showError(context, "Error Found: ");
+      Utils.showError(context, translate("error_messages.error_found"));
     }
     return null;
   }
@@ -158,11 +179,11 @@ class Network_Operations{
           for(int i=0;i<data.length;i++){
             list.add(Products(name: data[i]['name'],id: data[i]['id'],image: data[i]['image'],
                 subCategoryId: data[i]['subCategoryId'],isVisible: data[i]['isVisible'],orderCount: data[i]['orderCount'],totalQuantityOrdered: data[i]['totalQuantityOrdered'],
-                description: data[i]['description'],storeId: data[i]['storeId'],categoryId: data[i]['categoryId'],productSizes: data[i]['productSizes']));
+                description: data[i]['description'],storeId: data[i]['storeId'],categoryId: data[i]['categoryId'],productSizes: data[i]['productSizes'],isVeg:data[i]["isVeg"],allergic_description:data[i]["allergic_description"]));
           }
           return list;
         }else{
-          Utils.showError(context, "No Offline Data");
+          Utils.showError(context, translate("error_messages.no_offline_data"));
         }
       }
       if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
@@ -173,13 +194,14 @@ class Network_Operations{
 
         var data= jsonDecode(response.body);
         if(response.statusCode==200){
+          log(response.body.toString());
           if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
             List<Products> list=List();
             list.clear();
             for(int i=0;i<data.length;i++){
               list.add(Products(name: data[i]['name'],id: data[i]['id'],image: data[i]['image'],
                   subCategoryId: data[i]['subCategoryId'],isVisible: data[i]['isVisible'],orderCount: data[i]['orderCount'],totalQuantityOrdered: data[i]['totalQuantityOrdered'],
-                  description: data[i]['description'],storeId: data[i]['storeId'],categoryId: data[i]['categoryId'],productSizes: data[i]['productSizes']));
+                  description: data[i]['description'],storeId: data[i]['storeId'],categoryId: data[i]['categoryId'],productSizes: data[i]['productSizes'],isVeg:data[i]["isVeg"],allergic_description:data[i]["allergic_description"]));
             }
             return list;
           }
@@ -188,7 +210,7 @@ class Network_Operations{
           Utils.showError(context, response.body);
         }
       } else{
-        Utils.showError(context, "You are in Offline mode");
+        Utils.showError(context, translate("error_messages.you_are_in_offline_mode"));
       }
     }catch(e){
 
@@ -210,10 +232,10 @@ class Network_Operations{
       //   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => LoginScreen()), (route) => false);
       // }
       else{
-        Utils.showError(context, "Please Try Again");
+        Utils.showError(context, translate("error_messages.please_try_again"));
       }
     }catch(e){
-      Utils.showError(context,"Unable to Fetch Orders due to some error Please Contact Support");
+      Utils.showError(context, translate("error_messages.unable_to_fetch_orders"));
     }
     return null;
   }
@@ -255,13 +277,14 @@ class Network_Operations{
 
       }
       else{
+
        // pd.hide();
-        Utils.showError(context, "Please Try Again");
+        Utils.showError(context, translate("error_messages.please_try_again"));
         return null;
       }
     }catch(e){
      // pd.hide();
-      Utils.showError(context,"Unable to Fetch Tables due to some error Please Contact Support");
+      Utils.showError(context, translate("error_messages.unable_to_fetch_tables"));
     }
     return null;
   }
@@ -295,11 +318,16 @@ class Network_Operations{
             // return category_list;
           }
         } else {
-          Utils.showError(context, "Please Try Again");
+          if(response.body!=null&&response.body.isNotEmpty){
+            Utils.log("getCategoryApi",{"status":response.statusCode,"error_msg":response.body});
+          }else{
+            Utils.log("getCategoryApi","getCategoryApi is throwing "+response.statusCode.toString());
+          }
+          Utils.showError(context, translate("error_messages.please_try_again"));
         }
       }
       else{
-        Utils.showError(context, "You are in Offline mode");
+        Utils.showError(context, translate("error_messages.you_are_in_offline_mode"));
       }
     }
     catch(e){
@@ -318,7 +346,7 @@ class Network_Operations{
           return jsonDecode(cacheData.syncData);
 
         }else{
-          Utils.showError(context, "No Offline Data");
+          Utils.showError(context, translate("error_messages.no_offline_data"));
         }
       }
       if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
@@ -346,14 +374,19 @@ class Network_Operations{
           return data;
         }
         else{
-          Utils.showError(context, "Please Try Again");
+          if(response.body!=null&&response.body.isNotEmpty){
+            Utils.log("getAllDealsApi",{"status":response.statusCode,"error_msg":response.body});
+          }else{
+            Utils.log("getAllDealsApi","getAllDealsApi is throwing "+response.statusCode.toString());
+          }
+          Utils.showError(context, translate("error_messages.please_try_again"));
           return null;
         }
       }else{
-        Utils.showError(context, "You are in Offline mode");
+        Utils.showError(context, translate("error_messages.you_are_in_offline_mode"));
       }
     }catch(e){
-      Utils.showError(context,"Unable to Fetch Deals due to some error Please Contact Support");
+      Utils.showError(context, translate("error_messages.unable_to_fetch_deals"));
     }
     return null;
   }
@@ -367,7 +400,7 @@ class Network_Operations{
           return Additionals.listAdditionalsFromJson(cacheData.syncData);
 
         }else{
-          Utils.showError(context, "No Offline Data");
+          Utils.showError(context, translate("error_messages.no_offline_data"));
         }
       }
       if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
@@ -382,12 +415,17 @@ class Network_Operations{
           return Additionals.listAdditionalsFromJson(response.body);
         }
         else{
+          if(response.body!=null&&response.body.isNotEmpty){
+            Utils.log("getAdditionalsApi",{"status":response.statusCode,"error_msg":response.body});
+          }else{
+            Utils.log("getAdditionalsApi","getAdditionalsApi is throwing "+response.statusCode.toString());
+          }
          // pd.hide();
-          //Utils.showError(context, "Please Try Again");
+          //Utils.showError(context, translate("error_messages.please_try_again"));
         }
       }
     }catch(e){
-      Utils.showError(context,"Unable to Fetch Additionals due to some error Please Contact Support");
+      Utils.showError(context, translate("error_messages.unable_to_fetch_additional"));
     }
     return null;
   }
@@ -415,13 +453,18 @@ class Network_Operations{
           return Tax.taxListFromJson(response.body);
         }
         else{
-          Utils.showError(context, "Please Try Again");
+          if(response.body!=null&&response.body.isNotEmpty){
+            Utils.log("getTaxListByStoreIdApi",{"status":response.statusCode,"error_msg":response.body});
+          }else{
+            Utils.log("getTaxListByStoreIdApi","getTaxListByStoreIdApi is throwing "+response.statusCode.toString());
+          }
+          Utils.showError(context, translate("error_messages.please_try_again"));
           return null;
         }
       }
     }catch(e){
       print(e);
-      Utils.showError(context,"Unable to Fetch Taxes due to some error Please Contact Support");
+      Utils.showError(context, translate("error_messages.unable_to_fetch_taxes"));
     }
     return null;
   }
@@ -447,13 +490,16 @@ class Network_Operations{
       }
       else{
         //pd.hide();
-        print("Order Error "+response.body.toString());
-
+        if(response.body!=null&&response.body.isNotEmpty){
+          Utils.log("placeOrderApi",{"status":response.statusCode,"error_msg":response.body});
+        }else{
+          Utils.log("placeOrderApi","placeOrderApi is throwing "+response.statusCode.toString());
+        }
         return response.body;
       }
     }catch(e){
 
-      Utils.showError(context, "Error Found: $e");
+      Utils.showError(context, translate("error_messages.error_found"));
       return null;
     }
   }
@@ -466,15 +512,20 @@ class Network_Operations{
       );
       var response=await http.post(Uri.parse(Utils.baseUrl()+"orders/paycash"),headers: headers,body: body);
       if(response.statusCode==200){
-        Utils.showSuccess(context, "Order Delivered & Cash Paid");
+        Utils.showSuccess(context, translate("error_messages.order_delivered_and_cash_paid"));
         return true;
       }
       else{
+        if(response.body!=null&&response.body.isNotEmpty){
+          Utils.log("payCashOrderApi",{"status":response.statusCode,"error_msg":response.body});
+        }else{
+          Utils.log("payCashOrderApi","payCashOrderApi is throwing "+response.statusCode.toString());
+        }
         Utils.showError(context, "${jsonDecode(response.body)['message']}");
         return false;
       }
     }catch(e){
-      Utils.showError(context,"Unable to place Order due to some error Please Contact Support");
+      Utils.showError(context, translate("error_messages.unable_to_fetch_orders"));
       return false;
     }
     //return null;
@@ -499,12 +550,12 @@ class Network_Operations{
       }
       else{
         //pd.hide();
-        //Utils.showError(context, "Please Try Again");
+        //Utils.showError(context, translate("error_messages.please_try_again"));
         return null;
       }
     }catch(e){
       //pd.hide();
-      Utils.showError(context,"Unable to Fetch Available Tables due to some error Please Contact Support");
+      Utils.showError(context, translate("error_messages.unable_to_fetch_available_tables"));
 
       return null;
     }
@@ -543,12 +594,17 @@ class Network_Operations{
         //   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => LoginScreen()), (route) => false);
         // }
         else{
-          Utils.showError(context, "Please Try Again");
+          if(response.body!=null&&response.body.isNotEmpty){
+            Utils.log("getAllOrdersApi",{"status":response.statusCode,"error_msg":response.body});
+          }else{
+            Utils.log("getAllOrdersApi","getAllOrdersApi is throwing "+response.statusCode.toString());
+          }
+          Utils.showError(context, translate("error_messages.please_try_again"));
           return null;
         }
       }
     }catch(e){
-      Utils.showError(context,"Unable to Fetch Orders due to some error Please Contact Support");
+      Utils.showError(context, translate("error_messages.unable_to_fetch_orders"));
       return null;
     }
 
@@ -573,6 +629,7 @@ class Network_Operations{
         Map<String,String> headers = {'Authorization':'Bearer '+token};
         var response=await http.get(Uri.parse(Utils.baseUrl()+"orders/getallbasicorders?ComplaintTypeId=$ComplaintTypeId"),headers: headers);
         var data= jsonDecode(response.body);
+        print("Api Response: "+response.statusCode.toString());
         if(response.statusCode==200){
           APICacheDBModel cacheDBModel = new APICacheDBModel(
               key: "orderListByComplaintType"+ComplaintTypeId.toString(), syncData: response.body);
@@ -586,12 +643,17 @@ class Network_Operations{
         //   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => LoginScreen()), (route) => false);
         // }
         else{
-          Utils.showError(context, "Please Try Again");
+          if(response.body!=null&&response.body.isNotEmpty){
+            Utils.log("getAllOrdersByComplaintTypeIdApi",{"status":response.statusCode,"error_msg":response.body});
+          }else{
+            Utils.log("getAllOrdersByComplaintTypeIdApi","getAllOrdersByComplaintTypeIdApi is throwing "+response.statusCode.toString());
+          }
+          Utils.showError(context, translate("error_messages.please_try_again"));
           return null;
         }
       }
     }catch(e){
-      Utils.showError(context,"Unable to Fetch Orders due to some error Please Contact Support");
+      Utils.showError(context, translate("error_messages.unable_to_fetch_orders"));
       return null;
     }
 
@@ -608,10 +670,15 @@ class Network_Operations{
         return list;
       }
       else{
-        Utils.showError(context, "Please Try Again");
+        if(response.body!=null&&response.body.isNotEmpty){
+          Utils.log("getOrdersByTableIdApi",{"status":response.statusCode,"error_msg":response.body});
+        }else{
+          Utils.log("getOrdersByTableIdApi","getOrdersByTableIdApi is throwing "+response.statusCode.toString());
+        }
+        Utils.showError(context, translate("error_messages.please_try_again"));
       }
     }catch(e){
-      Utils.showError(context,"Unable to Filter Orderd by Tables due to some error Please Contact Support");
+      Utils.showError(context, translate("error_messages.unable_to_filter_orders_by_tables"));
     }
     return null;
   }
@@ -624,7 +691,7 @@ class Network_Operations{
           var cacheData = await APICacheManager().getCacheData("PredefinedReasons"+storeId.toString());
           return jsonDecode(cacheData.syncData);
         }else{
-          Utils.showError(context, "No Offline Data");
+          Utils.showError(context, translate("error_messages.no_offline_data"));
         }
       }
       if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi) {
@@ -638,14 +705,14 @@ class Network_Operations{
           return data;
         }
         else {
-          Utils.showError(context, "Please Try Again");
+          Utils.showError(context, translate("error_messages.please_try_again"));
           return null;
         }
       }else{
-        Utils.showError(context, "You are in Offline mode");
+        Utils.showError(context, translate("error_messages.you_are_in_offline_mode"));
       }
     }catch(e){
-      Utils.showError(context,"Unable to Fetch info due to some error Please Contact Support");
+      Utils.showError(context, translate("error_messages.unable_to_fetch_info"));
     }
   }
   static Future<dynamic> getCustomerById(BuildContext context,String token,int Id)async{
@@ -658,7 +725,7 @@ class Network_Operations{
           var cacheData = await APICacheManager().getCacheData("customerById"+Id.toString());
           return jsonDecode(cacheData.syncData);
         }else{
-          Utils.showError(context, "No Offline Data");
+          Utils.showError(context, translate("error_messages.no_offline_data"));
         }
       }
       if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi) {
@@ -672,14 +739,14 @@ class Network_Operations{
           return data;
         }
         else {
-          Utils.showError(context, "Please Try Again");
+          Utils.showError(context, translate("error_messages.please_try_again"));
           return null;
         }
       }else{
-        Utils.showError(context, "You are in Offline mode");
+        Utils.showError(context, translate("error_messages.you_are_in_offline_mode"));
       }
     }catch(e){
-      Utils.showError(context,"Unable to Fetch info due to some error Please Contact Support");
+      Utils.showError(context, translate("error_messages.unable_to_fetch_info"));
     }
     return null;
   }
@@ -697,15 +764,15 @@ class Network_Operations{
       // }
       else{
 
-        Utils.showError(context, "Please Try Again");
+        Utils.showError(context, translate("error_messages.please_try_again"));
       }
     }catch(e){
       var claims= Utils.parseJwt(token);
       if(DateTime.fromMillisecondsSinceEpoch(int.parse(claims['exp'].toString()+"000")).isBefore(DateTime.now())){
-        Utils.showError(context, "Token Expire Please Login Again");
+        Utils.showError(context, translate("error_messages.token_expire_please_login_again"));
         // Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => LoginScreen()), (route) => false);
       }else {
-        Utils.showError(context, "Error Found: $e");
+        Utils.showError(context, translate("error_messages.error_found"));
       }
     }
     return null;
@@ -721,7 +788,7 @@ class Network_Operations{
           return jsonDecode(cacheData.syncData);
 
         }else{
-          Utils.showError(context, "No Offline Data");
+          Utils.showError(context, translate("error_messages.no_offline_data"));
         }
       }
       if(result == ConnectivityResult.mobile||result == ConnectivityResult.wifi){
@@ -741,16 +808,16 @@ class Network_Operations{
         // }
         else{
 
-          Utils.showError(context, "Please Try Again");
+          Utils.showError(context, translate("error_messages.please_try_again"));
         }
       }
     }catch(e){
       var claims= Utils.parseJwt(token);
       if(DateTime.fromMillisecondsSinceEpoch(int.parse(claims['exp'].toString()+"000")).isBefore(DateTime.now())){
-        Utils.showError(context, "Token Expire Please Login Again");
+        Utils.showError(context, translate("error_messages.token_expire_please_login_again"));
         // Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => LoginScreen()), (route) => false);
       }else {
-        Utils.showError(context,"Unable to Fetch Current Shift due to some error Please Contact Support");
+        Utils.showError(context, translate("error_messages.unable_to_fetch_current_shift"));
       }
     }
     return null;
@@ -776,11 +843,11 @@ class Network_Operations{
         return list;
       }
       else{
-        Utils.showError(context, "Please Try Again");
+        Utils.showError(context, translate("error_messages.please_try_again"));
         return null;
       }
     }catch(e){
-      Utils.showError(context, "Data Not Found Or Error Found");
+      Utils.showError(context, translate("error_messages.data_not_found_or_error_found"));
     }
     return null;
   }
@@ -794,10 +861,10 @@ class Network_Operations{
         return data;
       }
       else{
-        Utils.showError(context, "Please Try Again");
+        Utils.showError(context, translate("error_messages.please_try_again"));
       }
     }catch(e){
-      Utils.showError(context,"Unable to Cancel Order due to some error Please Contact Support");
+      Utils.showError(context, translate("error_messages.unable_to_cancel_order"));
     }
     return null;
   }
@@ -811,11 +878,11 @@ class Network_Operations{
         return data;
       }
       else{
-        Utils.showError(context, "Please Try Again");
+        Utils.showError(context, translate("error_messages.please_try_again"));
       }
     }catch(e){
       print(e);
-      Utils.showError(context, "Error Found: $e");
+      Utils.showError(context, translate("error_messages.error_found"));
     }
     return null;
   }
@@ -830,7 +897,7 @@ class Network_Operations{
           return Store.StoreFromJson(cacheData.syncData);
 
         }else{
-          Utils.showError(context, "No Offline Data");
+          Utils.showError(context, translate("error_messages.no_offline_data"));
         }
       }
       if(connectivityResult == ConnectivityResult.mobile || connectivityResult == ConnectivityResult.wifi){
@@ -850,16 +917,16 @@ class Network_Operations{
         //   Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => LoginScreen()), (route) => false);
         // }
         else{
-          Utils.showError(context, "Please Try Again");
+          Utils.showError(context, translate("error_messages.please_try_again"));
         }
       }
     }catch(e){
       var claims= Utils.parseJwt(token);
       if(DateTime.fromMillisecondsSinceEpoch(int.parse(claims['exp'].toString()+"000")).isBefore(DateTime.now())){
-        Utils.showError(context, "Token Expire Please Login Again");
+        Utils.showError(context, translate("error_messages.token_expire_please_login_again"));
         // Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => LoginScreen()), (route) => false);
       }else {
-        Utils.showError(context, "Error Found: $e");
+        Utils.showError(context, translate("error_messages.error_found"));
       }
     }
     return null;
@@ -882,15 +949,20 @@ class Network_Operations{
         return true;
       }
       else{
+        if(response.body!=null&&response.body.isNotEmpty){
+          Utils.log("refundOrderApi",{"status":response.statusCode,"error_msg":response.body});
+        }else{
+          Utils.log("refundOrderApi","refundOrderApi is throwing "+response.statusCode.toString());
+        }
         if(response.body!=null){
           print("response "+response.body.toString());
         }
-        Utils.showError(context, "Please Try Again");
+        Utils.showError(context, translate("error_messages.please_try_again"));
         return false;
       }
     }catch(e){
       print("Exception "+e);
-      Utils.showError(context, "Unable to refund order");
+      Utils.showError(context, translate("error_messages.unable_to_refund_order"));
       return false;
     }
   }
@@ -912,15 +984,20 @@ class Network_Operations{
         return true;
       }
       else{
+        if(response.body!=null&&response.body.isNotEmpty){
+          Utils.log("refundOrderByCashApi",{"status":response.statusCode,"error_msg":response.body});
+        }else{
+          Utils.log("refundOrderByCashApi","refundOrderByCashApi is throwing "+response.statusCode.toString());
+        }
         if(response.body!=null){
           print("response "+response.body.toString());
         }
-        Utils.showError(context, "Please Try Again");
+        Utils.showError(context, translate("error_messages.please_try_again"));
         return false;
       }
     }catch(e){
       print("Exception "+e);
-      Utils.showError(context, "Unable to refund order");
+      Utils.showError(context, translate("error_messages.unable_to_refund_order"));
       return false;
     }
   }
@@ -934,12 +1011,12 @@ class Network_Operations{
         return ComplaintType.ListComplaintTypeFromJson(response.body);
       }
       else{
-        Utils.showError(context, "Please Try Again");
+        Utils.showError(context, translate("error_messages.please_try_again"));
         return null;
       }
     }catch(e){
       print(e);
-      Utils.showError(context, "Unable to Fetch Complain Type Due to Some Error Contact Support");
+      Utils.showError(context, translate("error_messages.unable_to_fetch_complaint_type"));
     }
     return null;
   }
@@ -957,17 +1034,22 @@ class Network_Operations{
       var data= jsonDecode(response.body);
       print(response.body);
       if(response.statusCode==200){
-        Utils.showSuccess(context, "Order Status Changed");
+        Utils.showSuccess(context, translate("error_messages.order_status_changed"));
         return true;
       }
       else{
+        if(response.body!=null&&response.body.isNotEmpty){
+          Utils.log("changeOrderStatusApi",{"status":response.statusCode,"error_msg":response.body});
+        }else{
+          Utils.log("changeOrderStatusApi","changeOrderStatusApi is throwing "+response.statusCode.toString());
+        }
         print(response.body);
         print(response.statusCode);
-        Utils.showError(context, "Please Try Again");
+        Utils.showError(context, translate("error_messages.please_try_again"));
         return false;
       }
     }catch(e){
-      Utils.showError(context, "Error Found: $e");
+      Utils.showError(context, translate("error_messages.error_found"));
       return false;
     }
     return null;
@@ -981,12 +1063,13 @@ class Network_Operations{
         return Vendors.vendorsListFromJson(response.body);
       }
       else{
-        Utils.showError(context, "Please Try Again");
+        Utils.showError(context, translate("error_messages.please_try_again"));
         return null;
       }
     }catch(e){
-      Utils.showError(context, "Error Found: $e");
+      throw e;
     }
     return null;
   }
+
 }

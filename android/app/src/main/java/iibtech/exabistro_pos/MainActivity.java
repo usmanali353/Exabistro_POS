@@ -1,4 +1,4 @@
-package com.example.exabistro_pos;
+package iibtech.exabistro_pos;
 
 import io.flutter.embedding.android.FlutterActivity;
 

@@ -2,14 +2,16 @@ import 'dart:convert';
 import 'dart:ui';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
-import 'package:exabistro_pos/components/constants.dart';
+
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../Utils/constants.dart';
 import '../../../../model/Vendors.dart';
 import 'KitchenOrdersDetails.dart';
 
@@ -89,11 +91,19 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                     if(value!=null&&value.length>0){
                       //value=value.reversed.toList();
                       for(var order in value){
-                        String createdOn=DateFormat("yyyy-MM-dd").parse(order["createdOn"]).toString().split(" ")[0].trim();
-                        String todayDate=DateTime(DateTime.now().year,DateTime.now().month,DateTime.now().day).toIso8601String().replaceAll("T00:00:00.000","").trim();
-                        if(createdOn.contains(todayDate)&&order["cashPay"]==null&&order["orderStatus"]!=2){
-                          orderList.add(order);
+                        print(DateTime.now().difference(DateTime.parse(order["createdOn"])).inDays);
+                        if(LocalizedApp.of(context).delegate.currentLocale.languageCode!="ar"){
+                          String createdOn=DateFormat("yyyy-MM-dd").parse(order["createdOn"]).toString().split(" ")[0].trim();
+                          String todayDate=DateTime(DateTime.now().year,DateTime.now().month,DateTime.now().day).toIso8601String().replaceAll("T00:00:00.000","").trim();
+                          if(createdOn.contains(todayDate)&&order["cashPay"]==null&&order["orderStatus"]!=2){
+                            orderList.add(order);
+                          }
+                        }else{
+                          if(DateTime.now().difference(DateTime.parse(order["createdOn"])).inDays==0&&order["cashPay"]==null&&order["orderStatus"]!=2){
+                            orderList.add(order);
+                          }
                         }
+
                       }
                     }
                     //orderList = value;
@@ -112,6 +122,8 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                       }
                     });
                   }
+                }).catchError((error){
+                  print(error.toString());
                 });
                 Network_Operations.getTableList(context,token,widget.store["id"])
                     .then((value) {
@@ -121,7 +133,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                   });
                 });
               }else{
-                Utils.showError(context, "Network Error");
+                Utils.showError(context, translate("error_messages.not_connected_to_internet"));
               }
             });
           },
@@ -177,7 +189,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                           padding: const EdgeInsets.only(left: 14, right: 14),
                                           child: Row(
                                             children: [
-                                              Text("Total Orders: ",
+                                              Text(translate("unpaid_today_orders.total_orders")+" ",
                                                 style: TextStyle(
                                                     fontSize: 25,
                                                     color: yellowColor,
@@ -215,7 +227,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                     // childAspectRatio: 4 ,
                                     crossAxisSpacing: 10,
                                     mainAxisSpacing: 10,
-                                    mainAxisExtent: 100
+                                    mainAxisExtent: LocalizedApp.of(context).delegate.currentLocale.languageCode=="ur"||LocalizedApp.of(context).delegate.currentLocale.languageCode=="ar"?104:100,
                                 ),
                                 itemCount: orderList!=null?orderList.length:0,
                                 itemBuilder: (context, index){
@@ -259,7 +271,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                                       children: [
                                                         Row(
                                                           children: [
-                                                            Text('Order ID: ',
+                                                            Text(translate("unpaid_today_orders.order_id")+": ",
                                                               style: TextStyle(
                                                                   fontSize: 30,
                                                                   fontWeight: FontWeight.bold,
@@ -296,7 +308,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                                   children: [
                                                     Row(
                                                       children: [
-                                                        Text('Total: ',
+                                                        Text(translate("unpaid_today_orders.total"),
                                                           style: TextStyle(
                                                               fontSize: 20,
                                                               fontWeight: FontWeight.bold,
@@ -334,7 +346,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                                       visible: orderList[index]['orderType']==1,
                                                       child: Row(
                                                         children: [
-                                                          Text('Table: ',
+                                                          Text(translate("unpaid_today_orders.table"),
                                                             style: TextStyle(
                                                                 fontSize: 20,
                                                                 fontWeight: FontWeight.bold,
@@ -470,7 +482,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                     });
                   });
                 }else{
-                  Utils.showError(context, "Network Error");
+                  Utils.showError(context, translate("error_messages.not_connected_to_internet"));
                 }
               });
             }else{
@@ -578,9 +590,9 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
 
                               Row(
                                 children: [
-                                  Text('Order ID: ',
+                                  Text(translate("unpaid_today_orders.order_id")+": ",
                                     style: TextStyle(
-                                        fontSize: 35,
+                                        fontSize: LocalizedApp.of(context).delegate.currentLocale.languageCode=="ur"||LocalizedApp.of(context).delegate.currentLocale.languageCode=="ar"?25:35,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white
                                     ),
@@ -604,124 +616,123 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                             WidgetsBinding.instance
                                                 .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
                                             Navigator.pop(context);
-                                            Utils.showSuccess(context, "Order has been Canceled");
+                                            Utils.showSuccess(context, translate("in_app_errors.order_cancelled"));
                                           }else{
-                                            Utils.showError(context, "Please Try Again");
+                                            Utils.showError(context, translate("error_messages.please_try_again"));
                                           }
                                         });
                                       },
                                     ):Container(),
-                                    orders["orderStatus"]!=7?Padding(
-                                        padding: const EdgeInsets.only(bottom: 16.0,right: 8.0,left: 8.0),
-                                      child: InkWell(
-                                        child: FaIcon(FontAwesomeIcons.history, color: blueColor, size: 30,),
-                                        onTap: (){
-                                           if(orders["orderStatus"]==1){
-                                             var orderStatusData={
-                                               "Id":orders['id'],
-                                               "status":3,
-                                             };
-                                             Navigator.pop(context);
-                                             Network_Operations.changeOrderStatus(context, token, orderStatusData).then((value){
-                                               if(value){
-                                                 setState(() {
-                                                   WidgetsBinding.instance
-                                                       .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
-                                                 });
-                                                 Utils.showSuccess(this.context, "Order Status Changed");
-                                               }else{
-                                                 Utils.showError(this.context, "Please Try Again");
-                                               }
-                                             });
-                                           }
-                                           if(orders["orderStatus"]==3){
-                                             var orderStatusData={
-                                               "Id":orders['id'],
-                                               "status":4,
-                                             };
+                                    orders["orderStatus"]!=7?InkWell(
+                                      child: Padding(
+                                          padding: const EdgeInsets.only(bottom: 16.0,right: 8.0,left: 8.0),
+                                          child: FaIcon(FontAwesomeIcons.history, color: blueColor, size: 30,)),
+                                      onTap: (){
+                                         if(orders["orderStatus"]==1){
+                                           var orderStatusData={
+                                             "Id":orders['id'],
+                                             "status":3,
+                                           };
+                                           Navigator.pop(context);
+                                           Network_Operations.changeOrderStatus(context, token, orderStatusData).then((value){
+                                             if(value){
+                                               setState(() {
+                                                 WidgetsBinding.instance
+                                                     .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                                               });
+                                               Utils.showSuccess(context, translate("error_messages.order_status_changed"));
+                                             }else{
+                                               Utils.showError(context, translate("error_messages.please_try_again"));
+                                             }
+                                           });
+                                         }
+                                         if(orders["orderStatus"]==3){
+                                           var orderStatusData={
+                                             "Id":orders['id'],
+                                             "status":4,
+                                           };
 
-                                             Navigator.pop(context);
-                                             Network_Operations.changeOrderStatus(context, token, orderStatusData).then((value){
-                                               if(value){
-                                                 setState(() {
-                                                   WidgetsBinding.instance
-                                                       .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
-                                                 });
-                                                 Utils.showSuccess(this.context, "Order Status Changed");
-                                               }else{
-                                                 Utils.showError(this.context, "Please Try Again");
+                                           Navigator.pop(context);
+                                           Network_Operations.changeOrderStatus(context, token, orderStatusData).then((value){
+                                             if(value){
+                                               setState(() {
+                                                 WidgetsBinding.instance
+                                                     .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                                               });
+                                               Utils.showSuccess(context, translate("error_messages.order_status_changed"));
+                                             }else{
+                                               Utils.showError(context, translate("error_messages.please_try_again"));
+                                             }
+                                           });
+                                         }
+                                         if(orders["orderStatus"]==4){
+                                           var orderStatusData={
+                                             "Id":orders['id'],
+                                             "status":5,
+                                           };
+                                           Navigator.pop(context);
+                                           Network_Operations.changeOrderStatus(context, token, orderStatusData).then((value){
+                                             if(value){
+                                               setState(() {
+                                                 WidgetsBinding.instance
+                                                     .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
+                                               });
+                                               Utils.showSuccess(context, translate("error_messages.order_status_changed"));
+                                             }else{
+                                               Utils.showError(context, translate("error_messages.please_try_again"));
+                                             }
+                                           });
+                                         }
+                                         if(orders["orderStatus"]==5){
+                                            if(orders["orderType"]==1||orders["orderType"]==2){
+                                              Navigator.pop(context);
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (context){
+                                                    return Dialog(
+                                                      backgroundColor: Colors.transparent,
+                                                      child: Container(
+                                                        width: 400,
+                                                        height: 370,
+                                                        child: payoutDialog(orders),
+                                                      ),
+                                                    );
+                                                  }
+                                              );
+                                            }else{
+                                              Navigator.pop(context);
+                                              showDialog(
+                                                  context: context,
+                                                  builder: (context){
+                                                    return Dialog(
+                                                      backgroundColor: Colors.transparent,
+                                                      child: Container(
+                                                        width: 400,
+                                                        height: 350,
+                                                        child: AssignRiderDialog(orders),
+                                                      ),
+                                                    );
+                                                  }
+                                              );
+                                            }
+                                         }
+                                         if(orders["orderStatus"]==6){
+                                           Navigator.pop(context);
+                                           showDialog(
+                                               context: context,
+                                               builder: (context){
+                                                 return Dialog(
+                                                   backgroundColor: Colors.transparent,
+                                                   child: Container(
+                                                     width: 400,
+                                                     height: 370,
+                                                     child: payoutDialog(orders),
+                                                   ),
+                                                 );
                                                }
-                                             });
-                                           }
-                                           if(orders["orderStatus"]==4){
-                                             var orderStatusData={
-                                               "Id":orders['id'],
-                                               "status":5,
-                                             };
-                                             Navigator.pop(context);
-                                             Network_Operations.changeOrderStatus(context, token, orderStatusData).then((value){
-                                               if(value){
-                                                 setState(() {
-                                                   WidgetsBinding.instance
-                                                       .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
-                                                 });
-                                                 Utils.showSuccess(this.context, "Order Status Changed");
-                                               }else{
-                                                 Utils.showError(this.context, "Please Try Again");
-                                               }
-                                             });
-                                           }
-                                           if(orders["orderStatus"]==5){
-                                              if(orders["orderType"]==1||orders["orderType"]==2){
-                                                Navigator.pop(context);
-                                                showDialog(
-                                                    context: context,
-                                                    builder: (context){
-                                                      return Dialog(
-                                                        backgroundColor: Colors.transparent,
-                                                        child: Container(
-                                                          width: 400,
-                                                          height: 370,
-                                                          child: payoutDialog(orders),
-                                                        ),
-                                                      );
-                                                    }
-                                                );
-                                              }else{
-                                                Navigator.pop(context);
-                                                showDialog(
-                                                    context: context,
-                                                    builder: (context){
-                                                      return Dialog(
-                                                        backgroundColor: Colors.transparent,
-                                                        child: Container(
-                                                          width: 400,
-                                                          height: 350,
-                                                          child: AssignRiderDialog(orders),
-                                                        ),
-                                                      );
-                                                    }
-                                                );
-                                              }
-                                           }
-                                           if(orders["orderStatus"]==6){
-                                             Navigator.pop(context);
-                                             showDialog(
-                                                 context: context,
-                                                 builder: (context){
-                                                   return Dialog(
-                                                     backgroundColor: Colors.transparent,
-                                                     child: Container(
-                                                       width: 400,
-                                                       height: 370,
-                                                       child: payoutDialog(orders),
-                                                     ),
-                                                   );
-                                                 }
-                                             );
-                                           }
-                                        },
-                                      ),
+                                           );
+                                         }
+                                      },
                                     )
                                     :Container(),
                                     Padding(
@@ -767,7 +778,8 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Items:',
+                                              //'Items:',
+                                              translate("unpaid_today_orders_popup.items"),
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -821,7 +833,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Total: ',
+                                              translate("unpaid_today_orders_popup.total"),
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -938,7 +950,8 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Status:',
+                                              //'Status:',
+                                              translate("unpaid_today_orders_popup.status"),
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -1046,7 +1059,8 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Waiter:',
+                                              //'Waiter:',
+                                              translate("unpaid_today_orders_popup.waiter"),
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -1101,7 +1115,8 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Customer:',
+                                              //'Customer:',
+                                              translate("unpaid_today_orders_popup.customer"),
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -1157,7 +1172,8 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                             ),
                                             child: Center(
                                               child: AutoSizeText(
-                                                'Table#:',
+                                                //'Table#:',
+                                                translate("unpaid_today_orders_popup.table_number"),
                                                 style: TextStyle(
                                                     color: BackgroundColor,
                                                     fontSize: 22,
@@ -1211,7 +1227,8 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                                 .spaceBetween,
                                             children: [
                                               Text(
-                                                "SubTotal: ",
+                                                //"SubTotal: ",
+                                                translate("unpaid_today_orders_popup.sub_total"),
                                                 style: TextStyle(
                                                     fontSize:
                                                     20,
@@ -1326,7 +1343,8 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                                 .spaceBetween,
                                             children: [
                                               Text(
-                                                "Total: ",
+                                                //"Total: ",
+                                                translate("unpaid_today_orders_popup.total"),
                                                 style: TextStyle(
                                                     fontSize:
                                                     20,
@@ -1437,7 +1455,8 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                                       ),
                                                       child: Center(
                                                         child: AutoSizeText(
-                                                          'Unit Price: ',
+                                                          //'Unit Price: ',
+                                                          translate("unpaid_today_orders_popup.unit_price"),
                                                           style: TextStyle(
                                                               color: yellowColor,
                                                               fontSize: 20,
@@ -1493,7 +1512,8 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                                       ),
                                                       child: Center(
                                                         child: AutoSizeText(
-                                                          'Quantity: ',
+                                                          //'Quantity: ',
+                                                          translate("unpaid_today_orders_popup.quantity"),
                                                           style: TextStyle(
                                                               color: yellowColor,
                                                               fontSize: 20,
@@ -1549,7 +1569,8 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                                       ),
                                                       child: Center(
                                                         child: AutoSizeText(
-                                                          'Size: ',
+                                                          //'Size: ',
+                                                          translate("unpaid_today_orders_popup.size"),
                                                           style: TextStyle(
                                                               color: yellowColor,
                                                               fontSize: 20,
@@ -1631,7 +1652,8 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                                         child: Column(
                                                           children: [
                                                             AutoSizeText(
-                                                              'Extras: ',
+                                                              //'Extras: ',
+                                                              translate("unpaid_today_orders_popup.extras"),
                                                               style: TextStyle(
                                                                   color: yellowColor,
                                                                   fontSize: 20,
@@ -1681,7 +1703,8 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                   children: [
                                                     Text(
-                                                      'Price: ',
+                                                      //'Price: ',
+                                                      translate("unpaid_today_orders_popup.price"),
                                                       style: TextStyle(
                                                         color: BackgroundColor,
                                                         fontSize: 25,
@@ -1785,7 +1808,10 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                             width: MediaQuery.of(context).size.width,
                             height: 40,
                             color: yellowColor,
-                            child: Center(child: Text("Payout",style: TextStyle(fontSize: 25,fontWeight: FontWeight.bold,color: BackgroundColor),)),
+                            child: Center(child: Text(
+                              //"Payout",
+                              translate("unpaid_today_orders_popup.payout"),
+                              style: TextStyle(fontSize: 25,fontWeight: FontWeight.bold,color: BackgroundColor),)),
 
                           ),
                           Padding(
@@ -1803,7 +1829,10 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text("Total Amount",style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: yellowColor),),
+                                    Text(
+                                      //"Total Amount",
+                                      translate("unpaid_today_orders_popup.total_amount"),
+                                      style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: yellowColor),),
                                     Text(totalAmount.toString(),style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: PrimaryColor),),
                                   ],
                                 ),
@@ -1831,7 +1860,8 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                 },
                                 decoration: InputDecoration(
                                   border: OutlineInputBorder(),
-                                  hintText: "Amount Paid",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                  hintText: translate("unpaid_today_orders_popup.amount_paid"),
+                                  hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                 ),
                                 onChanged: (value){
                                   innersetState(() {
@@ -1863,7 +1893,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                   children: [
-                                    Text("Balance",style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: yellowColor),),
+                                    Text(translate("unpaid_today_orders_popup.balance"),style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: yellowColor),),
                                     Text(balance.toStringAsFixed(0),style: TextStyle(fontSize: 20,fontWeight: FontWeight.bold,color: PrimaryColor),),
                                   ],
                                 ),
@@ -1891,9 +1921,9 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                       WidgetsBinding.instance
                                           .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
                                     });
-                                    Utils.showSuccess(this.context,"Payment Successful");
+                                    Utils.showSuccess(this.context, translate("in_app_errors.payment_successful"));
                                   }else{
-                                    Utils.showError(this.context,"Problem in Making Payment");
+                                    Utils.showError(this.context,translate("in_app_errors.problem_in_making_payment"));
                                   }
                                 });
                               }
@@ -1907,7 +1937,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                     borderRadius: BorderRadius.circular(4),
                                     color: yellowColor
                                 ),
-                                child: Center(child: Text("Payout",style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
+                                child: Center(child: Text(translate("unpaid_today_orders_popup.payout"),style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
                               ),
                             ),
                           )
@@ -1947,7 +1977,10 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                             width: MediaQuery.of(context).size.width,
                             height: 40,
                             color: yellowColor,
-                            child: Center(child: Text("Assign Rider",style: TextStyle(fontSize: 25,fontWeight: FontWeight.bold,color: BackgroundColor),)),
+                            child: Center(child: Text(
+                              //"Assign Rider",
+                              translate("unpaid_today_orders_popup.assign_rider"),
+                              style: TextStyle(fontSize: 25,fontWeight: FontWeight.bold,color: BackgroundColor),)),
 
                           ),
                           Form(
@@ -1969,7 +2002,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                     },
                                     decoration: InputDecoration(
                                       border: OutlineInputBorder(),
-                                      hintText: "Estimated Time",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                      hintText: translate("unpaid_today_orders_popup.estimated_time"),hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                     ),
                                   ),
                                 ),
@@ -1977,7 +2010,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                   padding: const EdgeInsets.all(16.0),
                                   child: DropdownButtonFormField<Vendors>(
                                     decoration: InputDecoration(
-                                      labelText: "Select Driver",
+                                      labelText: translate("unpaid_today_orders_popup.select_driver"),
                                       alignLabelWithHint: true,
                                       labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
                                       enabledBorder: OutlineInputBorder(
@@ -2031,9 +2064,9 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                             WidgetsBinding.instance
                                                 .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
                                           });
-                                          Utils.showSuccess(this.context, "Order Status Changed");
+                                          Utils.showSuccess(context, translate("error_messages.order_status_changed"));
                                         }else{
-                                          Utils.showError(this.context, "Please Try Again");
+                                          Utils.showError(context, translate("error_messages.please_try_again"));
                                         }
                                       });
                                     }
@@ -2047,7 +2080,7 @@ class _KitchenTabViewState extends State<UnPaidOrdersScreenForTab>{
                                           borderRadius: BorderRadius.circular(4),
                                           color: yellowColor
                                       ),
-                                      child: Center(child: Text("Proceed",style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
+                                      child: Center(child: Text(translate("unpaid_today_orders_popup.proceed"),style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
                                     ),
                                   ),
                                 )

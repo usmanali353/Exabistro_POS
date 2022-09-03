@@ -1,9 +1,10 @@
 import 'dart:io';
 import 'package:exabistro_pos/Screens/AddPrinterDialog.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
+import 'package:exabistro_pos/Utils/constants.dart';
 import 'package:flutter_bluetooth_basic/flutter_bluetooth_basic.dart';
 import 'package:esc_pos_bluetooth/esc_pos_bluetooth.dart';
-import 'package:exabistro_pos/components/constants.dart';
+
 import 'package:flutter/material.dart';
 import 'package:simple_speed_dial/simple_speed_dial.dart';
 

@@ -4,15 +4,17 @@ import 'package:exabistro_pos/Screens/LoadingScreen.dart';
 import 'package:exabistro_pos/Screens/Orders/HistoryTabsComponents.dart';
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/KitchenOrdersDetails.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
-import 'package:exabistro_pos/components/constants.dart';
+
 import 'package:exabistro_pos/model/ComplaintTypes.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../../Utils/constants.dart';
 import '../../../LoginScreen.dart';
 import '../../../POSMainScreenUI1.dart';
 import '../PaidTabsComponents.dart';
@@ -144,7 +146,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                     Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>POSMainScreenUI1(store:widget.store)), (route) => false);
                   },
                   title: Text(
-                    "Home",
+                    translate("drawer_items.home"),
                     style: TextStyle(
                         color: blueColor,
                         fontSize: 22,
@@ -159,7 +161,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                     Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>OrdersHistoryTabsScreen(storeId:widget.store)), (route) => false);
                   },
                   title: Text(
-                    "Order History",
+                    translate("drawer_items.order_history"),
                     style: TextStyle(
                         color: blueColor,
                         fontSize: 22,
@@ -180,7 +182,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                 backgroundColor: Colors.transparent,
                                 child: Container(
                                   width: 400,
-                                  height: 130,
+                                  height:  LocalizedApp.of(context).delegate.currentLocale.languageCode=="ur"||LocalizedApp.of(context).delegate.currentLocale.languageCode=="ar"?166:130,
                                   child: Utils.shiftReportDialog(context,value.last),
                                 ),
                               ) ;
@@ -191,7 +193,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                     });
                   },
                   title: Text(
-                    "Shift Report",
+                    translate("drawer_items.shift_report"),
                     style: TextStyle(
                         color: blueColor,
                         fontSize: 22,
@@ -211,7 +213,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                     });
                   },
                   title: Text(
-                    "Logout",
+                    translate("drawer_items.logout"),
                     style: TextStyle(
                         color: blueColor,
                         fontSize: 22,
@@ -227,7 +229,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
         ):Container(),
         appBar: widget.store["payOut"]!=null&&widget.store["payOut"]==true&&!isLoading? AppBar(
           title: Text(
-            'Today Orders',
+            translate("drawer_items.today_orders"),
             style: TextStyle(
                 color: yellowColor,
                 fontWeight: FontWeight.bold,
@@ -271,11 +273,16 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                       //value=value.reversed.toList();
                       print(value.toString());
                       for(var order in value){
-                        String createdOn=DateFormat("yyyy-MM-dd").parse(order["createdOn"]).toString().split(" ")[0].trim();
-                        String todayDate=DateTime(DateTime.now().year,DateTime.now().month,DateTime.now().day).toIso8601String().replaceAll("T00:00:00.000","").trim();
-
-                        if(createdOn.contains(todayDate)&&order["cashPay"]!=null&&order["orderStatus"]!=2){
-                          orderList.add(order);
+                        if(LocalizedApp.of(context).delegate.currentLocale.languageCode!="ar"){
+                          String createdOn=DateFormat("yyyy-MM-dd").parse(order["createdOn"]).toString().split(" ")[0].trim();
+                          String todayDate=DateTime(DateTime.now().year,DateTime.now().month,DateTime.now().day).toIso8601String().replaceAll("T00:00:00.000","").trim();
+                          if(createdOn.contains(todayDate)&&order["cashPay"]!=null&&order["orderStatus"]!=2){
+                            orderList.add(order);
+                          }
+                        }else{
+                          if(DateTime.now().difference(DateTime.parse(order["createdOn"])).inDays==0&&order["cashPay"]!=null&&order["orderStatus"]!=2){
+                            orderList.add(order);
+                          }
                         }
                       }
                     }
@@ -293,7 +300,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                 setState(() {
                   isLoading=false;
                 });
-                Utils.showError(context, "Network Error");
+                Utils.showError(context, translate("error_messages.not_connected_to_internet"));
               }
             });
 
@@ -350,7 +357,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                           padding: const EdgeInsets.only(left: 14, right: 14),
                                           child: Row(
                                             children: [
-                                              Text("Total Orders: ",
+                                              Text(translate("unpaid_today_orders.total_orders")+": ",
                                                 style: TextStyle(
                                                     fontSize: 25,
                                                     color: yellowColor,
@@ -389,7 +396,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                     // childAspectRatio: MediaQuery.of(context).size.height<900?3:4,
                                     crossAxisSpacing: 10,
                                     mainAxisSpacing: 10,
-                                    mainAxisExtent: 100
+                                    mainAxisExtent: LocalizedApp.of(context).delegate.currentLocale.languageCode=="ur"||LocalizedApp.of(context).delegate.currentLocale.languageCode=="ar"?104:100,
                                 ),
                                 itemCount: orderList!=null?orderList.length:0,
                                 itemBuilder: (context, index){
@@ -434,7 +441,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                       children: [
                                                         Row(
                                                           children: [
-                                                            Text('Order ID: ',
+                                                            Text(translate("unpaid_today_orders.order_id")+": ",
                                                               style: TextStyle(
                                                                   fontSize: 30,
                                                                   fontWeight: FontWeight.bold,
@@ -478,7 +485,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                   children: [
                                                     Row(
                                                       children: [
-                                                        Text('Total: ',
+                                                        Text(translate("paid_today_orders_popup.total")+": ",
                                                           style: TextStyle(
                                                               fontSize: 20,
                                                               fontWeight: FontWeight.bold,
@@ -516,7 +523,9 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                       visible: orderList[index]['orderType']==1,
                                                       child: Row(
                                                         children: [
-                                                          Text('Table:',
+                                                          Text(
+                                                            //'Table:',
+                                                          translate("paid_today_orders.table"),
                                                             style: TextStyle(
                                                                 fontSize: 20,
                                                                 fontWeight: FontWeight.bold,
@@ -649,7 +658,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                     });
                   });
                 }else{
-                  Utils.showError(context, "Network Error");
+                  Utils.showError(context, translate("error_messages.not_connected_to_internet"));
                 }
               });
             }else{
@@ -777,9 +786,9 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                               orders["orderType"]==1? FaIcon(FontAwesomeIcons.utensils, color: blueColor, size:30):orders["orderType"]==2?FaIcon(FontAwesomeIcons.shoppingBag, color: blueColor,size:30):FaIcon(FontAwesomeIcons.biking, color: blueColor,size:30),
                               Row(
                                 children: [
-                                  Text('Order ID: ',
+                                  Text(translate("unpaid_today_orders.order_id")+": ",
                                     style: TextStyle(
-                                        fontSize: 35,
+                                        fontSize: LocalizedApp.of(context).delegate.currentLocale.languageCode=="ur"||LocalizedApp.of(context).delegate.currentLocale.languageCode=="ar"?25:35,
                                         fontWeight: FontWeight.bold,
                                         color: Colors.white
                                     ),
@@ -860,7 +869,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                             ),
                                             child: Center(
                                               child: AutoSizeText(
-                                                'Total: ',
+                                                translate("paid_today_orders_popup.total"),
                                                 style: TextStyle(
                                                     color: BackgroundColor,
                                                     fontSize: 22,
@@ -978,7 +987,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Status:',
+                                              translate("paid_today_orders_popup.status"),
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -1086,7 +1095,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Waiter:',
+                                              translate("paid_today_orders_popup.waiter"),
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -1141,7 +1150,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Customer:',
+                                              translate("paid_today_orders_popup.customer"),
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -1197,7 +1206,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                             ),
                                             child: Center(
                                               child: AutoSizeText(
-                                                'Table#:',
+                                                translate("paid_today_orders_popup.table_number"),
                                                 style: TextStyle(
                                                     color: BackgroundColor,
                                                     fontSize: 22,
@@ -1245,7 +1254,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                           context: context,
                                           builder: (cotext){
                                             return AlertDialog(
-                                              title: Text("Refund Reason Detail"),
+                                              title: Text(translate("paid_today_orders_popup.refund_reason")),
                                               content: Text(orders["refundReason"]!=null?orders["refundReason"]:"N/A"),
                                             );
                                           }
@@ -1266,7 +1275,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                               ),
                                               child: Center(
                                                 child: AutoSizeText(
-                                                  'Refund Reason',
+                                                  translate("paid_today_orders_popup.refund_reason"),
                                                   style: TextStyle(
                                                       color: BackgroundColor,
                                                       fontSize: 22,
@@ -1321,7 +1330,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                 .spaceBetween,
                                             children: [
                                               Text(
-                                                "SubTotal: ",
+                                                translate("paid_today_orders_popup.sub_total"),
                                                 style: TextStyle(
                                                     fontSize:
                                                     20,
@@ -1436,7 +1445,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                 .spaceBetween,
                                             children: [
                                               Text(
-                                                "Total: ",
+                                                translate("paid_today_orders_popup.total"),
                                                 style: TextStyle(
                                                     fontSize:
                                                     20,
@@ -1555,7 +1564,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                       ),
                                                       child: Center(
                                                         child: AutoSizeText(
-                                                          'Unit Price: ',
+                                                          translate("paid_today_orders_popup.unit_price")+": ",
                                                           style: TextStyle(
                                                               color: yellowColor,
                                                               fontSize: 20,
@@ -1611,7 +1620,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                       ),
                                                       child: Center(
                                                         child: AutoSizeText(
-                                                          'Quantity: ',
+                                                          translate("paid_today_orders_popup.quantity")+": ",
                                                           style: TextStyle(
                                                               color: yellowColor,
                                                               fontSize: 20,
@@ -1667,7 +1676,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                       ),
                                                       child: Center(
                                                         child: AutoSizeText(
-                                                          'Size: ',
+                                                          translate("paid_today_orders_popup.size"),
                                                           style: TextStyle(
                                                               color: yellowColor,
                                                               fontSize: 20,
@@ -1749,7 +1758,8 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                           child: Column(
                                                             children: [
                                                               AutoSizeText(
-                                                                'Extras: ',
+                                                                //'Extras: ',
+                                                                translate("paid_today_orders_popup.extras"),
                                                                 style: TextStyle(
                                                                     color: yellowColor,
                                                                     fontSize: 20,
@@ -1799,7 +1809,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                   children: [
                                                     Text(
-                                                      'Price: ',
+                                                      translate("paid_today_orders_popup.price"),
                                                       style: TextStyle(
                                                         color: BackgroundColor,
                                                         fontSize: 25,
@@ -1909,7 +1919,10 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                     width: MediaQuery.of(context).size.width,
                     height: 40,
                     color: yellowColor,
-                    child: Center(child: Text("Refund Items",style: TextStyle(fontSize: 25,fontWeight: FontWeight.bold,color: BackgroundColor),)),
+                    child: Center(child: Text(
+                      //"Refund Items",
+                      translate("paid_today_orders_popup.refund_items"),
+                      style: TextStyle(fontSize: 25,fontWeight: FontWeight.bold,color: BackgroundColor),)),
 
                   ),
 
@@ -1922,7 +1935,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                             padding: const EdgeInsets.all(8.0),
                             child: DropdownButtonFormField<String>(
                               decoration: InputDecoration(
-                                labelText: "Select Reason Type",
+                                labelText:  translate("paid_today_orders_popup.select_reason_type"),
                                 alignLabelWithHint: true,
                                 labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
                                 enabledBorder: OutlineInputBorder(
@@ -1968,7 +1981,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                               padding: const EdgeInsets.all(8.0),
                               child: DropdownButtonFormField<String>(
                                 decoration: InputDecoration(
-                                  labelText: "Select Predefined Reason",
+                                  labelText: translate("paid_today_orders_popup.select_predefined_reason"),
                                   alignLabelWithHint: true,
                                   labelStyle: TextStyle(fontWeight: FontWeight.bold,fontSize: 16, color:yellowColor),
                                   enabledBorder: OutlineInputBorder(
@@ -2016,7 +2029,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                 },
                                 decoration: InputDecoration(
                                   border: OutlineInputBorder(),
-                                  hintText: "Reason of Refund",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                  hintText: translate("paid_today_orders_popup.reason_of_refund"),hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ),
@@ -2035,7 +2048,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                 },
                                 decoration: InputDecoration(
                                   border: OutlineInputBorder(),
-                                  hintText: "Cash Amount to Refund",hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
+                                  hintText: translate("paid_today_orders_popup.cash_amount_to_refund"),hintStyle: TextStyle(color: yellowColor, fontSize: 16, fontWeight: FontWeight.bold),
                                 ),
                               ),
                             ),
@@ -2115,13 +2128,13 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                   if(value){
                                     WidgetsBinding.instance
                                         .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
-                                    Utils.showSuccess(this.context,"Refunded Successfully");
+                                    Utils.showSuccess(context, translate("in_app_errors.refunded_successfully"));
                                   }else{
-                                    Utils.showError(this.context,"Unable to Rwfund due to some error");
+                                    Utils.showError(context, translate("in_app_errors.unable_to_refund"));
                                   }
                                 });
                               }else{
-                                Utils.showError(this.context, "Provide Required Information");
+                                Utils.showError(context, translate("in_app_errors.provide_all_required_information"));
                               }
                             }else {
                               Network_Operations.refundOrderByCash(context: context,token: token,orderId: orderId,refundReason: selectedComplaintType!=null&&selectedComplaintType=="Other"||selectedPredefinedReason!=null&&selectedPredefinedReason=="Other"?refundReason.text:selectedPredefinedReason,ComplaintTypeId: complaintTypeId,cashAmount: cashAmount.text).then((value){
@@ -2130,9 +2143,9 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                   if(value){
                                     WidgetsBinding.instance
                                         .addPostFrameCallback((_) => _refreshIndicatorKey.currentState.show());
-                                    Utils.showSuccess(this.context,"Refunded Successfully");
+                                    Utils.showSuccess(context, translate("in_app_errors.refunded_successfully"));
                                   }else{
-                                    Utils.showError(this.context,"Unable to Rwfund due to some error");
+                                    Utils.showError(context, translate("in_app_errors.unable_to_refund"));
                                   }
                                 }
                               });
@@ -2150,7 +2163,7 @@ class _KitchenTabViewState extends State<PaidOrdersScreenForTab>{
                                 borderRadius: BorderRadius.circular(4),
                                 color: yellowColor
                             ),
-                            child: Center(child: Text("Refund",style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
+                            child: Center(child: Text(translate("paid_today_orders_popup.refund_btn"),style: TextStyle(color: BackgroundColor, fontWeight: FontWeight.bold, fontSize: 30),)),
                           ),
                         ),
                       ),

@@ -2,14 +2,16 @@ import 'dart:ui';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/KitchenOrdersDetails.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
-import 'package:exabistro_pos/components/constants.dart';
+
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../Utils/constants.dart';
 import '../../model/ComplaintTypes.dart';
 import '../LoadingScreen.dart';
 import '../LoginScreen.dart';
@@ -188,7 +190,7 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                 backgroundColor: Colors.transparent,
                                 child: Container(
                                   width: 400,
-                                  height: 130,
+                                  height: LocalizedApp.of(context).delegate.currentLocale.languageCode=="ur"||LocalizedApp.of(context).delegate.currentLocale.languageCode=="ar"?166:130,
                                   child: Utils.shiftReportDialog(context,value.last),
                                 ),
                               ) ;
@@ -280,7 +282,7 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                 setState(() {
                   isLoading=false;
                 });
-                Utils.showError(context, "Network Error");
+                Utils.showError(context, translate("error_messages.not_connected_to_internet"));
               }
             });
           },
@@ -336,7 +338,10 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                           padding: const EdgeInsets.only(left: 14, right: 14),
                                           child: Row(
                                             children: [
-                                              Text("Total Orders: ",
+                                              Text(
+                                                //"Total Orders: ",
+                                                translate("refunded_orders_history.total_orders"),
+
                                                 style: TextStyle(
                                                     fontSize: 25,
                                                     color: yellowColor,
@@ -375,7 +380,7 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                     // childAspectRatio: MediaQuery.of(context).size.height<900?3:4,
                                     crossAxisSpacing: 10,
                                     mainAxisSpacing: 10,
-                                    mainAxisExtent: 100
+                                  mainAxisExtent: LocalizedApp.of(context).delegate.currentLocale.languageCode=="ur"||LocalizedApp.of(context).delegate.currentLocale.languageCode=="ar"?110:100,
                                 ),
                                 itemCount: orderList!=null?orderList.length:0,
                                 itemBuilder: (context, index){
@@ -464,7 +469,9 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                                   children: [
                                                     Row(
                                                       children: [
-                                                        Text('Total: ',
+                                                        Text(
+                                                          //'Total: ',
+                                                          translate("refunded_orders_history.total"),
                                                           style: TextStyle(
                                                               fontSize: 20,
                                                               fontWeight: FontWeight.bold,
@@ -502,7 +509,10 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                                       visible: orderList[index]['orderType']==1,
                                                       child: Row(
                                                         children: [
-                                                          Text('Table:',
+                                                          Text(
+                                                            //'Table:',
+                                                            translate("refunded_orders_history.table"),
+
                                                             style: TextStyle(
                                                                 fontSize: 20,
                                                                 fontWeight: FontWeight.bold,
@@ -625,7 +635,7 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                     });
                   });
                 }else{
-                  Utils.showError(context, "Network Error");
+                  Utils.showError(context, translate("error_messages.not_connected_to_internet"));
                 }
               });
             }else{
@@ -789,7 +799,8 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                             ),
                                             child: Center(
                                               child: AutoSizeText(
-                                                'Total: ',
+                                                //'Total: ',
+                                                translate("refunded_orders_history_popup.total"),
                                                 style: TextStyle(
                                                     color: BackgroundColor,
                                                     fontSize: 22,
@@ -907,7 +918,8 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Status:',
+                                              //'Status:',
+                                              translate("refunded_orders_history_popup.status"),
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -1015,7 +1027,9 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Waiter:',
+                                              //'Waiter:',
+                                              translate("refunded_orders_history_popup.waiter"),
+
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -1070,7 +1084,8 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Customer:',
+                                              //'Customer:',
+                                              translate("refunded_orders_history_popup.customer"),
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -1126,7 +1141,8 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                             ),
                                             child: Center(
                                               child: AutoSizeText(
-                                                'Table#:',
+                                                //'Table#:',
+                                                translate("refunded_orders_history_popup.table_number"),
                                                 style: TextStyle(
                                                     color: BackgroundColor,
                                                     fontSize: 22,
@@ -1174,7 +1190,9 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                             context: context,
                                             builder: (cotext){
                                               return AlertDialog(
-                                                title: Text("Refund Reason Detail"),
+                                                title: Text(
+                                                  translate("refunded_orders_history_popup.refund_reason_details"),
+                                                ),
                                                 content: Text(orders["refundReason"]!=null?orders["refundReason"]:"N/A"),
                                               );
                                             }
@@ -1195,7 +1213,8 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                               ),
                                               child: Center(
                                                 child: AutoSizeText(
-                                                  'Refund Reason',
+                                                  //'Refund Reason',
+                                                  translate("refunded_orders_history_popup.refund_reason"),
                                                   style: TextStyle(
                                                       color: BackgroundColor,
                                                       fontSize: 22,
@@ -1250,7 +1269,8 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                                 .spaceBetween,
                                             children: [
                                               Text(
-                                                "SubTotal: ",
+                                                //"SubTotal: ",
+                                                translate("refunded_orders_history_popup.sub_total"),
                                                 style: TextStyle(
                                                     fontSize:
                                                     20,
@@ -1365,7 +1385,8 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                                 .spaceBetween,
                                             children: [
                                               Text(
-                                                "Total: ",
+                                                //"Total: ",
+                                                translate("refunded_orders_history_popup.total"),
                                                 style: TextStyle(
                                                     fontSize:
                                                     20,
@@ -1484,7 +1505,8 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                                       ),
                                                       child: Center(
                                                         child: AutoSizeText(
-                                                          'Unit Price: ',
+                                                          //'Unit Price: ',
+                                                          translate("refunded_orders_history_popup.unit_price"),
                                                           style: TextStyle(
                                                               color: yellowColor,
                                                               fontSize: 20,
@@ -1540,7 +1562,9 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                                       ),
                                                       child: Center(
                                                         child: AutoSizeText(
-                                                          'Quantity: ',
+                                                          //'Quantity: ',
+                                                          translate("refunded_orders_history_popup.quantity"),
+
                                                           style: TextStyle(
                                                               color: yellowColor,
                                                               fontSize: 20,
@@ -1596,7 +1620,8 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                                       ),
                                                       child: Center(
                                                         child: AutoSizeText(
-                                                          'Size: ',
+                                                          //'Size: ',
+                                                          translate("refunded_orders_history_popup.size"),
                                                           style: TextStyle(
                                                               color: yellowColor,
                                                               fontSize: 20,
@@ -1678,7 +1703,9 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                                           child: Column(
                                                             children: [
                                                               AutoSizeText(
-                                                                'Extras: ',
+                                                                //'Extras: ',
+                                                                translate("refunded_orders_history_popup.extras"),
+
                                                                 style: TextStyle(
                                                                     color: yellowColor,
                                                                     fontSize: 20,
@@ -1728,7 +1755,8 @@ class _RefundedOrdersState extends State<RefundedOrders>{
                                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                   children: [
                                                     Text(
-                                                      'Price: ',
+                                                      //'Price: ',
+                                                      translate("refunded_orders_history_popup.price"),
                                                       style: TextStyle(
                                                         color: BackgroundColor,
                                                         fontSize: 25,

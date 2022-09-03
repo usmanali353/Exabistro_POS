@@ -5,9 +5,10 @@ import 'package:exabistro_pos/Screens/POSMainScreenUI1.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../components/constants.dart';
+import '../Utils/constants.dart';
 import '../model/Stores.dart';
 
 
@@ -93,7 +94,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
           ],
           centerTitle: true,
           backgroundColor:  BackgroundColor,
-          title: Text("Select Branch", style: TextStyle(
+          title: Text(translate("store_screen.appbar_title"), style: TextStyle(
               color: yellowColor,
               fontSize: 25,
             fontWeight: FontWeight.bold
@@ -323,7 +324,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
                                 child:  Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Text("Store: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 22,color: yellowColor),),
+                                    Text(translate("store_screen.store")+": ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 22,color: yellowColor),),
                                     Text(widget.roles[index]['store']!=null?widget.roles[index]['store']['name']:" - ",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 22,color: PrimaryColor),),
                                   ],
                                 ),
@@ -341,7 +342,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Text("City: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 22,color: Colors.white),),
+                                    Text(translate("store_screen.city")+": ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 22,color: Colors.white),),
                                     Text("${widget.roles[index]['store']['city']}",style: TextStyle(color: PrimaryColor,fontWeight: FontWeight.bold, fontSize: 22),),
                                   ],
                                 ),
@@ -359,7 +360,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
                                 child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Text("Role: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 22,color: yellowColor),),
+                                    Text(translate("store_screen.role")+": ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 22,color: yellowColor),),
                                     Text("${getRoleName(widget.roles[index]['roleId'])}",style: TextStyle(color: PrimaryColor,fontWeight: FontWeight.bold, fontSize: 22),),
                                   ],
                                 ),
@@ -788,7 +789,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
                                   child:  Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Text("Store: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 22,color: yellowColor),),
+                                      Text(translate("store_screen.store")+": ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 22,color: yellowColor),),
                                       Text(widget.roles[index]['store']!=null?widget.roles[index]['store']['name']:" - ",style: TextStyle(fontWeight: FontWeight.bold,fontSize: 22,color: PrimaryColor),),
                                     ],
                                   ),
@@ -806,7 +807,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Text("City: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 22,color: Colors.white),),
+                                      Text(translate("store_screen.city")+": ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 22,color: Colors.white),),
                                       Text("${widget.roles[index]['store']['city']}",style: TextStyle(color: PrimaryColor,fontWeight: FontWeight.bold, fontSize: 22),),
                                     ],
                                   ),
@@ -824,7 +825,7 @@ class _categoryListPageState extends State<RoleBaseStoreSelection>{
                                   child: Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
-                                      Text("Role: ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 22,color: yellowColor),),
+                                      Text(translate("store_screen.role")+": ", style: TextStyle(fontWeight: FontWeight.bold,fontSize: 22,color: yellowColor),),
                                       Text("${getRoleName(widget.roles[index]['roleId'])}",style: TextStyle(color: PrimaryColor,fontWeight: FontWeight.bold, fontSize: 22),),
                                     ],
                                   ),

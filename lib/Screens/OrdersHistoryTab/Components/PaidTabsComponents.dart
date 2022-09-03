@@ -3,15 +3,17 @@ import 'package:exabistro_pos/Screens/Orders/HistoryTabsComponents.dart';
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/PaidOrdersList.dart';
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/UnPaidOrdersList.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
-import 'package:exabistro_pos/components/constants.dart';
+
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'dart:ui';
 
 import 'package:flutter/services.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../../../Utils/constants.dart';
 import '../../POSMainScreenUI1.dart';
 
 
@@ -110,7 +112,8 @@ String token,email;
                       Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>POSMainScreenUI1(store:widget.storeId)), (route) => false);
                     },
                     title: Text(
-                      "Home",
+                      //"Home",
+                      translate("drawer_items.home"),
                       style: TextStyle(
                           color: blueColor,
                           fontSize: 22,
@@ -125,7 +128,8 @@ String token,email;
                       Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) =>OrdersHistoryTabsScreen(storeId:widget.storeId)), (route) => false);
                     },
                     title: Text(
-                      "Order History",
+                      //"Order History",
+                      translate("drawer_items.orders_history"),
                       style: TextStyle(
                           color: blueColor,
                           fontSize: 22,
@@ -146,7 +150,7 @@ String token,email;
                                   backgroundColor: Colors.transparent,
                                   child: Container(
                                     width: 400,
-                                    height: 130,
+                                    height:  LocalizedApp.of(context).delegate.currentLocale.languageCode=="ur"||LocalizedApp.of(context).delegate.currentLocale.languageCode=="ar"?166:130,
                                     child: Utils.shiftReportDialog(context,value.last),
                                   ),
                                 ) ;
@@ -157,7 +161,8 @@ String token,email;
                       });
                     },
                     title: Text(
-                      "Shift Report",
+                      //"Shift Report",
+                      translate("drawer_items.shift_report"),
                       style: TextStyle(
                           color: blueColor,
                           fontSize: 22,
@@ -177,7 +182,8 @@ String token,email;
                       });
                     },
                     title: Text(
-                      "Logout",
+                      //"Logout",
+                      translate("drawer_items.logout"),
                       style: TextStyle(
                           color: blueColor,
                           fontSize: 22,
@@ -195,7 +201,7 @@ String token,email;
             iconTheme: IconThemeData(
                 color: blueColor
             ),
-            title: Text("Orders", style: TextStyle(color: yellowColor, fontWeight: FontWeight.bold, fontSize: 30),),
+            title: Text(translate("drawer_items.today_orders"), style: TextStyle(color: yellowColor, fontWeight: FontWeight.bold, fontSize: 30),),
             centerTitle: true,
             backgroundColor: BackgroundColor,
             elevation: 0,
@@ -216,7 +222,7 @@ String token,email;
                   Tab(
                     child: Align(
                       alignment: Alignment.center,
-                      child: Text("Unpaid Orders",
+                      child: Text(translate("unpaid_today_orders.unpaid_orders_label"),
                         style: TextStyle(
                           //color: Colors.white,
                           fontSize: 20,
@@ -229,7 +235,7 @@ String token,email;
                   Tab(
                     child: Align(
                       alignment: Alignment.center,
-                      child: Text("Paid Orders",
+                      child: Text(translate("paid_today_orders.paid_orders_label"),
                         style: TextStyle(
                           fontSize: 20,
                           //color: Colors.white,

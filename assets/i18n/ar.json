@@ -1,0 +1,354 @@
+{
+	"store_screen": {
+		"store": "متجر",
+		"city": "مدينة",
+		"role": "دور",
+		"appbar_title": "حدد الفرع",
+		"open": "فتح",
+		"close": "غلق"
+	},
+	"loading_screen": {
+		"text": "أرجو الإنتظار"
+	},
+	"button": {
+		"cancel": "إلغاء",
+		"change_language": "تغيير اللغة"
+	},
+	"language": {
+		"name": {
+			"en": "English",
+			"da": "Danish",
+			"ur": "اردو",
+			"ar": "العربية"
+		},
+		"selected_message": "اللغة المختارة حالياً هي  {language}",
+		"selection": {
+			"message": "برجاء إختيار لغة من القائمة",
+			"title": "إختيار اللغة"
+		}
+	},
+	"SignIn_screen": {
+		"welcom_title": "أهلا بك",
+		"title2": "تسجيل الدخول للمتابعة",
+		"emailTitle": "البريد الإلكتروني",
+		"passwordTitle": "كلمه السر"
+	},
+	"main_screen": {
+		"menu": "قائمة الطعام",
+		"overall": "شاملة",
+		"cart": "عربة التسوق",
+		"total": "المجموع",
+		"takeaway_btn": "يبعد",
+		"delivery_btn": "توصيل",
+		"products_tab": "منتجات",
+		"deals_tab": "صفقات"
+	},
+	"product_popup": {
+		"select_size": "أختر الحجم",
+		"quantity": "كمية",
+		"price": "سعر",
+		"addToCard_btn": "أضف إلى السلة"
+	},
+
+	"deals_popup": {
+		"discounted_price": "سعر الخصم",
+		"actual_price": "السعر الفعلي",
+		"products": "منتجات",
+		"quantity": "كمية",
+		"addToCard_btn": "أضف إلى السلة"
+	},
+
+	"cart_items": {
+		"unit_price": "سعر الوحدة",
+		"quantity": "كمية",
+		"size": "بحجم",
+		"price": "سعر"
+
+	},
+
+	"dineIn_popup": {
+		"dineInLabel": "ضع طلبًا لتناول الطعام",
+		"customer_name_hint": "اسم الزبون *",
+		"customer_phone_hint": "هاتف العميل *",
+		"discount_amount_hint": "مقدار الخصم",
+		"sub_total": "المجموع الفرعي",
+		"total": "المجموع",
+		"submitOrder_btn": "أكد الطلب"
+	},
+	"takeAway_popup": {
+		"takeAwayLabel": "ضع طلبًا للطلبات الخارجية",
+		"customer_name_hint": "اسم الزبون *",
+		"customer_phone_hint": "هاتف العميل *",
+		"discount_amount_hint": "مقدار الخصم",
+		"sub_total": "المجموع الفرعي",
+		"total": "المجموع",
+		"submitOrder_btn": "أكد الطلب"
+	},
+	"delivery_popup": {
+		"deliveryLabel": "تقديم الطلب للتسليم",
+		"customer_name_hint": "اسم الزبون *",
+		"customer_address_hint": "عنوان العميل *",
+		"customer_phone_hint": "هاتف العميل *",
+		"discount_amount_hint": "مقدار الخصم",
+		"sub_total": "المجموع الفرعي",
+		"total": "المجموع",
+		"submitOrder_btn": "أكد الطلب"
+	},
+	"unpaid_today_orders": {
+		"unpaid_orders_label": "أوامر غير مدفوعة",
+		"total_orders": "إجمالي الطلبات: ",
+		"orders": "طلبات الطعام",
+		"total": "المجموع",
+		"table": "الطاولة",
+        "order_id":"رقم الطلب"
+	},
+	"unpaid_today_orders_popup": {
+		"items": "العناصر",
+		"total": "المجموع",
+		"status": "حالة",
+		"waiter": "نادل",
+		"customer": "عميل",
+		"table_number": "الطاولة#",
+		"sub_total": "المجموع الفرعي",
+		"unit_price": "سعر الوحدة",
+		"quantity": "كمية",
+		"extras": "إضافات",
+		"size": "بحجم",
+		"price": "سعر",
+		"payout": "سيصرف",
+		"total_amount": "المبلغ الإجمالي",
+		"amount_paid": "المبلغ المدفوع",
+		"balance": "الرصيد",
+		"assign_rider": "عيّن رايدر",
+		"estimated_time": "الوقت المقدر",
+		"select_driver": "حدد السائق",
+		"proceed": "يتابع"
+
+	},
+	"paid_today_orders": {
+		"paid_orders_label": "الطلبات المدفوعة",
+		"total_orders": "إجمالي الطلبات: ",
+		"orders": "طلبات الطعام",
+		"total": "المجموع",
+		"table": "الطاولة"
+
+	},
+	"paid_today_orders_popup": {
+		"items": "العناصر",
+		"total": "المجموع",
+		"status": "حالة",
+		"waiter": "نادل",
+		"customer": "عميل",
+		"table_number": "الطاولة#",
+		"sub_total": "المجموع الفرعي",
+		"extras": "إضافات",
+		"unit_price": "سعر الوحدة",
+		"quantity": "كمية",
+		"size": "بحجم",
+		"price": "سعر",
+        "refund_reason": "سبب الاسترداد",
+		"refund_items": "عناصر الاسترداد",
+		"select_reason_type": "حدد نوع السبب",
+		"select_predefined_reason": "حدد السبب المحدد مسبقًا",
+		"reason_of_refund": "سبب الاسترداد",
+		"cash_amount_to_refund": "المبلغ النقدي المراد استرداده",
+		"refund_btn": "استرداد"
+
+	},
+
+	"delivered_orders_history": {
+		"delivered_orders_label": "الطلبات المسلمة",
+		"total_orders": "إجمالي الطلبات: ",
+		"total": "المجموع",
+		"table": "الطاولة"
+
+	},
+	"delivered_orders_history_popup": {
+		"items": "العناصر",
+		"total": "المجموع",
+		"status": "حالة",
+		"waiter": "نادل",
+		"customer": "عميل",
+		"table_number": "الطاولة#",
+		"sub_total": "المجموع الفرعي",
+		"unit_price": "سعر الوحدة",
+		"quantity": "كمية",
+		"size": "بحجم",
+		"price": "سعر",
+		"extras": "إضافات",
+		"refund_reason_details": "تفاصيل سبب رد الأموال",
+		"refund_reason": "سبب الاسترداد"
+
+	},
+
+	"cancelled_orders_history": {
+		"cancelled_orders_label": "الطلبات الملغاة",
+		"total_orders": "إجمالي الطلبات: ",
+		"total": "المجموع",
+		"table": "الطاولة"
+
+	},
+	"cancelled_orders_history_popup": {
+		"items": "العناصر",
+		"total": "المجموع",
+		"status": "حالة",
+		"waiter": "نادل",
+		"customer": "عميل",
+		"table_number": "الطاولة#",
+		"sub_total": "المجموع الفرعي",
+		"unit_price": "سعر الوحدة",
+		"quantity": "كمية",
+		"size": "بحجم",
+		"price": "سعر",
+		"extras": "إضافات"
+	},
+
+	"discounted_orders_history": {
+		"discounted_orders_label": "الطلبات المخفضة",
+		"total_orders": "إجمالي الطلبات: ",
+		"total": "المجموع",
+		"table": "الطاولة"
+
+	},
+	"discounted_orders_history_popup": {
+		"items": "العناصر",
+		"total": "المجموع",
+		"status": "حالة",
+		"waiter": "نادل",
+		"customer": "عميل",
+		"table_number": "الطاولة#",
+		"sub_total": "المجموع الفرعي",
+		"unit_price": "سعر الوحدة",
+		"quantity": "كمية",
+		"size": "بحجم",
+		"price": "سعر",
+		"refund_reason_details": "تفاصيل سبب رد الأموال",
+		"extras": "إضافات"
+	},
+
+	"refunded_orders_history": {
+		"refunded_orders_label": "الطلبات المعادة",
+		"total_orders": "إجمالي الطلبات: ",
+		"total": "المجموع",
+		"table": "الطاولة"
+
+
+	},
+	"refunded_orders_history_popup": {
+		"items": "العناصر",
+		"total": "المجموع",
+		"status": "حالة",
+		"waiter": "نادل",
+		"customer": "عميل",
+		"table_number": "الطاولة#",
+		"sub_total": "المجموع الفرعي",
+		"unit_price": "سعر الوحدة",
+		"quantity": "كمية",
+		"size": "بحجم",
+		"price": "سعر",
+		"extras": "إضافات",
+		"refund_reason_details": "تفاصيل سبب رد الأموال",
+		"refund_reason": "سبب الاسترداد"
+	},
+
+
+	"shift_report": {
+		"session_number": "جلسة#",
+		"opening_balance": "الرصيد الافتتاحي",
+		"closing_balance": "الرصيد الختامي",
+		"time": "زمن",
+		"user": "المستعمل"
+	},
+
+
+	"drawer_items": {
+		"home": "مسكن",
+		"orders_history": "تاريخ الطلبات",
+		"today_orders": "أوامر اليوم",
+		"shift_report": "تقرير التحول",
+		"logout": "تسجيل خروج"
+	},
+	"buttons": {
+		"signIn": "تسجيل الدخول",
+		"signUp": "إشترك",
+		"forgetpassword": "هل نسيت كلمة المرور؟",
+		"submit": "إرسال",
+		"save": "حفظ",
+		"add_to_cart": "أضف إلى السلة",
+		"checkout": "الدفع",
+		"get_direction": "احصل على اتجاه",
+		"cancel": "Cancel"
+	},
+	"alert_dialog": {
+		"cancel": "يلغي",
+		"delete": "حذف",
+		"add_from_cache": "أضف من ذاكرة التخزين المؤقت",
+		"notice": "يلاحظ",
+		"content": "البيانات متوفرة في ذاكرة التخزين المؤقت الخاصة بك هل تريد إضافتها؟",
+		"edit_extras": "تحرير الاضافات",
+		"update_toppings": "تحديث الاضافات",
+		"payout": "سيصرف",
+		"total_amount": "المبلغ الإجمالي",
+		"amount_paid": "المبلغ المدفوع",
+		"balance": "الرصيد",
+		"payout_btn": "سيصرف"
+	},
+
+	"error_messages": {
+		"token_expire_please_login_again": "انتهاء صلاحية الرمز! الرجاد الدخول على الحساب من جديد",
+		"login_successful": "تم تسجيل الدخول بنجاح",
+		"your_password_is_incorrect": "كلمة مرورك غير صحيحة",
+		"not_connected_to_internet": "غير متصل بالإنترنت",
+		"this_app_is_only_for_employees": "هذا التطبيق مخصص للموظفين فقط",
+		"please_enter_valid_email_address": "الرجاء إدخال عنوان بريد إلكتروني صالح",
+		"error_found": "يوجد خطأ",
+		"no_offline_data": "لا توجد بيانات دون اتصال",
+		"you_are_in_offline_mode": "أنت في وضع عدم الاتصال",
+		"please_try_again": "حاول مرة اخرى",
+		"unable_to_fetch_orders": "تعذر جلب الطلبات",
+		"unable_to_fetch_tables": "تعذر جلب الجداول",
+		"unable_to_fetch_deals": "تعذر جلب الصفقات",
+		"unable_to_fetch_additional": "تعذر جلب الإضافات",
+		"unable_to_fetch_taxes": "غير قادر على جلب الضرائب",
+		"unable_to_fetch_available_tables": "تعذر جلب الجداول المتاحة",
+		"unable_to_filter_orders_by_tables": "تعذر تصفية الطلبات حسب الجداول",
+		"unable_to_fetch_info": "تعذر جلب المعلومات",
+		"order_delivered_and_cash_paid": "تم تسليم الطلب والدفع النقدي",
+		"unable_to_fetch_current_shift": "تعذر جلب التحول الحالي",
+		"data_not_found_or_error_found": "لم يتم العثور على البيانات أو تم العثور على خطأ",
+		"unable_to_refund_order": "تعذر استرداد الطلب",
+		"unable_to_cancel_order": "تعذر إلغاء الطلب",
+		"unable_to_fetch_complaint_type": "تعذر جلب نوع الشكوى",
+		"order_status_changed": "تم تغيير حالة الطلب"
+	},
+
+	"in_app_errors": {
+		"item_deleted": "تم حذف العنصر",
+		"unable_to_update": "غير قادر على التحديث",
+		"updated_to_cart_successfully": "تم التحديث إلى عربة التسوق بنجاح",
+		"added_to_cart_successfully": "تمت الإضافة إلى عربة التسوق بنجاح",
+		"some_error_occur": "يحدث بعض الأخطاء",
+		"your_order_stored_offline": "تم تخزين طلبك في وضع عدم الاتصال",
+		"payment_successful": "تم الدفع بنجاح",
+		"problem_in_making_payment": "مشكلة في السداد",
+		"order_placed_successfully": "تم تقديم الطلب بنجاح",
+		"unable_to_place Order": "غير قادر على تقديم الطلب",
+		"provide_all_required_information": "قدم جميع المعلومات المطلوبة",
+		"quantity_successfully_updated": "تم تحديث الكمية بنجاح",
+
+		"order_cancelled": "تم إلغاء الطلب",
+
+
+		"refunded_successfully": "تم رد الأموال بنجاح",
+		"unable_to_refund": "غير قادر على استرداد",
+		"email_is_required": "البريد الالكتروني مطلوب",
+		"email_format_is_invalid": "تنسيق البريد الإلكتروني غير صالح",
+		"password_is_Required": "كلمة المرور مطلوبة",
+		"Password must contain atleast one lower case,Upper case and special characters": "يجب أن تحتوي كلمة المرور على الأقل على حالة صغيرة واحدة وحروف كبيرة وأحرف خاصة",
+
+		"veg": "نباتي",
+		"non_veg": "غير نباتي",
+		"allergic_description": "فك الحساسية "
+	}
+
+}

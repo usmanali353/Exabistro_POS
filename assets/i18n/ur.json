@@ -1,0 +1,359 @@
+{
+  "store_screen": {
+    "store": "اسٹور",
+    "city": "شہر",
+    "role": "کردار",
+    "appbar_title": "برانچ منتخب کریں",
+    "open": "کھولیں",
+    "close": "بند"
+  },
+  "loading_screen": {
+    "text": ".برائے مہربانی انتظار کریں..."
+  },
+  "language": {
+    "name": {
+      "en": "English",
+      "da": "Danish",
+      "ur": "اردو",
+      "ar": "العربية"
+    },
+    "selected_message": "فی الحال منتخب کردہ زبان {language} ہے",
+    "selection": {
+      "message": "براہ کرم فہرست میں سے کسی زبان کا انتخاب کریں",
+      "title": "زبان کا انتخاب"
+    }
+  },
+  "button": {
+    "cancel": "منسوخ",
+    "change_language": "زبان تبدیل کریں"
+  },
+  "buttons": {
+    "signIn": "سائن ان",
+    "signUp": "سائن اپ",
+    "forgetpassword": "پاسورڈ بھول گے؟",
+    "submit": "ارسال کریں",
+    "save": "محفوظ کریں",
+    "add_to_cart": "کارٹ میں شامل کریں",
+    "checkout": "چیک آؤٹ",
+    "get_direction": "سمت حاصل کریں",
+    "cancel": "Cancel"
+  },
+  "main_screen": {
+    "menu": "مینو",
+    "overall": "مکمل مینو",
+    "cart": "کارٹ",
+    "total": "کل",
+    "takeaway_btn": "ٹیک اوے",
+    "delivery_btn": "ڈلیوری",
+    "products_tab": "مصنوعات",
+    "deals_tab": "ڈیل"
+  },
+  "product_popup": {
+    "select_size": "سائز منتخب کریں",
+    "quantity": "مقدار",
+    "price": "قیمت",
+    "addToCard_btn": "کارٹ میں شامل کریں"
+  },
+
+  "deals_popup": {
+    "discounted_price": "رعائیتی قیمت",
+    "actual_price": "اصل قیمت",
+    "products": "مصنوعات",
+    "quantity": "مقدار",
+    "addToCard_btn": "کارٹ  میں شامل کریں"
+  },
+
+  "cart_items": {
+    "unit_price": "اکائی قیمت",
+    "quantity": "مقدار",
+    "size": "سائز",
+    "price": "قیمت"
+
+  },
+
+  "dineIn_popup": {
+    "dineInLabel": "ڈائن ان کے لیے آرڈر دیں",
+    "customer_name_hint": "کسٹمر کا نام *",
+    "customer_phone_hint": "کسٹمر فون# *",
+    "discount_amount_hint": "ڈسکاؤنٹ کی رقم",
+    "sub_total": "ذیلی کل",
+    "total": "کل",
+    "submitOrder_btn": "آرڈر جمع کرانے"
+  },
+  "takeAway_popup": {
+    "takeAwayLabel": "ٹیک اوے کے لیے آرڈر دیں",
+    "customer_name_hint": "کسٹمر کا نام *",
+    "customer_phone_hint": "کسٹمر فون# *",
+    "discount_amount_hint": "ڈسکاؤنٹ کی رقم",
+    "sub_total": "ذیلی کل",
+    "total": "کل",
+    "submitOrder_btn": "آرڈر جمع کرانے"
+  },
+  "delivery_popup": {
+    "deliveryLabel": "ڈیلیوری کے لیے آرڈر دیں",
+    "customer_name_hint": "کسٹمر کا نام *",
+    "customer_address_hint": "کسٹمر کا پتہ *",
+    "customer_phone_hint": "کسٹمر فون# *",
+    "discount_amount_hint": "ڈسکاؤنٹ کی رقم",
+    "sub_total": "ذیلی کل",
+    "total": "کل",
+    "submitOrder_btn": "آرڈر جمع کرانے"
+  },
+  "unpaid_today_orders": {
+    "total": "کل",
+    "table": "ٹیبل",
+    "unpaid_orders_label": "غیر ادا شدہ آرڈرز",
+    "total_orders": "کل آرڈرز",
+    "order_id": "آرڈر نمبر"
+  },
+  "unpaid_today_orders_popup": {
+    "total": "کل",
+    "status": "حالت",
+    "waiter": "ویٹر",
+    "customer": "کسٹمر",
+    "table_number": "ٹیبل#",
+    "extras": "ٹاپنگ",
+    "sub_total": "ذیلی کل",
+    "unit_price": "اکائی قیمت",
+    "quantity": "مقدار",
+    "size": "سائز",
+    "price": "قیمت",
+    "items": "اشیاء",
+    "assign_rider": "رائڈر کا انتخاب کریں",
+    "estimated_time": "متوقع وقت",
+    "select_driver": "ڈرائیور کو منتخب کریں",
+    "proceed": "آگے",
+    "refund_items": "ریفنڈ آئٹمز",
+    "select_reason_type": "وجہ منتخب کریں۔",
+    "select_predefined_reason": "طے شدہ وجہ کو منتخب کریں۔",
+    "reason_of_refund": "رقم واپسی کی وجہ",
+    "cash_amount_to_refund": "واپسی کے لیے رقم",
+    "total_amount": "کل رقم",
+    "amount_paid": "ادا شدہ رقم",
+    "balance": "بقیہ",
+    "payout": "ادائیگی",
+    "refund_btn": "واپسی"
+  },
+  "paid_today_orders": {
+    "total": "کل",
+    "table": "ٹیبل",
+    "paid_orders_label": "ادا شدہ آرڈرز",
+    "total_orders": "کل آرڈرز"
+  },
+  "paid_today_orders_popup": {
+    "items": "اشیاء",
+    "total": "کل",
+    "status": "حالت",
+    "waiter": "ویٹر",
+    "customer": "کسٹمر",
+    "table_number": "ٹیبل#",
+    "sub_total": "ذیلی کل",
+    "unit_price": "اکائی قیمت",
+    "quantity": "مقدار",
+    "size": "سائز",
+    "price": "قیمت",
+    "extras": "ٹاپنگ",
+    "refund_reason": "رقم واپسی کی وجہ",
+    "payout": "ادائیگی",
+    "total_amount": "کل رقم",
+    "amount_paid": "ادا شدہ رقم",
+    "balance": "بقیہ",
+    "assign_rider": "رائڈر کا انتخاب کریں",
+    "estimated_time": "متوقع وقت",
+    "select_driver": "ڈرائیور کو منتخب کریں",
+    "proceed": "آگے",
+    "refund_items": "ریفنڈ آئٹمز",
+    "select_reason_type": "وجہ منتخب کریں۔",
+    "select_predefined_reason": "طے شدہ وجہ کو منتخب کریں۔",
+    "reason_of_refund": "رقم واپسی کی وجہ",
+    "cash_amount_to_refund": "واپسی کے لیے رقم",
+    "refund_btn": "واپسی"
+  },
+
+  "delivered_orders_history": {
+    "delivered_orders_label": "ڈیلیور کردہ آرڈرز",
+    "total_orders": "کل آرڈرز: ",
+    "total": "کل",
+    "table": "ٹیبل"
+
+  },
+  "delivered_orders_history_popup": {
+    "items": "اشیاء",
+    "total": "کل",
+    "status": "حالت",
+    "waiter": "ویٹر",
+    "customer": "کسٹمر",
+    "table_number": "ٹیبل#",
+    "sub_total": "ذیلی کل",
+    "unit_price": "اکائی قیمت",
+    "quantity": "مقدار",
+    "size": "سائز",
+    "price": "قیمت",
+    "refund_reason": "رقم واپسی کی وجہ",
+    "refund_reason_details": "رقم واپسی کی تفصیلات",
+    "extras": "ٹاپنگ"
+
+  },
+
+  "cancelled_orders_history": {
+    "cancelled_orders_label": "منسوخ شدہ آرڈرز",
+    "total_orders": "کل آرڈرز: ",
+    "total": "کل",
+    "table": "ٹیبل"
+
+  },
+  "cancelled_orders_history_popup": {
+    "items": "اشیاء",
+    "total": "کل",
+    "status": "حالت",
+    "waiter": "ویٹر",
+    "customer": "کسٹمر",
+    "table_number": "ٹیبل#",
+    "sub_total": "ذیلی کل",
+    "unit_price": "اکائی قیمت",
+    "quantity": "مقدار",
+    "size": "سائز",
+    "price": "قیمت",
+    "extras": "ٹاپنگ"
+  },
+
+  "discounted_orders_history": {
+    "discounted_orders_label": "رعایتی آرڈرز",
+    "total_orders": "کل آرڈرز: ",
+    "total": "کل",
+    "table": "ٹیبل"
+
+  },
+  "discounted_orders_history_popup": {
+    "items": "اشیاء",
+    "total": "کل",
+    "status": "حالت",
+    "waiter": "ویٹر",
+    "customer": "کسٹمر",
+    "table_number": "ٹیبل#",
+    "sub_total": "ذیلی کل",
+    "unit_price": "اکائی قیمت",
+    "quantity": "مقدار",
+    "size": "سائز",
+    "price": "قیمت",
+    "extras": "ٹاپنگ"
+
+  },
+
+  "refunded_orders_history": {
+    "refunded_orders_label": "ریفنڈ آرڈرز",
+    "total_orders": "کل آرڈرز: ",
+    "total": "کل",
+    "table": "ٹیبل"
+
+  },
+  "refunded_orders_history_popup": {
+    "items": "اشیاء",
+    "total": "کل",
+    "status": "حالت",
+    "waiter": "ویٹر",
+    "customer": "کسٹمر",
+    "table_number": "ٹیبل#",
+    "sub_total": "ذیلی کل",
+    "unit_price": "اکائی قیمت",
+    "quantity": "مقدار",
+    "size": "سائز",
+    "price": "قیمت",
+    "refund_reason": "رقم واپسی کی وجہ",
+    "refund_reason_details": "رقم واپسی کی تفصیلات",
+    "extras": "ٹاپنگ"
+  },
+
+  "shift_report": {
+    "session_number": "سیشن #",
+    "opening_balance": "اوپننگ بیلنس",
+    "closing_balance": "اختتامی بیلنس",
+    "time": "وقت",
+    "user": "صارف"
+  },
+
+  "drawer_items": {
+    "home": "گھر",
+    "orders_history": "پرانے آرڈر",
+    "today_orders": "آج کے آرڈر",
+    "shift_report": "شفٹ رپورٹ",
+    "logout": "لاگ آوٹ"
+  },
+  "SignIn_screen": {
+    "welcom_title": "خوش آمدید",
+    "title2": "جاری رکھنے کے لیے سائن ان کریں",
+    "emailTitle": "ای میل",
+    "passwordTitle": "پاس ورڈ"
+  },
+
+  "alert_dialog": {
+    "cancel": "منسوخ",
+    "delete": "حذف",
+    "add_from_cache": "کیشے سے شامل کریں",
+    "notice": "نوٹس",
+    "content": "آپ کے کیشے میں ڈیٹا دستیاب ہے کیا آپ شامل کرنا چاہتے ہیں؟",
+    "edit_extras": "ٹاپنگز میں ترمیم کریں۔",
+    "update_toppings": "ٹاپنگز کو اپ ڈیٹ کریں۔",
+    "payout": "ادائیگی",
+    "total_amount": "کل رقم",
+    "amount_paid": "رقم ادا کر دی",
+    "balance": "بقیہ",
+    "payout_btn": "ادائیگی"
+  },
+
+  "error_messages": {
+    "token_expire_please_login_again": "ٹوکن کی میعاد ختم! براہ کرم دوبارہ لاگ ان کریں",
+    "login_successful": "لاگ ان کامیاب",
+    "your_password_is_incorrect": "آپ کا پاس ورڈ غلط ہے",
+    "not_connected_to_internet": "انٹرنیٹ سے منسلک نہیں ہے",
+    "this_app_is_only_for_employees": "یہ ایپ صرف ملازمین کے لیے ہے",
+    "please_enter_valid_email_address": "براہ کرم درست ای میل ایڈریس درج کریں",
+    "error_found": "خرابی ملی",
+    "no_offline_data": "کوئی آف لائن ڈیٹا نہیں",
+    "you_are_in_offline_mode": "آپ آف لائن موڈ میں ہیں",
+    "please_try_again": "دوبارہ کوشش کریں",
+    "unable_to_fetch_orders": "آرڈرز حاصل کرنے سے قاصر",
+    "unable_to_fetch_tables": "میزیں حاصل کرنے سے قاصر",
+    "unable_to_fetch_deals": "ڈیلز حاصل کرنے سے قاصر",
+    "unable_to_fetch_additional": "ٹاپنگز حاصل کرنے سے قاصر",
+    "unable_to_fetch_taxes": "ٹیکس وصول کرنے سے قاصر",
+    "unable_to_fetch_available_tables": "دستیاب میزیں حاصل کرنے سے قاصر",
+    "unable_to_filter_orders_by_tables": "ٹیبلز کے ذریعے آرڈرز کو فلٹر کرنے سے قاصر ہے",
+    "unable_to_fetch_info": "معلومات حاصل کرنے سے قاصر",
+    "order_delivered_and_cash_paid": "آرڈر ڈیلیور اور نقد ادائیگی",
+    "unable_to_fetch_current_shift": "موجودہ شفٹ کو حاصل کرنے سے قاصر",
+    "data_not_found_or_error_found": "ڈیٹا نہیں ملا یا خرابی ملی",
+    "unable_to_refund_order": "آرڈر ریفنڈ کرنے سے قاصر",
+    "unable_to_cancel_order": "آرڈر منسوخ کرنے سے قاصر",
+    "unable_to_fetch_complaint_type": "شکایت کی قسم حاصل کرنے سے قاصر",
+    "order_status_changed": "آرڈر کی حیثیت بدل گئی"
+  },
+  "in_app_errors": {
+    "item_deleted": "آئٹم کو حذف کر دیا گیا",
+    "unable_to_update": "اپ ڈیٹ کرنے سے قاصر",
+    "updated_to_cart_successfully": "کارٹ میں کامیابی کے ساتھ اپ ڈیٹ ہو گیا",
+    "added_to_cart_successfully": "کارٹ میں کامیابی کے ساتھ شامل کر دیا گیا",
+    "some_error_occur": "کچھ خرابی ہوتی ہے",
+    "your_order_stored_offline": "آپ کا آرڈر آف لائن محفوظ ہے",
+    "payment_successful": "ادائیگی کامیاب",
+    "problem_in_making_payment": "ادائیگی کرنے میں مسئلہ",
+    "order_placed_successfully": "آرڈر کامیابی سے ہو گیا۔",
+    "unable_to_place Order": "آرڈر دینے سے قاصر",
+    "provide_all_required_information": "تمام مطلوبہ معلومات فراہم کریں",
+    "quantity_successfully_updated": "مقدار کامیابی کے ساتھ اپ ڈیٹ ہو گئی",
+
+    "order_cancelled": "آرڈر منسوخ کر دیا گیا ہے۔",
+
+
+    "refunded_successfully": "کامیابی کے ساتھ ریفنڈ کر دیا گیا",
+    "unable_to_refund": "ریفنڈ کرنے سے قاصر",
+    "email_is_required": "ای میل درکار ہے",
+    "email_format_is_invalid": "ای میل فارمیٹ غلط ہے",
+    "password_is_Required": "پاس ورڈ درکار ہے",
+    "Password must contain atleast one lower case,Upper case and special characters": "پاس ورڈ میں کم از کم ایک لوئر کیس، اپر کیس اور خصوصی حروف ہونا چاہیے",
+
+    "veg": "ویج",
+    "non_veg": "نان ویج",
+    "allergic_description": "الرجک ڈیکرپشن "
+  }
+}

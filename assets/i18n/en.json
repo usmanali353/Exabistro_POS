@@ -1,0 +1,354 @@
+{
+	"store_screen": {
+		"store": "Store",
+		"city": "City",
+		"role": "Role",
+		"appbar_title": "Select Branch",
+		"open": "Open",
+		"close": "Close"
+	},
+	"loading_screen": {
+		"text": "Loading..."
+	},
+	"button": {
+		"cancel": "Cancel",
+		"change_language": "Change Language"
+	},
+	"language": {
+		"name": {
+			"en": "English",
+			"da": "Danish",
+			"ur": "اردو",
+			"ar": "العربية"
+		},
+		"selected_message": "Currently selected language is {language}",
+		"selection": {
+			"message": "Please select a language from the list",
+			"title": "Language Selection"
+		}
+	},
+	"main_screen": {
+		"menu": "Menu",
+		"overall": "Overall",
+		"cart": "Cart",
+		"total": "Total",
+		"takeaway_btn": "Take-Away",
+		"delivery_btn": "Delivery",
+		"products_tab": "Products",
+		"deals_tab": "Deals"
+	},
+	"product_popup": {
+		"select_size": "Select Size",
+		"quantity": "Quantity",
+		"price": "Price",
+		"addToCard_btn": "Add To Cart"
+	},
+
+	"deals_popup": {
+		"discounted_price": "Discount Price",
+		"actual_price": "Actual Price",
+		"products": "Products",
+		"quantity": "Quantity",
+		"addToCard_btn": "Add To Cart"
+	},
+
+	"cart_items": {
+		"unit_price": "Unit Price",
+		"quantity": "Quantity",
+		"size": "Size",
+		"price": "Price"
+	},
+
+	"dineIn_popup": {
+		"dineInLabel": "Place Order For Dine-In",
+		"customer_name_hint": "Customer Name *",
+		"customer_phone_hint": "Customer Phone *",
+		"discount_amount_hint": "Discount Amount",
+		"sub_total": "Sub-Total",
+		"total": "Total",
+		"submitOrder_btn": "Submit Order"
+	},
+	"takeAway_popup": {
+		"takeAwayLabel": "Place Order For Take-Away",
+		"customer_name_hint": "Customer Name *",
+		"customer_phone_hint": "Customer Phone *",
+		"discount_amount_hint": "Discount Amount",
+		"sub_total": "Sub-Total",
+		"total": "Total",
+		"submitOrder_btn": "Submit Order"
+	},
+	"delivery_popup": {
+		"deliveryLabel": "Place Order For Delivery",
+		"customer_name_hint": "Customer Name *",
+		"customer_address_hint": "Customer Address *",
+		"customer_phone_hint": "Customer Phone *",
+		"discount_amount_hint": "Discount Amount",
+		"sub_total": "Sub-Total",
+		"total": "Total",
+		"submitOrder_btn": "Submit Order"
+	},
+
+
+
+	"unpaid_today_orders": {
+		"unpaid_orders_label": "Unpaid Orders",
+		"total_orders": "Total Orders",
+		"orders": "Food Orders",
+		"total": "Total: ",
+		"table": "Table: ",
+		"order_id": "Order ID"
+	},
+	"unpaid_today_orders_popup": {
+		"items": "Items",
+		"total": "Total",
+		"status": "Status",
+		"waiter": "Waiter",
+		"customer": "Customer",
+		"table_number": "Table#",
+		"sub_total": "Sub-Total",
+		"unit_price": "Unit Price",
+		"quantity": "Quantity",
+		"extras": "Extras",
+		"size": "Size",
+		"price": "Price",
+		"payout": "Payout",
+		"total_amount": "Total Amount",
+		"amount_paid": "Amount Paid",
+		"balance": "Balance",
+		"assign_rider": "Assign Rider",
+		"estimated_time": "Estimated Time",
+		"select_driver": "Select Driver",
+		"proceed": "Proceed"
+	},
+	"paid_today_orders": {
+		"paid_orders_label": "Paid Orders",
+		"total_orders": "Total Orders: ",
+		"orders": "Food Orders",
+		"total": "Total: ",
+		"table": "Table: ",
+        "refund_reason": "Refund Reason"
+	},
+	"paid_today_orders_popup": {
+		"items": "Items",
+		"total": "Total",
+		"status": "Status",
+		"waiter": "Waiter",
+		"customer": "Customer",
+		"table_number": "Table#",
+		"sub_total": "Sub-Total",
+		"unit_price": "Unit Price",
+		"quantity": "Quantity",
+		"extras": "Extras",
+		"size": "Size",
+		"price": "Price",
+		"payout": "Payout",
+		"total_amount": "Total Amount",
+		"amount_paid": "Amount Paid",
+		"balance": "Balance",
+		"assign_rider": "Assign Rider",
+		"estimated_time": "Estimated Time",
+		"select_driver": "Select Driver",
+		"proceed": "Proceed",
+		"refund_reason": "Refund Reason",
+		"refund_items": "Refund Items",
+		"select_reason_type": "Select Reason Type",
+		"select_predefined_reason": "Select Predefined Reason",
+		"reason_of_refund": "Reason of Refund",
+		"cash_amount_to_refund": "Cash Amount to Refund",
+		"refund_btn": "Refund"
+
+
+	},
+
+	"delivered_orders_history": {
+		"delivered_orders_label": "Delivered Orders",
+		"total_orders": "Total Orders: ",
+		"total": "Total: ",
+		"table": "Table: "
+
+	},
+	"delivered_orders_history_popup": {
+		"items": "Items",
+		"total": "Total",
+		"status": "Status",
+		"waiter": "Waiter",
+		"customer": "Customer",
+		"table_number": "Table#",
+		"sub_total": "Sub-Total",
+		"unit_price": "Unit Price",
+		"quantity": "Quantity",
+		"size": "Size",
+		"price": "Price",
+		"refund_reason_details": "Refund Reason Details",
+		"refund_reason": "Refund Reason"
+
+	},
+
+	"cancelled_orders_history": {
+		"cancelled_orders_label": "Cancelled Orders",
+		"total_orders": "Total Orders: ",
+		"total": "Total",
+		"table": "Table"
+
+	},
+	"cancelled_orders_history_popup": {
+		"items": "Items",
+		"total": "Total",
+		"status": "Status",
+		"waiter": "Waiter",
+		"customer": "Customer",
+		"table_number": "Table#",
+		"sub_total": "Sub-Total",
+		"unit_price": "Unit Price",
+		"quantity": "Quantity",
+		"size": "Size",
+		"price": "Price",
+		"extras": "Extras"
+
+	},
+
+	"discounted_orders_history": {
+		"discounted_orders_label": "Discounted Orders",
+		"total_orders": "Total Orders: ",
+		"total": "Total",
+		"table": "Table"
+
+	},
+	"discounted_orders_history_popup": {
+		"total": "Total",
+		"status": "Status",
+		"waiter": "Waiter",
+		"customer": "Customer",
+		"table_number": "Table#",
+		"sub_total": "Sub-Total",
+		"unit_price": "Unit Price",
+		"quantity": "Quantity",
+		"size": "Size",
+		"price": "Price",
+		"extras": "Extras"
+
+	},
+
+	"refunded_orders_history": {
+		"refunded_orders_label": "Refunded Orders",
+		"total_orders": "Total Orders: ",
+		"total": "Total",
+		"table": "Table"
+
+	},
+	"refunded_orders_history_popup": {
+		"total": "Total",
+		"status": "Status",
+		"waiter": "Waiter",
+		"customer": "Customer",
+		"table_number": "Table#",
+		"sub_total": "Sub-Total",
+		"unit_price": "Unit Price",
+		"quantity": "Quantity",
+		"size": "Size",
+		"price": "Price",
+		"extras": "Extras",
+		"refund_reason_details": "Refund Reason Details",
+		"refund_reason": "Refund Reason"
+	},
+
+	"shift_report": {
+		"session_number": "Session#",
+		"opening_balance": "Opening Balance",
+		"closing_balance": "Closing Balance",
+		"time": "Time",
+		"user": "User"
+	},
+	"drawer_items": {
+		"home": "Home",
+		"today_orders": "Today Orders",
+		"shift_report": "Shift Report",
+		"orders_history": "Orders History",
+		"logout": "LogOut"
+	},
+	"buttons": {
+		"signIn": "Sign In",
+		"submit": "Submit",
+		"save": "Save",
+		"add_to_cart": "Add To Cart",
+		"checkout": "Check Out",
+		"get_direction": "Get Direction",
+		"cancel": "Cancel"
+	},
+	"SignIn_screen": {
+		"welcom_title": "Welcome",
+		"title2": "Sign In to Continue",
+		"emailTitle": "Email",
+		"passwordTitle": "Password"
+	},
+	"alert_dialog": {
+		"cancel": "Cancel",
+		"delete": "Delete",
+		"add_from_cache": "Add From Cache",
+		"notice": "Notice",
+		"content": "Data is Available in your Cache do you want to add?",
+		"edit_extras": "Edit Extras",
+		"update_toppings": "Update Toppings",
+		"payout": "Payout",
+		"total_amount": "Total Amount",
+		"amount_paid": "Amount Paid",
+		"balance": "Balance",
+		"payout_btn": "Payout"
+	},
+
+	"error_messages": {
+		"token_expire_please_login_again": "Token Expire! Please Login Again",
+		"login_successful": "Login Successful",
+		"your_password_is_incorrect": "Your Password is Incorrect",
+		"not_connected_to_internet": "Not Connected to Internet",
+		"this_app_is_only_for_employees": "This App is only for Employees",
+		"please_enter_valid_email_address": "Please Enter Valid Email Address",
+		"error_found": "Error Found",
+		"no_offline_data": "No Offline Data",
+		"you_are_in_offline_mode": "You are in Offline Mode",
+		"please_try_again": "Please Try Again",
+		"unable_to_fetch_orders": "Unable to Fetch Orders",
+		"unable_to_fetch_tables": "Unable to Fetch Tables",
+		"unable_to_fetch_deals": "Unable to Fetch Deals",
+		"unable_to_fetch_additional": "Unable to Fetch Toppings",
+		"unable_to_fetch_taxes": "Unable to Fetch Taxes",
+		"unable_to_fetch_available_tables": "Unable to Fetch Available Tables",
+		"unable_to_filter_orders_by_tables": "Unable to Filter Orders by Tables",
+		"unable_to_fetch_info": "Unable to Fetch Information",
+		"order_delivered_and_cash_paid": "Order Delivered & Cash Paid",
+		"unable_to_fetch_current_shift": "Unable to Fetch Current Shift",
+		"data_not_found_or_error_found": "Data Not Found Or Error Found",
+		"unable_to_refund_order": "Unable to refund order",
+		"unable_to_cancel_order": "Unable to cancel order",
+		"unable_to_fetch_complaint_type": "Unable to Fetch Complaint Type",
+		"order_status_changed": "Order Status Changed"
+	},
+	"in_app_errors": {
+		"item_deleted": "Item Deleted",
+		"unable_to_update": "Unable to Update",
+		"updated_to_cart_successfully": "Updated to Cart successfully",
+		"added_to_cart_successfully": "Added to Cart successfully",
+		"some_error_occur": "Some Error Occur",
+		"your_order_stored_offline": "Your Order Stored Offline",
+		"payment_successful": "Payment Successful",
+		"problem_in_making_payment": "Problem in Making Payment",
+		"order_placed_successfully": "Order Placed successfully",
+		"unable_to_place Order": "Unable to Place Order",
+		"provide_all_required_information": "Provide all Required Information",
+		"quantity_successfully_updated": "Quantity Successfully Updated",
+
+		"order_cancelled": "Order has been Canceled",
+
+
+		"refunded_successfully": "Refunded Successfully",
+		"unable_to_refund": "Unable to Refund",
+		"email_is_required": "Email is Required",
+		"email_format_is_invalid": "Email Format is Invalid",
+		"password_is_Required": "Password is Required",
+		"Password must contain atleast one lower case,Upper case and special characters": "Password must contain atleast one lower case,Upper case and special characters",
+
+		"veg": "Veg",
+		"non_veg": "Non-Veg",
+		"allergic_description": "Allergic Description "
+	}
+}

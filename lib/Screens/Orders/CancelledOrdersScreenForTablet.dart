@@ -1,22 +1,22 @@
-import 'dart:convert';
 import 'dart:io';
 import 'dart:ui';
 import 'package:auto_size_text/auto_size_text.dart';
 import 'package:esc_pos_bluetooth/esc_pos_bluetooth.dart';
-import 'package:exabistro_pos/Screens/LoadingScreen.dart';
-import 'package:exabistro_pos/Screens/LoginScreen.dart';
+
 import 'package:exabistro_pos/Screens/OrdersHistoryTab/Components/Screens/KitchenOrdersDetails.dart';
 import 'package:exabistro_pos/Utils/Utils.dart';
-import 'package:exabistro_pos/components/constants.dart';
+
 import 'package:exabistro_pos/model/Categories.dart';
-import 'package:exabistro_pos/model/OrderById.dart';
 import 'package:exabistro_pos/networks/Network_Operations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_translate/flutter_translate.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 import 'package:flutter_bluetooth_basic/flutter_bluetooth_basic.dart';
+
+import '../../Utils/constants.dart';
 
 
 class CancelledOrdersScreenForTablet extends StatefulWidget {
@@ -179,7 +179,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                 setState(() {
                   isListVisible=false;
                 });
-                Utils.showError(context, "Network Error");
+                Utils.showError(context, translate("error_messages.not_connected_to_internet"));
               }
             });
           },
@@ -233,7 +233,9 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                           padding: const EdgeInsets.only(left: 14, right: 14),
                                           child: Row(
                                             children: [
-                                              Text("Total Orders: ",
+                                              Text(
+                                                //"Total Orders: ",
+                                                translate("cancelled_orders_history.total_orders"),
                                                 style: TextStyle(
                                                     fontSize: 25,
                                                     color: yellowColor,
@@ -272,7 +274,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                       // childAspectRatio: MediaQuery.of(context).size.height<900?3:4 ,
                                       crossAxisSpacing: 10,
                                       mainAxisSpacing: 10,
-                                      mainAxisExtent: 100
+                                    mainAxisExtent: LocalizedApp.of(context).delegate.currentLocale.languageCode=="ur"||LocalizedApp.of(context).delegate.currentLocale.languageCode=="ar"?110:100,
                                   ),
                                   itemCount: orderList!=null?orderList.length:0,
                                   itemBuilder: (context, index){
@@ -361,7 +363,9 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                                     children: [
                                                       Row(
                                                         children: [
-                                                          Text('Total: ',
+                                                          Text(
+                                                            //'Total: ',
+                                                            translate("cancelled_orders_history.total"),
                                                             style: TextStyle(
                                                                 fontSize: 20,
                                                                 fontWeight: FontWeight.bold,
@@ -399,7 +403,9 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                                         visible: orderList[index]['orderType']==1,
                                                         child: Row(
                                                           children: [
-                                                            Text('Table: ',
+                                                            Text(
+                                                              //'Table: ',
+                                                              translate("cancelled_orders_history.table"),
                                                               style: TextStyle(
                                                                   fontSize: 20,
                                                                   fontWeight: FontWeight.bold,
@@ -543,7 +549,7 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                     });
                   });
                 }else{
-                  Utils.showError(context, "Network Error");
+                  Utils.showError(context, translate("error_messages.not_connected_to_internet"));
                 }
               });
 
@@ -586,8 +592,6 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
             child: Container(
                 width: 450,
                 height:350,
-
-
                 child: DealsDetailsForKitchen(orderId)
 
             ),
@@ -708,7 +712,8 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Items:',
+                                              //'Items:',
+                                              translate("cancelled_orders_history_popup.items"),
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -762,7 +767,8 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Total: ',
+                                              //'Total: ',
+                                              translate("cancelled_orders_history_popup.total"),
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -879,7 +885,8 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Status:',
+                                              //'Status:',
+                                              translate("cancelled_orders_history_popup.status"),
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -987,7 +994,8 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Waiter:',
+                                              //'Waiter:',
+                                              translate("cancelled_orders_history_popup.waiter"),
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -1042,7 +1050,8 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                           ),
                                           child: Center(
                                             child: AutoSizeText(
-                                              'Customer:',
+                                              //'Customer:',
+                                              translate("cancelled_orders_history_popup.customer"),
                                               style: TextStyle(
                                                   color: BackgroundColor,
                                                   fontSize: 22,
@@ -1098,7 +1107,8 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                             ),
                                             child: Center(
                                               child: AutoSizeText(
-                                                'Table#:',
+                                                //'Table#:',
+                                                translate("cancelled_orders_history_popup.table_number"),
                                                 style: TextStyle(
                                                     color: BackgroundColor,
                                                     fontSize: 22,
@@ -1152,7 +1162,8 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                                 .spaceBetween,
                                             children: [
                                               Text(
-                                                "SubTotal: ",
+                                                //"SubTotal: ",
+                                                translate("cancelled_orders_history_popup.sub_total"),
                                                 style: TextStyle(
                                                     fontSize:
                                                     20,
@@ -1267,7 +1278,8 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                                 .spaceBetween,
                                             children: [
                                               Text(
-                                                "Total: ",
+                                                //"Total: ",
+                                                translate("cancelled_orders_history_popup.total"),
                                                 style: TextStyle(
                                                     fontSize:
                                                     20,
@@ -1378,7 +1390,8 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                                       ),
                                                       child: Center(
                                                         child: AutoSizeText(
-                                                          'Unit Price: ',
+                                                          //'Unit Price: ',
+                                                          translate("cancelled_orders_history_popup.unit_price"),
                                                           style: TextStyle(
                                                               color: yellowColor,
                                                               fontSize: 20,
@@ -1434,7 +1447,8 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                                       ),
                                                       child: Center(
                                                         child: AutoSizeText(
-                                                          'Quantity: ',
+                                                          //'Quantity: ',
+                                                          translate("cancelled_orders_history_popup.quantity"),
                                                           style: TextStyle(
                                                               color: yellowColor,
                                                               fontSize: 20,
@@ -1490,7 +1504,8 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                                       ),
                                                       child: Center(
                                                         child: AutoSizeText(
-                                                          'Size: ',
+                                                          //'Size: ',
+                                                          translate("cancelled_orders_history_popup.size"),
                                                           style: TextStyle(
                                                               color: yellowColor,
                                                               fontSize: 20,
@@ -1572,7 +1587,8 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                                           child: Column(
                                                             children: [
                                                               AutoSizeText(
-                                                                'Extras: ',
+                                                                //'Extras: ',
+                                                                translate("cancelled_orders_history_popup.extras"),
                                                                 style: TextStyle(
                                                                     color: yellowColor,
                                                                     fontSize: 20,
@@ -1622,7 +1638,8 @@ class _KitchenTabViewState extends State<CancelledOrdersScreenForTablet> with Ti
                                                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                                   children: [
                                                     Text(
-                                                      'Price: ',
+                                                      //'Price: ',
+                                                      translate("cancelled_orders_history_popup.price"),
                                                       style: TextStyle(
                                                         color: BackgroundColor,
                                                         fontSize: 25,
